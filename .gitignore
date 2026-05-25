@@ -1,0 +1,10 @@
+node_modules/
+.next/
+.env
+.env.local
+.env.*.local
+.playwright-cli/
+artifacts/*/.next/
+artifacts/*/node_modules/
+artifacts/mockup-sandbox/
+artifacts/api-server/

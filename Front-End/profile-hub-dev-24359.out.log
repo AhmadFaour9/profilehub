@@ -1,0 +1,158 @@
+
+> @workspace/profile-hub@0.0.0 dev C:\Users\Ahmad Faour\Desktop\my projects for AI\ProfileHub\Front-End\artifacts\profile-hub
+> next dev --hostname 0.0.0.0 --port 24359
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:24359
+- Network:       http://0.0.0.0:24359
+✓ Ready in 470ms
+Creating turbopack project {
+  dir: 'C:\\Users\\Ahmad Faour\\Desktop\\my projects for AI\\ProfileHub\\Front-End\\artifacts\\profile-hub',
+  testMode: true
+}
+
+ GET / 200 in 482ms (next.js: 114ms, proxy.ts: 135ms, application-code: 233ms)
+ GET /favicon.ico 200 in 804ms (next.js: 728ms, application-code: 76ms)
+ GET / 200 in 102ms (next.js: 6ms, proxy.ts: 7ms, application-code: 88ms)
+ GET /favicon.ico 200 in 72ms (next.js: 20ms, application-code: 52ms)
+ GET / 200 in 64ms (next.js: 4ms, proxy.ts: 8ms, application-code: 52ms)
+ GET /favicon.ico 200 in 54ms (next.js: 15ms, application-code: 39ms)
+○ Compiling /login ...
+ GET /register 200 in 2.7s (next.js: 2.7s, proxy.ts: 5ms, application-code: 49ms)
+ GET /sara-al-hassan 200 in 151ms (next.js: 23ms, proxy.ts: 12ms, application-code: 116ms)
+ POST /api/analytics/page-view 200 in 197ms (next.js: 164ms, proxy.ts: 14ms, application-code: 19ms)
+ POST /api/analytics/page-view 200 in 212ms (next.js: 193ms, proxy.ts: 14ms, application-code: 5ms)
+✓ Compiled in 168ms
+ GET / 200 in 111ms (next.js: 17ms, proxy.ts: 10ms, application-code: 84ms)
+ GET / 200 in 50ms (next.js: 4ms, proxy.ts: 8ms, application-code: 38ms)
+ GET /sara-al-hassan 200 in 695ms (next.js: 301ms, proxy.ts: 110ms, application-code: 284ms)
+ GET / 200 in 75ms (next.js: 7ms, proxy.ts: 7ms, application-code: 61ms)
+ GET / 200 in 130ms (next.js: 7ms, proxy.ts: 10ms, application-code: 114ms)
+ GET / 200 in 98ms (next.js: 6ms, proxy.ts: 56ms, application-code: 36ms)
+ GET / 200 in 92ms (next.js: 10ms, proxy.ts: 6ms, application-code: 76ms)
+ GET /sara-al-hassan 200 in 240ms (next.js: 37ms, proxy.ts: 7ms, application-code: 196ms)
+ GET / 200 in 115ms (next.js: 6ms, proxy.ts: 10ms, application-code: 100ms)
+ GET / 200 in 165ms (next.js: 12ms, proxy.ts: 10ms, application-code: 143ms)
+ GET / 200 in 111ms (next.js: 8ms, proxy.ts: 9ms, application-code: 94ms)
+ GET /sara-al-hassan 200 in 165ms (next.js: 47ms, proxy.ts: 46ms, application-code: 71ms)
+ GET /sara-al-hassan 200 in 79ms (next.js: 25ms, proxy.ts: 7ms, application-code: 47ms)
+ GET /sara-al-hassan 200 in 66ms (next.js: 6ms, proxy.ts: 4ms, application-code: 55ms)
+ GET /sara-al-hassan 200 in 136ms (next.js: 63ms, proxy.ts: 8ms, application-code: 65ms)
+ GET /sara-al-hassan 200 in 139ms (next.js: 10ms, proxy.ts: 9ms, application-code: 120ms)
+ GET /sara-al-hassan 200 in 129ms (next.js: 58ms, proxy.ts: 12ms, application-code: 59ms)
+ GET /sara-al-hassan 200 in 137ms (next.js: 16ms, proxy.ts: 12ms, application-code: 109ms)
+ GET /sara-al-hassan 200 in 274ms (next.js: 22ms, proxy.ts: 7ms, application-code: 246ms)
+ POST /api/analytics/page-view 200 in 69ms (next.js: 52ms, proxy.ts: 8ms, application-code: 9ms)
+✓ Compiled in 88ms
+ GET / 200 in 756ms (next.js: 202ms, proxy.ts: 85ms, application-code: 469ms)
+ GET / 200 in 454ms (next.js: 368ms, proxy.ts: 7ms, application-code: 79ms)
+ GET / 200 in 105ms (next.js: 4ms, proxy.ts: 13ms, application-code: 87ms)
+ GET / 200 in 83ms (next.js: 6ms, proxy.ts: 10ms, application-code: 66ms)
+ GET /sara-al-hassan 200 in 890ms (next.js: 439ms, proxy.ts: 195ms, application-code: 257ms)
+ GET / 200 in 89ms (next.js: 6ms, proxy.ts: 7ms, application-code: 76ms)
+ GET / 200 in 131ms (next.js: 6ms, proxy.ts: 11ms, application-code: 113ms)
+ GET / 200 in 121ms (next.js: 5ms, proxy.ts: 57ms, application-code: 59ms)
+ GET / 200 in 41ms (next.js: 5ms, proxy.ts: 12ms, application-code: 24ms)
+ GET /sara-al-hassan 200 in 171ms (next.js: 43ms, proxy.ts: 11ms, application-code: 117ms)
+ GET /sara-al-hassan 200 in 56ms (next.js: 5ms, proxy.ts: 6ms, application-code: 46ms)
+ GET /sara-al-hassan 200 in 56ms (next.js: 7ms, proxy.ts: 4ms, application-code: 45ms)
+ GET /sara-al-hassan 200 in 79ms (next.js: 25ms, proxy.ts: 9ms, application-code: 46ms)
+ GET /sara-al-hassan 200 in 51ms (next.js: 6ms, proxy.ts: 6ms, application-code: 38ms)
+ GET /sara-al-hassan 200 in 53ms (next.js: 6ms, proxy.ts: 4ms, application-code: 42ms)
+ GET /sara-al-hassan 200 in 41ms (next.js: 5ms, proxy.ts: 7ms, application-code: 29ms)
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:24359
+- Network:       http://0.0.0.0:24359
+✓ Ready in 425ms
+Creating turbopack project {
+  dir: 'C:\\Users\\Ahmad Faour\\Desktop\\my projects for AI\\ProfileHub\\Front-End\\artifacts\\profile-hub',
+  testMode: true
+}
+
+ GET / 200 in 285ms (next.js: 59ms, proxy.ts: 14ms, application-code: 212ms)
+ GET /favicon.ico 200 in 558ms (next.js: 231ms, application-code: 327ms)
+ GET /sara-al-hassan 200 in 1454ms (next.js: 961ms, proxy.ts: 156ms, application-code: 336ms)
+ POST /api/analytics/page-view 200 in 124ms (next.js: 104ms, proxy.ts: 6ms, application-code: 14ms)
+ GET / 200 in 52ms (next.js: 10ms, proxy.ts: 12ms, application-code: 30ms)
+ GET /sara-al-hassan 200 in 362ms (next.js: 145ms, proxy.ts: 46ms, application-code: 171ms)
+ GET / 200 in 84ms (next.js: 6ms, proxy.ts: 4ms, application-code: 73ms)
+ GET / 200 in 97ms (next.js: 7ms, proxy.ts: 5ms, application-code: 85ms)
+ GET /sara-al-hassan 200 in 201ms (next.js: 9ms, proxy.ts: 27ms, application-code: 165ms)
+ GET / 200 in 114ms (next.js: 7ms, proxy.ts: 10ms, application-code: 97ms)
+ GET / 200 in 139ms (next.js: 10ms, proxy.ts: 9ms, application-code: 121ms)
+ GET / 200 in 114ms (next.js: 5ms, proxy.ts: 8ms, application-code: 101ms)
+ GET / 200 in 69ms (next.js: 3ms, proxy.ts: 11ms, application-code: 55ms)
+ GET / 200 in 33ms (next.js: 5ms, proxy.ts: 5ms, application-code: 24ms)
+ GET /sara-al-hassan 200 in 196ms (next.js: 41ms, proxy.ts: 46ms, application-code: 109ms)
+ GET /sara-al-hassan 200 in 80ms (next.js: 21ms, proxy.ts: 4ms, application-code: 54ms)
+ GET /sara-al-hassan 200 in 64ms (next.js: 8ms, proxy.ts: 5ms, application-code: 52ms)
+ GET /sara-al-hassan 200 in 71ms (next.js: 7ms, proxy.ts: 7ms, application-code: 57ms)
+ GET /sara-al-hassan 200 in 77ms (next.js: 6ms, proxy.ts: 24ms, application-code: 46ms)
+ GET /sara-al-hassan 200 in 42ms (next.js: 7ms, proxy.ts: 4ms, application-code: 31ms)
+ GET / 200 in 319ms (next.js: 50ms, proxy.ts: 64ms, application-code: 205ms)
+ GET / 200 in 202ms (next.js: 137ms, proxy.ts: 5ms, application-code: 59ms)
+ GET / 200 in 74ms (next.js: 3ms, proxy.ts: 8ms, application-code: 62ms)
+ GET /sara-al-hassan 200 in 396ms (next.js: 180ms, proxy.ts: 64ms, application-code: 152ms)
+ GET / 200 in 38ms (next.js: 4ms, proxy.ts: 8ms, application-code: 26ms)
+ GET / 200 in 39ms (next.js: 7ms, proxy.ts: 4ms, application-code: 27ms)
+ GET / 200 in 86ms (next.js: 4ms, proxy.ts: 6ms, application-code: 76ms)
+ GET / 200 in 32ms (next.js: 3ms, proxy.ts: 5ms, application-code: 24ms)
+ GET /sara-al-hassan 200 in 97ms (next.js: 28ms, proxy.ts: 6ms, application-code: 63ms)
+ GET /sara-al-hassan 200 in 42ms (next.js: 6ms, proxy.ts: 6ms, application-code: 31ms)
+ GET /sara-al-hassan 200 in 56ms (next.js: 7ms, proxy.ts: 5ms, application-code: 44ms)
+ GET /sara-al-hassan 200 in 61ms (next.js: 8ms, proxy.ts: 5ms, application-code: 47ms)
+ GET /sara-al-hassan 200 in 67ms (next.js: 8ms, proxy.ts: 5ms, application-code: 53ms)
+ GET /sara-al-hassan 200 in 52ms (next.js: 17ms, proxy.ts: 7ms, application-code: 27ms)
+ GET /sara-al-hassan 404 in 469ms (next.js: -182156µs, proxy.ts: 449ms, application-code: 203ms)
+ GET / 404 in 434ms (next.js: -23159µs, proxy.ts: 426ms, application-code: 31ms)
+ GET /sara-al-hassan 404 in 55ms (next.js: -8053µs, proxy.ts: 43ms, application-code: 20ms)
+ GET / 404 in 52ms (next.js: -7234µs, proxy.ts: 38ms, application-code: 21ms)
+ GET / 404 in 50ms (next.js: -7353µs, proxy.ts: 45ms, application-code: 12ms)
+ GET /favicon.ico 500 in 11ms
+✓ Compiled in 143ms
+ GET /sara-al-hassan 404 in 38ms (next.js: -8634µs, proxy.ts: 36ms, application-code: 10ms)
+ GET / 404 in 18ms (next.js: -9451µs, proxy.ts: 16ms, application-code: 11ms)
+ GET /favicon.ico 500 in 14ms
+ GET /sara-al-hassan 404 in 100ms (next.js: -12691µs, proxy.ts: 45ms, application-code: 68ms)
+ GET / 404 in 46ms (next.js: -9848µs, proxy.ts: 42ms, application-code: 14ms)
+ GET /favicon.ico 500 in 4ms
+✓ Compiled in 68ms
+ GET / 200 in 163ms (next.js: 20ms, application-code: 143ms)
+ GET /sara-al-hassan 200 in 916ms (next.js: 263ms, application-code: 653ms)
+ GET /favicon.ico 200 in 80ms (next.js: 16ms, application-code: 64ms)
+ POST /api/analytics/page-view 500 in 32ms (next.js: 20ms, application-code: 12ms)
+ GET /sara-al-hassan 500 in 29ms (next.js: 16ms, application-code: 13ms)
+ GET /sara-al-hassan 500 in 20ms (next.js: 9ms, application-code: 10ms)
+ GET / 500 in 18ms (next.js: 7ms, application-code: 11ms)
+ GET / 500 in 21ms (next.js: 6ms, application-code: 15ms)
+ GET / 500 in 26ms (next.js: 8ms, application-code: 18ms)
+ GET / 500 in 7ms
+ GET /favicon.ico 500 in 5ms
+ GET /sara-al-hassan 500 in 37ms (next.js: 25ms, application-code: 12ms)
+ GET / 500 in 16ms (next.js: 6ms, application-code: 10ms)
+✓ Compiled in 174ms
+ GET /sara-al-hassan 500 in 23ms (next.js: 16ms, application-code: 7ms)
+ GET / 500 in 21ms (next.js: 10ms, application-code: 11ms)
+ GET /favicon.ico 500 in 3ms
+✓ Compiled in 136ms
+ GET /sara-al-hassan 500 in 40ms (next.js: 24ms, application-code: 16ms)
+ GET / 500 in 19ms (next.js: 6ms, application-code: 13ms)
+ GET /favicon.ico 500 in 5ms
+ GET /sara-al-hassan 500 in 46ms (next.js: 21ms, application-code: 25ms)
+ GET / 500 in 72ms (next.js: 21ms, application-code: 51ms)
+ GET /favicon.ico 500 in 13ms
+ GET /sara-al-hassan 500 in 50ms (next.js: 19ms, application-code: 32ms)
+ GET / 500 in 46ms (next.js: 17ms, application-code: 29ms)
+ GET /favicon.ico 500 in 10ms
+ GET /sara-al-hassan 500 in 49ms (next.js: 16ms, application-code: 33ms)
+ GET / 500 in 50ms (next.js: 17ms, application-code: 33ms)
+ GET /favicon.ico 500 in 15ms
+✓ Compiled in 176ms
+ GET /sara-al-hassan 500 in 94ms (next.js: 60ms, application-code: 34ms)
+ GET / 500 in 96ms (next.js: 54ms, application-code: 42ms)
+ GET /favicon.ico 500 in 11ms
+ GET / 500 in 37ms (next.js: 17ms, application-code: 21ms)
+[?25h
+C:\Users\Ahmad Faour\Desktop\my projects for AI\ProfileHub\Front-End\artifacts\profile-hub:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/profile-hub@0.0.0 dev: `next dev --hostname 0.0.0.0 --port 24359`
+Exit status 4294967295

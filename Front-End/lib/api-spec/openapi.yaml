@@ -1,0 +1,916 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: ProfileHub API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: profiles
+    description: User profile operations
+  - name: links
+    description: Smart link operations
+  - name: projects
+    description: Project operations
+  - name: services
+    description: Service operations
+  - name: gallery
+    description: Gallery operations
+  - name: analytics
+    description: Analytics operations
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /profiles/{username}:
+    get:
+      operationId: getPublicProfile
+      tags: [profiles]
+      summary: Get public profile by username
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicProfile"
+        "404":
+          description: Not found
+
+  /me/profile:
+    get:
+      operationId: getMyProfile
+      tags: [profiles]
+      summary: Get authenticated user profile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+    patch:
+      operationId: updateMyProfile
+      tags: [profiles]
+      summary: Update authenticated user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileUpdate"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+
+  /me/links:
+    get:
+      operationId: getMyLinks
+      tags: [links]
+      summary: Get all user links
+      responses:
+        "200":
+          description: List of links
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Link"
+    post:
+      operationId: createLink
+      tags: [links]
+      summary: Create a new link
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LinkInput"
+      responses:
+        "201":
+          description: Created link
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Link"
+
+  /me/links/{id}:
+    patch:
+      operationId: updateLink
+      tags: [links]
+      summary: Update a link
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LinkUpdate"
+      responses:
+        "200":
+          description: Updated link
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Link"
+    delete:
+      operationId: deleteLink
+      tags: [links]
+      summary: Delete a link
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /me/links/reorder:
+    post:
+      operationId: reorderLinks
+      tags: [links]
+      summary: Reorder links
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderInput"
+      responses:
+        "200":
+          description: Reordered
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Link"
+
+  /me/projects:
+    get:
+      operationId: getMyProjects
+      tags: [projects]
+      summary: Get all user projects
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Created project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /me/projects/{id}:
+    patch:
+      operationId: updateProject
+      tags: [projects]
+      summary: Update a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectUpdate"
+      responses:
+        "200":
+          description: Updated project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      summary: Delete a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /me/services:
+    get:
+      operationId: getMyServices
+      tags: [services]
+      summary: Get all user services
+      responses:
+        "200":
+          description: List of services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Service"
+    post:
+      operationId: createService
+      tags: [services]
+      summary: Create a service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceInput"
+      responses:
+        "201":
+          description: Created service
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+
+  /me/services/{id}:
+    patch:
+      operationId: updateService
+      tags: [services]
+      summary: Update a service
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceUpdate"
+      responses:
+        "200":
+          description: Updated service
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+    delete:
+      operationId: deleteService
+      tags: [services]
+      summary: Delete a service
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /me/gallery:
+    get:
+      operationId: getMyGallery
+      tags: [gallery]
+      summary: Get all gallery images
+      responses:
+        "200":
+          description: List of gallery items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GalleryItem"
+    post:
+      operationId: createGalleryItem
+      tags: [gallery]
+      summary: Add gallery item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GalleryItemInput"
+      responses:
+        "201":
+          description: Created gallery item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GalleryItem"
+
+  /me/gallery/{id}:
+    delete:
+      operationId: deleteGalleryItem
+      tags: [gallery]
+      summary: Delete gallery item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /me/analytics/overview:
+    get:
+      operationId: getAnalyticsOverview
+      tags: [analytics]
+      summary: Get analytics overview stats
+      responses:
+        "200":
+          description: Analytics overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsOverview"
+
+  /me/analytics/views:
+    get:
+      operationId: getPageViews
+      tags: [analytics]
+      summary: Get page views over time
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [7d, 30d, 90d]
+          required: false
+      responses:
+        "200":
+          description: Page views time series
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TimeSeriesPoint"
+
+  /me/analytics/links:
+    get:
+      operationId: getLinkAnalytics
+      tags: [analytics]
+      summary: Get link click analytics
+      responses:
+        "200":
+          description: Link analytics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LinkAnalytics"
+
+  /me/publish:
+    post:
+      operationId: publishProfile
+      tags: [profiles]
+      summary: Publish or unpublish profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishInput"
+      responses:
+        "200":
+          description: Publish result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    SocialLink:
+      type: object
+      properties:
+        platform:
+          type: string
+        url:
+          type: string
+        handle:
+          type: string
+      required:
+        - platform
+        - url
+
+    ProfileTheme:
+      type: object
+      properties:
+        id:
+          type: string
+        primaryColor:
+          type: string
+        backgroundColor:
+          type: string
+        fontFamily:
+          type: string
+        buttonStyle:
+          type: string
+          enum: [rounded, pill, sharp]
+        layout:
+          type: string
+          enum: [centered, left, minimal]
+      required:
+        - id
+
+    Profile:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        displayName:
+          type: string
+        profession:
+          type: ["string", "null"]
+        bio:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        coverUrl:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        isPublished:
+          type: boolean
+        socialLinks:
+          type: array
+          items:
+            $ref: "#/components/schemas/SocialLink"
+        theme:
+          $ref: "#/components/schemas/ProfileTheme"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - username
+        - displayName
+        - isPublished
+        - createdAt
+        - updatedAt
+
+    PublicProfile:
+      type: object
+      properties:
+        username:
+          type: string
+        displayName:
+          type: string
+        profession:
+          type: ["string", "null"]
+        bio:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        coverUrl:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        socialLinks:
+          type: array
+          items:
+            $ref: "#/components/schemas/SocialLink"
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+        projects:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/Service"
+        gallery:
+          type: array
+          items:
+            $ref: "#/components/schemas/GalleryItem"
+        theme:
+          $ref: "#/components/schemas/ProfileTheme"
+      required:
+        - username
+        - displayName
+
+    ProfileUpdate:
+      type: object
+      properties:
+        displayName:
+          type: string
+        profession:
+          type: string
+        bio:
+          type: string
+        avatarUrl:
+          type: string
+        coverUrl:
+          type: string
+        email:
+          type: string
+        location:
+          type: string
+        website:
+          type: string
+        socialLinks:
+          type: array
+          items:
+            $ref: "#/components/schemas/SocialLink"
+        theme:
+          $ref: "#/components/schemas/ProfileTheme"
+
+    Link:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        url:
+          type: string
+        description:
+          type: ["string", "null"]
+        icon:
+          type: ["string", "null"]
+        thumbnailUrl:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        isPinned:
+          type: boolean
+        order:
+          type: integer
+        clickCount:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - url
+        - isActive
+        - isPinned
+        - order
+        - clickCount
+        - createdAt
+
+    LinkInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        url:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        icon:
+          type: string
+        thumbnailUrl:
+          type: string
+        isActive:
+          type: boolean
+        isPinned:
+          type: boolean
+      required:
+        - title
+        - url
+
+    LinkUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        url:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        thumbnailUrl:
+          type: string
+        isActive:
+          type: boolean
+        isPinned:
+          type: boolean
+
+    ReorderInput:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+      required:
+        - ids
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        url:
+          type: ["string", "null"]
+        tags:
+          type: array
+          items:
+            type: string
+        isFeatured:
+          type: boolean
+        order:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - isFeatured
+        - order
+        - createdAt
+
+    ProjectInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        imageUrl:
+          type: string
+        url:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        isFeatured:
+          type: boolean
+      required:
+        - title
+
+    ProjectUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: string
+        url:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        isFeatured:
+          type: boolean
+
+    Service:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        price:
+          type: ["string", "null"]
+        currency:
+          type: ["string", "null"]
+        duration:
+          type: ["string", "null"]
+        ctaLabel:
+          type: ["string", "null"]
+        ctaUrl:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        order:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - isActive
+        - order
+        - createdAt
+
+    ServiceInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        price:
+          type: string
+        currency:
+          type: string
+        duration:
+          type: string
+        ctaLabel:
+          type: string
+        ctaUrl:
+          type: string
+        isActive:
+          type: boolean
+      required:
+        - title
+
+    ServiceUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: string
+        currency:
+          type: string
+        duration:
+          type: string
+        ctaLabel:
+          type: string
+        ctaUrl:
+          type: string
+        isActive:
+          type: boolean
+
+    GalleryItem:
+      type: object
+      properties:
+        id:
+          type: string
+        imageUrl:
+          type: string
+        caption:
+          type: ["string", "null"]
+        order:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - imageUrl
+        - order
+        - createdAt
+
+    GalleryItemInput:
+      type: object
+      properties:
+        imageUrl:
+          type: string
+          minLength: 1
+        caption:
+          type: string
+      required:
+        - imageUrl
+
+    AnalyticsOverview:
+      type: object
+      properties:
+        totalViews:
+          type: integer
+        totalClicks:
+          type: integer
+        uniqueVisitors:
+          type: integer
+        viewsThisWeek:
+          type: integer
+        clicksThisWeek:
+          type: integer
+        topCountry:
+          type: ["string", "null"]
+        growthRate:
+          type: number
+      required:
+        - totalViews
+        - totalClicks
+        - uniqueVisitors
+        - viewsThisWeek
+        - clicksThisWeek
+        - growthRate
+
+    TimeSeriesPoint:
+      type: object
+      properties:
+        date:
+          type: string
+        value:
+          type: integer
+      required:
+        - date
+        - value
+
+    LinkAnalytics:
+      type: object
+      properties:
+        linkId:
+          type: string
+        title:
+          type: string
+        url:
+          type: string
+        clicks:
+          type: integer
+        percentage:
+          type: number
+      required:
+        - linkId
+        - title
+        - url
+        - clicks
+        - percentage
+
+    PublishInput:
+      type: object
+      properties:
+        isPublished:
+          type: boolean
+      required:
+        - isPublished
