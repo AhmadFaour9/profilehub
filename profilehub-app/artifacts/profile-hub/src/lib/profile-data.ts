@@ -27,22 +27,27 @@ export async function getOrCreateProfile(user: User): Promise<Profile | null> {
 
   // Use admin client to insert so we bypass RLS (server-side only)
   const admin = createSupabaseAdminClient();
-  if (!admin) return null;
+  if (!admin) {
+    throw new Error("service_role_missing");
+  }
 
   const { data, error } = await admin
     .from("profiles")
-    .insert({
+    .upsert({
       user_id: user.id,
       username,
       display_name: displayName,
       is_published: false,
-    })
+    }, { onConflict: "user_id" })
     .select("*")
     .single();
 
   if (error) {
-    console.error("Failed to create default profile:", error.message);
-    return null;
+    console.error("Failed to create default profile:", error);
+    if (error.code === '23505') throw new Error("username_taken");
+    if (error.code === '42501') throw new Error("profile_rls_denied");
+    if (error.code === '42P01') throw new Error("schema_mismatch");
+    throw new Error(`profile_insert_error:${error.code}`);
   }
 
   return {

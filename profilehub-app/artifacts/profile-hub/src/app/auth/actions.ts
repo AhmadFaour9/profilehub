@@ -94,8 +94,9 @@ export async function registerWithPassword(input: {
         metadata: { source: "email_signup" },
       });
     } catch (profileErr: any) {
+      const msg = profileErr instanceof Error ? profileErr.message : "profile_creation_failed";
       console.error("[AUTH] Register failed: getOrCreateProfile threw an error", profileErr?.message || profileErr);
-      return { ok: false, message: "profile_creation_failed" };
+      return { ok: false, message: msg };
     }
   }
 
