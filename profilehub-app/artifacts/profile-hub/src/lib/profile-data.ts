@@ -28,6 +28,11 @@ export async function getOrCreateProfile(user: User): Promise<Profile | null> {
   // Use admin client to insert so we bypass RLS (server-side only)
   const admin = createSupabaseAdminClient();
   if (!admin) {
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (serviceRoleKey && serviceRoleKey === anonKey) {
+      throw new Error("service_role_invalid");
+    }
     throw new Error("service_role_missing");
   }
 
