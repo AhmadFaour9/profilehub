@@ -1,18 +1,65 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "include": ["next-env.d.ts", ".next/types/**/*.ts", "src/**/*", "tests/**/*"],
-  "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
+  "include": [
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    "src/**/*",
+    "tests/**/*",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    "**/*.test.ts"
+  ],
   "compilerOptions": {
+    "isolatedModules": true,
+    "module": "esnext",
+    "noEmitOnError": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": false,
+    "noImplicitReturns": true,
+    "noUnusedLocals": false,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": false,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "useUnknownInCatchVariables": true,
+    "alwaysStrict": true,
+    "skipLibCheck": true,
+    "target": "es2022",
+    "customConditions": [
+      "workspace"
+    ],
     "noEmit": true,
-    "jsx": "preserve",
-    "lib": ["esnext", "dom", "dom.iterable"],
+    "jsx": "react-jsx",
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable"
+    ],
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
     "moduleResolution": "bundler",
-    "types": ["node", "vitest/globals"],
-    "plugins": [{ "name": "next" }],
+    "types": [
+      "node",
+      "vitest/globals"
+    ],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "allowJs": true,
+    "strict": false,
+    "incremental": true,
+    "esModuleInterop": true
   }
 }
