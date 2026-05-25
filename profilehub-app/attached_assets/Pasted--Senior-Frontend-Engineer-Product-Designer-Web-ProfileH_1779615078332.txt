@@ -1,0 +1,143 @@
+أنت Senior Frontend Engineer وProduct Designer. أريد بناء تطبيق Web احترافي اسمه مؤقتًا ProfileHub، وهو منصة مجانية لإنشاء صفحة هوية رقمية احترافية تشبه Linktree لكن أقوى: تجمع الروابط، المشاريع، الصور، الخدمات، السيرة، وسائل التواصل، QR، وتحليلات بسيطة.
+
+المطلوب:
+بناء Frontend كامل باستخدام:
+- Next.js App Router
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- React Hook Form
+- Zod
+- Zustand أو Context عند الحاجة
+- تصميم Responsive ممتاز
+- دعم RTL/LTR
+- دعم العربية والإنجليزية
+- Dark/Light mode
+- بدون ألوان Tailwind الافتراضية المكررة
+- استخدم Design Tokens من ملف مخصص
+- اجعل التصميم Premium، هادئ، نظيف، وليس شبيهًا بقوالب الوكلاء الافتراضية
+
+مهم جدًا:
+سأرفع لك لاحقًا مجلد أو ملفات تصميم من مواقع تصميم خارجية. عند توفر التصميم:
+- استخرج منه نظام الألوان
+- استخرج spacing, radius, typography, shadows
+- لا تنسخه عشوائيًا
+- حوّله إلى Design System داخل Tailwind config وCSS variables
+- اربط كل الصفحات بنفس الهوية البصرية
+
+الصفحات المطلوبة:
+1. Landing page
+   - Hero قوي
+   - شرح الفكرة
+   - مقارنة مع Linktree التقليدي
+   - Features
+   - Templates preview
+   - CTA لإنشاء الحساب
+   - FAQ
+
+2. Public Profile Page
+   route: /[username]
+   تعرض:
+   - avatar / cover
+   - الاسم
+   - المهنة
+   - bio
+   - social links
+   - smart links
+   - projects
+   - services
+   - gallery
+   - contact buttons
+   - QR share
+   - theme حسب المستخدم
+
+3. Auth pages
+   - login
+   - register
+   - forgot password
+   - Google login UI
+
+4. Dashboard
+   route: /dashboard
+   يحتوي:
+   - overview
+   - profile editor
+   - links manager
+   - projects manager
+   - services manager
+   - gallery manager
+   - theme editor
+   - analytics
+   - settings
+
+5. Editor UX
+   - add/edit/delete/reorder blocks
+   - drag and drop للروابط
+   - preview live للموبايل
+   - publish/unpublish
+   - validation واضحة
+   - empty states جميلة
+
+6. Analytics UI
+   - page views
+   - link clicks
+   - top links
+   - referrers
+   - countries placeholder
+   - charts بسيطة
+
+Components:
+- AppShell
+- DashboardSidebar
+- Topbar
+- PublicProfile
+- ProfileHeader
+- SmartLinkCard
+- ProjectCard
+- ServiceCard
+- GalleryGrid
+- ThemePicker
+- MobilePreview
+- QRButton
+- AnalyticsCards
+- EmptyState
+- LoadingSkeleton
+- ErrorState
+
+Data:
+في هذه المرحلة استخدم mock data منظّم داخل /lib/mock-data.ts، لكن صمّم الكود بحيث يسهل ربطه لاحقًا بـ Supabase.
+لا تضع بيانات داخل components مباشرة.
+
+Architecture:
+- /app
+- /components
+- /components/dashboard
+- /components/profile
+- /components/ui
+- /lib
+- /types
+- /hooks
+- /styles
+
+Quality:
+- اكتب types واضحة
+- لا تستخدم any إلا للضرورة
+- افصل business logic عن UI
+- اجعل الكود قابلًا للتوسع
+- اجعل كل صفحة production-ready
+- لا تترك TODO مبهمة
+- أضف README يشرح التشغيل والبنية
+
+Design constraints:
+- لا تستخدم الأزرق/البنفسجي الافتراضي المنتشر إلا إذا كان ضمن design tokens
+- لا تستخدم gradient عام ومكرر
+- لا تستخدم landing page تقليدية رخيصة
+- اجعل الواجهة مناسبة لمنتج SaaS عالمي
+- اهتم جدًا بالموبايل لأن أغلب الاستخدام سيكون من الهاتف
+
+Deliverables:
+- مشروع Frontend يعمل
+- تصميم كامل
+- mock data
+- README
+- ملاحظات حول ما يحتاج ربط Backend لاحقًا

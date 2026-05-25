@@ -1,0 +1,30 @@
+kind = "web"
+previewPath = "/"
+title = "ProfileHub"
+version = "1.0.0"
+id = "artifacts/profile-hub"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24359
+
+[services.development]
+run = "pnpm --filter @workspace/profile-hub run dev"
+
+[services.production]
+
+[services.production.build]
+args = [ "pnpm", "--filter", "@workspace/profile-hub", "run", "build" ]
+
+[services.production.run]
+args = [ "pnpm", "--filter", "@workspace/profile-hub", "run", "serve" ]
+
+[services.production.run.env]
+PORT = "24359"
+NODE_ENV = "production"
+
+[services.env]
+PORT = "24359"
+BASE_PATH = "/"
