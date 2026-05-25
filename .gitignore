@@ -9,4 +9,13 @@ artifacts/*/.next/
 artifacts/*/node_modules/
 artifacts/mockup-sandbox/
 artifacts/api-server/
-Front-End/
+profilehub-app/
+
+# Front-End workspace ignores
+Front-End/node_modules/
+Front-End/.cache/
+Front-End/.local/
+Front-End/.playwright-cli/
+Front-End/artifacts/*/.next/
+Front-End/artifacts/*/node_modules/
+Front-End/*.log

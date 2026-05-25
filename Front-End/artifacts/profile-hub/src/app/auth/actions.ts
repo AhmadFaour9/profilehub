@@ -41,14 +41,25 @@ export async function registerWithPassword(input: {
   password: string;
 }): Promise<AuthActionResult> {
   if (!isSupabaseConfigured()) {
-    return { ok: false, message: "Supabase env is not configured." };
+    console.error("[AUTH] Register failed: Supabase env is not configured.");
+    return { ok: false, message: "invalid_config" };
   }
 
   const username = usernameSchema.parse(input.username);
   const admin = createSupabaseAdminClient();
   if (admin) {
-    const { data } = await admin.from("profiles").select("id").eq("username", username).maybeSingle();
-    if (data) return { ok: false, message: "Username is already taken." };
+    const { data, error: adminErr } = await admin.from("profiles").select("id").eq("username", username).maybeSingle();
+    if (adminErr) {
+      console.error("[AUTH] Register failed: Admin DB error (RLS or missing table)", adminErr.message);
+      return { ok: false, message: "profile_creation_failed" };
+    }
+    if (data) {
+      console.warn(`[AUTH] Register failed: Username ${username} already taken`);
+      return { ok: false, message: "username_taken" };
+    }
+  } else {
+    console.error("[AUTH] Register failed: Missing service role key.");
+    return { ok: false, message: "invalid_config" };
   }
 
   const supabase = await createSupabaseServerClient();
@@ -65,19 +76,27 @@ export async function registerWithPassword(input: {
   });
 
   if (error) {
-    await log("warn", "auth", "Email registration failed", { reason: error.message });
-    return { ok: false, message: "Could not create the account." };
+    console.error("[AUTH] Register failed: Supabase signUp error", error.message);
+    if (error.message.includes("Signups not allowed") || error.message.includes("disabled")) {
+      return { ok: false, message: "email_signup_disabled" };
+    }
+    return { ok: false, message: "profile_creation_failed" };
   }
 
   if (data.user) {
-    const profile = await getOrCreateProfile(data.user);
-    await auditLog({
-      userId: data.user.id,
-      action: "create",
-      entityType: "profile",
-      entityId: profile?.id,
-      metadata: { source: "email_signup" },
-    });
+    try {
+      const profile = await getOrCreateProfile(data.user);
+      await auditLog({
+        userId: data.user.id,
+        action: "create",
+        entityType: "profile",
+        entityId: profile?.id,
+        metadata: { source: "email_signup" },
+      });
+    } catch (profileErr: any) {
+      console.error("[AUTH] Register failed: getOrCreateProfile threw an error", profileErr?.message || profileErr);
+      return { ok: false, message: "profile_creation_failed" };
+    }
   }
 
   if (data.session) redirect("/onboarding");

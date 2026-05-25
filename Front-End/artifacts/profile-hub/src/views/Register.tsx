@@ -28,7 +28,16 @@ export default function Register() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setMessage(null);
     const result = await registerWithPassword(values);
-    setMessage(result.message || (result.ok ? "Account created." : "Could not create account."));
+    if (!result.ok) {
+      const code = result.message;
+      if (code === "invalid_config") setMessage("System configuration error. Please try again later.");
+      else if (code === "username_taken") setMessage("This username is already taken. Please choose another.");
+      else if (code === "email_signup_disabled") setMessage("Email signup is currently disabled.");
+      else if (code === "profile_creation_failed") setMessage("Could not initialize your profile. Please contact support.");
+      else setMessage(code || "An unexpected error occurred.");
+    } else {
+      setMessage(result.message || "Account created.");
+    }
   }
 
   return (
