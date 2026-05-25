@@ -31,7 +31,7 @@ Enterprise-grade personal branding platform built with **Microservices Architect
 
 ```
 ProfileHub/
-├── Front-End/                      # Frontend workspace
+├── profilehub-app/                 # ProfileHub application workspace
 │   └── artifacts/
 │       └── profile-hub/            # 🌐 Next.js Web App Service (:3000)
 │           ├── src/

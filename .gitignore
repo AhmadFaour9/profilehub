@@ -4,7 +4,9 @@ node_modules/
 .env.local
 .env.*.local
 .playwright-cli/
+*.log
 artifacts/*/.next/
 artifacts/*/node_modules/
 artifacts/mockup-sandbox/
 artifacts/api-server/
+Front-End/
