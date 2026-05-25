@@ -50,8 +50,8 @@ export async function registerWithPassword(input: {
   if (admin) {
     const { data, error: adminErr } = await admin.from("profiles").select("id").eq("username", username).maybeSingle();
     if (adminErr) {
-      console.error("[AUTH] Register failed: Admin DB error (RLS or missing table)", adminErr.message);
-      return { ok: false, message: "profile_creation_failed" };
+      console.error("[AUTH] Register failed: Admin DB error (RLS or missing table)", adminErr.message, adminErr.code);
+      return { ok: false, message: `admin_db_error:${adminErr.code || adminErr.message}` };
     }
     if (data) {
       console.warn(`[AUTH] Register failed: Username ${username} already taken`);
