@@ -30,11 +30,13 @@ export default function Register() {
     const result = await registerWithPassword(values);
     if (!result.ok) {
       const code = result.message;
-      if (code === "invalid_config") setMessage("System configuration error. Please try again later.");
-      else if (code === "username_taken") setMessage("This username is already taken. Please choose another.");
-      else if (code === "email_signup_disabled") setMessage("Email signup is currently disabled.");
-      else if (code === "profile_creation_failed") setMessage("Could not initialize your profile. Please contact support.");
-      else setMessage(code || "An unexpected error occurred.");
+      let uiMessage = "An unexpected error occurred.";
+      if (code === "invalid_config") uiMessage = "System configuration error. Please try again later.";
+      else if (code === "username_taken") uiMessage = "This username is already taken. Please choose another.";
+      else if (code === "email_signup_disabled") uiMessage = "Email signup is currently disabled.";
+      else if (code === "profile_creation_failed") uiMessage = "Could not initialize your profile. Please contact support.";
+      else uiMessage = code || "An unexpected error occurred.";
+      setMessage(`DEBUG_REGISTER_ERROR: ${uiMessage}`);
     } else {
       setMessage(result.message || "Account created.");
     }
