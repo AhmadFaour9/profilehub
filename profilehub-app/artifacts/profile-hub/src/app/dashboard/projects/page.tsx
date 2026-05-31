@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import ProjectsManager from "@/views/dashboard/ProjectsManager";
 import { getMyProfileContent } from "@/lib/profile-data";
 import { redirect } from "next/navigation";
@@ -7,3 +8,4 @@ export default async function DashboardProjectsPage() {
   if (!content) redirect("/login");
   return <ProjectsManager projects={content?.projects} />;
 }
+

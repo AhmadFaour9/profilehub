@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import Analytics from "@/views/dashboard/Analytics";
 import { getDashboardAnalytics } from "@/lib/analytics-data";
 import { getMyProfile } from "@/lib/profile-data";
@@ -13,3 +14,4 @@ export default async function DashboardAnalyticsPage() {
     />
   );
 }
+

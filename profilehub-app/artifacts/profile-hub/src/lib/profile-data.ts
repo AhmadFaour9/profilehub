@@ -195,8 +195,9 @@ export async function getMyProfileContent() {
 
   try {
     const client = await createSupabaseServerClient();
-    const { data: { user } } = await client.auth.getUser();
+    const { data: { user }, error: authError } = await client.auth.getUser();
     if (!user) {
+      console.warn("[DASHBOARD] getUser returned null", { authError });
       return null;
     }
     
