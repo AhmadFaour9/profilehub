@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (data.user) {
-    await getOrCreateProfile(data.user);
+    await getOrCreateProfile(data.user, { source: "auth_callback" });
   }
 
   return NextResponse.redirect(new URL(safeNext, request.url));

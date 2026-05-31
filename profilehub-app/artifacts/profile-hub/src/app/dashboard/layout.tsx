@@ -11,7 +11,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (isSupabaseConfigured()) {
     const user = await getCurrentUser();
     if (!user) redirect("/login");
-    profile = (await getOrCreateProfile(user)) || undefined;
+    profile = (await getOrCreateProfile(user, { source: "dashboard" })) || undefined;
   }
 
   return <AppShell profile={profile}>{children}</AppShell>;

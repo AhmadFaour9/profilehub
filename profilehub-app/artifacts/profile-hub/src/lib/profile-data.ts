@@ -12,7 +12,15 @@ import {
   runSupabaseAdminOperation,
   type SupabaseDbError,
 } from "@/lib/supabase-admin-resolver";
-import type { Profile, PublicProfile } from "@/modules/shared";
+import { usernameSchema, type Profile, type PublicProfile } from "@/modules/shared";
+
+type ProfileEnsureSource = "signup" | "login" | "auth_callback" | "dashboard" | "onboarding" | "profile_update";
+
+type ProfileEnsureOptions = {
+  username?: string;
+  displayName?: string;
+  source?: ProfileEnsureSource;
+};
 
 function mapProfileRow(row: any): Profile {
   return {
@@ -44,6 +52,31 @@ function logProfileDbError(message: string, error: SupabaseDbError) {
   });
 }
 
+function logProfileLookupFailed(userId: string, source: ProfileEnsureSource, error: SupabaseDbError | null | undefined) {
+  console.warn("[PROFILE] profile_lookup_failed", {
+    auth_user_id: userId,
+    source,
+    code: error?.code,
+    message: error?.message,
+  });
+}
+
+function logProfileCreated(userId: string, profileId: string | undefined, source: ProfileEnsureSource) {
+  if (source === "signup") {
+    console.info("[PROFILE] profile_created_after_signup", {
+      auth_user_id: userId,
+      profile_id: profileId,
+    });
+    return;
+  }
+
+  console.info("[PROFILE] profile_auto_created_on_dashboard", {
+    auth_user_id: userId,
+    profile_id: profileId,
+    source,
+  });
+}
+
 function profileInsertErrorMessage(error: SupabaseDbError | null | undefined): string {
   if (!error) return "profile_insert_error:unknown";
   if (error.code === "23505") return "username_taken";
@@ -52,30 +85,37 @@ function profileInsertErrorMessage(error: SupabaseDbError | null | undefined): s
   return `profile_insert_error:${error.code || "unknown"}`;
 }
 
-/**
- * Get the current user's profile, or create a default one if it doesn't exist.
- * Called after auth signup/login to ensure every user has a profile row.
- */
-export async function getOrCreateProfile(user: User): Promise<Profile | null> {
-  const existingProfile = await runSupabaseAdminOperation((admin) =>
-    admin.from("profiles").select("*, theme:themes(*)").eq("user_id", user.id).maybeSingle()
-  );
+function buildProfileDefaults(user: User, options: ProfileEnsureOptions) {
+  const metadata = user.user_metadata || {};
+  const metadataUsername =
+    typeof metadata.username === "string"
+      ? metadata.username
+      : typeof metadata.user_name === "string"
+        ? metadata.user_name
+        : typeof metadata.full_name === "string"
+          ? metadata.full_name
+          : "";
+  const emailName = user.email?.split("@")[0] || "";
+  const rawUsername = options.username || metadataUsername || emailName || "user";
+  const slug = rawUsername
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "")
+    .replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, "")
+    .slice(0, 25);
+  const baseUsername = slug.length >= 3 ? slug : `user${slug}`;
+  const parsedUsername = usernameSchema.safeParse(baseUsername);
+  const username = parsedUsername.success ? parsedUsername.data : `user${Math.floor(100000 + Math.random() * 900000)}`;
+  const displayName =
+    options.displayName ||
+    (typeof metadata.full_name === "string" ? metadata.full_name : "") ||
+    user.email?.split("@")[0] ||
+    username;
 
-  if (!existingProfile.ok) {
-    if (existingProfile.error !== "admin_db_error") throw new Error(existingProfile.error);
-    if (existingProfile.dbError) logProfileDbError("Failed to look up default profile:", existingProfile.dbError);
-    throw new Error(formatAdminDbError(existingProfile.dbError));
-  }
+  return { username, displayName };
+}
 
-  if (existingProfile.result.data) return mapProfileRow(existingProfile.result.data);
-
-  // Build a safe username from auth metadata
-  const rawName = user.user_metadata?.user_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "user";
-  const slug = rawName.toLowerCase().replace(/[^a-z0-9]/g, "");
-  const username = (slug.length >= 3 ? slug : "user" + slug).slice(0, 25) + Math.floor(Math.random() * 1000);
-  const displayName = user.user_metadata?.full_name || user.email?.split("@")[0] || "New User";
-
-  const createdProfile = await runSupabaseAdminOperation((admin) =>
+async function upsertProfileForUser(user: User, username: string, displayName: string) {
+  return runSupabaseAdminOperation((admin) =>
     admin
       .from("profiles")
       .upsert(
@@ -90,6 +130,36 @@ export async function getOrCreateProfile(user: User): Promise<Profile | null> {
       .select("*, theme:themes(*)")
       .single()
   );
+}
+
+/**
+ * Get the current user's profile, or create a default one if it doesn't exist.
+ * Called after auth signup/login to ensure every user has a profile row.
+ */
+export async function getOrCreateProfile(user: User, options: ProfileEnsureOptions = {}): Promise<Profile | null> {
+  const source = options.source || "dashboard";
+  const existingProfile = await runSupabaseAdminOperation((admin) =>
+    admin.from("profiles").select("*, theme:themes(*)").eq("user_id", user.id).maybeSingle()
+  );
+
+  if (!existingProfile.ok) {
+    if (existingProfile.error !== "admin_db_error") throw new Error(existingProfile.error);
+    logProfileLookupFailed(user.id, source, existingProfile.dbError);
+    throw new Error(formatAdminDbError(existingProfile.dbError));
+  }
+
+  if (existingProfile.result.data) return mapProfileRow(existingProfile.result.data);
+
+  const defaults = buildProfileDefaults(user, options);
+  let createdProfile = await upsertProfileForUser(user, defaults.username, defaults.displayName);
+
+  if (!createdProfile.ok && createdProfile.error === "admin_db_error" && createdProfile.dbError?.code === "23505" && !options.username) {
+    createdProfile = await upsertProfileForUser(
+      user,
+      `user${Math.floor(100000 + Math.random() * 900000)}`,
+      defaults.displayName
+    );
+  }
 
   if (!createdProfile.ok) {
     if (createdProfile.error !== "admin_db_error") throw new Error(createdProfile.error);
@@ -97,7 +167,9 @@ export async function getOrCreateProfile(user: User): Promise<Profile | null> {
     throw new Error(profileInsertErrorMessage(createdProfile.dbError));
   }
 
-  return mapProfileRow(createdProfile.result.data);
+  const profile = mapProfileRow(createdProfile.result.data);
+  logProfileCreated(user.id, profile.id, source);
+  return profile;
 }
 
 export async function getMyProfile(): Promise<Profile | null> {
@@ -106,8 +178,7 @@ export async function getMyProfile(): Promise<Profile | null> {
   const client = await createSupabaseServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return null;
-  const service = createProfileService(client, user.id);
-  return service.getMyProfile();
+  return getOrCreateProfile(user, { source: "dashboard" });
 }
 
 export async function getMyProfileContent() {
@@ -120,10 +191,15 @@ export async function getMyProfileContent() {
   if (!user) {
     return { profile: mockUser, links: mockLinks, projects: mockProjects, services: mockServices, media: mockGallery };
   }
+  const profile = await getOrCreateProfile(user, { source: "dashboard" });
+  if (!profile) {
+    return { profile: mockUser, links: mockLinks, projects: mockProjects, services: mockServices, media: mockGallery };
+  }
+
   const service = createProfileService(client, user.id);
   const content = await service.getMyProfileContent();
   if (!content) {
-    return { profile: mockUser, links: mockLinks, projects: mockProjects, services: mockServices, media: mockGallery };
+    return { profile, links: [], projects: [], services: [], media: [] };
   }
   return content;
 }

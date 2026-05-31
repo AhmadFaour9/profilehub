@@ -2,6 +2,7 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { getCurrentUser, createSupabaseServerClient } from "@/modules/auth";
+import { getOrCreateProfile } from "@/lib/profile-data";
 import { createProfileService } from "@/modules/profile";
 import { createStoragePath, validateStorageFile, type StorageBucket } from "@/modules/storage";
 import { log } from "@/modules/logging";
@@ -23,7 +24,7 @@ async function getServices() {
 
   const client = await createSupabaseServerClient();
   const profileService = createProfileService(client, user.id);
-  const profile = await profileService.getMyProfile();
+  const profile = await getOrCreateProfile(user, { source: "dashboard" });
 
   if (!profile) return null;
   return { user, profile, profileService };

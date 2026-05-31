@@ -8,11 +8,10 @@ import { getAppUrl, getSupabasePublicConfig, isSupabaseConfigured } from "@/lib/
 import { getSupabaseAdminConfig, type SupabaseAdminConfig } from "@/lib/supabase-admin-env";
 import {
   formatAdminDbError,
-  isSupabasePermissionError,
   runSupabaseAdminOperation,
   type SupabaseAdminOperationFailure,
 } from "@/lib/supabase-admin-resolver";
-import { getOrCreateProfile, getMyProfile } from "@/lib/profile-data";
+import { getOrCreateProfile } from "@/lib/profile-data";
 import { auditLog, log } from "@/modules/logging";
 import {  hashValue  } from "@/modules/shared/security";
 import { profileFormSchema, usernameSchema } from "@/modules/shared";
@@ -46,13 +45,6 @@ const registerInputSchema = z.object({
 
 function isSchemaMismatchCode(code: string | undefined): boolean {
   return Boolean(code && ["42P01", "42703", "23502", "23514"].includes(code));
-}
-
-function mapProfileDbError(error: SupabaseDbError): RegisterMessage {
-  if (error.code === "23505") return "username_taken";
-  if (isSchemaMismatchCode(error.code)) return "schema_mismatch";
-  if (isSupabasePermissionError(error)) return formatAdminDbError(error);
-  return "profile_insert_failed";
 }
 
 function mapAdminOperationConfigError(failure: SupabaseAdminOperationFailure): RegisterMessage {
@@ -91,7 +83,7 @@ export async function loginWithPassword(input: { email: string; password: string
     return { ok: false, message: "Invalid email or password." };
   }
 
-  if (data.user) await getOrCreateProfile(data.user);
+  if (data.user) await getOrCreateProfile(data.user, { source: "login" });
   redirect("/dashboard");
 }
 
@@ -175,37 +167,36 @@ export async function registerWithPassword(input: {
   }
 
   const user = data.user;
-  const profileInsert = await runSupabaseAdminOperation((admin) =>
-    admin
-      .from("profiles")
-      .upsert(
-        {
-          user_id: user.id,
-          username,
-          display_name: username,
-          is_published: false,
-        },
-        { onConflict: "user_id" }
-      )
-      .select("id")
-      .single()
-  );
+  console.info("[AUTH] auth_user_id", { auth_user_id: user.id });
 
-  if (!profileInsert.ok) {
-    if (profileInsert.error !== "admin_db_error") {
-      return { ok: false, message: mapAdminOperationConfigError(profileInsert) };
+  let profile;
+  try {
+    profile = await getOrCreateProfile(user, {
+      username,
+      displayName: username,
+      source: "signup",
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "profile_insert_failed";
+    console.error("[AUTH] Register profile creation failed", {
+      auth_user_id: user.id,
+      message,
+    });
+
+    if (message === "username_taken") return { ok: false, message: "username_taken" };
+    if (message === "schema_mismatch") return { ok: false, message: "schema_mismatch" };
+    if (message.startsWith("admin_db_error:")) return { ok: false, message: message as `admin_db_error:${string}` };
+    if (message === "service_role_missing" || message === "service_role_invalid" || message === "public_supabase_missing") {
+      return { ok: false, message };
     }
-
-    const error = profileInsert.dbError;
-    if (error) logSupabaseDbError("[AUTH] Register profile insert failed", error);
-    return { ok: false, message: error ? mapProfileDbError(error) : "profile_insert_failed" };
+    return { ok: false, message: "profile_insert_failed" };
   }
 
   await auditLog({
     userId: user.id,
     action: "create",
     entityType: "profile",
-    entityId: profileInsert.result.data?.id,
+    entityId: profile?.id,
     metadata: { source: "email_signup" },
   });
 
@@ -247,8 +238,18 @@ export async function updateProfile(input: unknown): Promise<AuthActionResult> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, message: "You must be logged in." };
 
-  const currentProfile = await getMyProfile();
-  if (!currentProfile) return { ok: false, message: "Profile not found." };
+  let currentProfile;
+  try {
+    currentProfile = await getOrCreateProfile(user, { source: "profile_update" });
+  } catch (error) {
+    console.error("[PROFILE] profile_lookup_failed", {
+      auth_user_id: user.id,
+      source: "profile_update",
+      message: error instanceof Error ? error.message : "unknown",
+    });
+    return { ok: false, message: "profile_lookup_failed" };
+  }
+  if (!currentProfile) return { ok: false, message: "profile_missing_after_auto_create" };
 
   const parsed = profileFormSchema.parse(input);
   const supabase = await createSupabaseServerClient();
