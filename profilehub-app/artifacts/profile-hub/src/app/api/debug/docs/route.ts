@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { isAuthorizedDebugRequest } from "@/lib/debug-auth-tests";
+import { isDebugAuthEnabled } from "@/lib/debug-auth-tests";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -40,7 +40,7 @@ const html = `<!doctype html>
 </html>`;
 
 export async function GET(request: NextRequest) {
-  if (!isAuthorizedDebugRequest(request)) {
+  if (!isDebugAuthEnabled()) {
     return new Response("Not Found", { status: 404 });
   }
 
