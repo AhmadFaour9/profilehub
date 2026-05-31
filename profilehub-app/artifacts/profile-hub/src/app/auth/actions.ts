@@ -3,10 +3,15 @@
 import { redirect } from "next/navigation";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
-import { createSupabaseAdminClient } from "@/modules/auth";
 import { createSupabaseServerClient, getCurrentUser } from "@/modules/auth";
 import { getAppUrl, getSupabasePublicConfig, isSupabaseConfigured } from "@/lib/env";
 import { getSupabaseAdminConfig, type SupabaseAdminConfig } from "@/lib/supabase-admin-env";
+import {
+  formatAdminDbError,
+  isSupabasePermissionError,
+  runSupabaseAdminOperation,
+  type SupabaseAdminOperationFailure,
+} from "@/lib/supabase-admin-resolver";
 import { getOrCreateProfile, getMyProfile } from "@/lib/profile-data";
 import { auditLog, log } from "@/modules/logging";
 import {  hashValue  } from "@/modules/shared/security";
@@ -25,7 +30,8 @@ type RegisterMessage =
   | "auth_signup_failed"
   | "profile_insert_failed"
   | "schema_mismatch"
-  | "register_success";
+  | "register_success"
+  | `admin_db_error:${string}`;
 
 type SupabaseDbError = {
   code?: string;
@@ -45,7 +51,13 @@ function isSchemaMismatchCode(code: string | undefined): boolean {
 function mapProfileDbError(error: SupabaseDbError): RegisterMessage {
   if (error.code === "23505") return "username_taken";
   if (isSchemaMismatchCode(error.code)) return "schema_mismatch";
+  if (isSupabasePermissionError(error)) return formatAdminDbError(error);
   return "profile_insert_failed";
+}
+
+function mapAdminOperationConfigError(failure: SupabaseAdminOperationFailure): RegisterMessage {
+  if (failure.error === "admin_db_error") return formatAdminDbError(failure.dbError);
+  return failure.error;
 }
 
 function logRegisterConfig(publicConfig: ReturnType<typeof getSupabasePublicConfig>, adminConfig: SupabaseAdminConfig) {
@@ -116,21 +128,22 @@ export async function registerWithPassword(input: {
   }
 
   const { username, email, password } = parsed.data;
-  const admin = createSupabaseAdminClient(adminConfig);
-  if (!admin) return { ok: false, message: "service_role_invalid" };
+  const usernameCheck = await runSupabaseAdminOperation((admin) =>
+    admin.from("profiles").select("id").eq("username", username).maybeSingle()
+  );
 
-  const { data: existingProfile, error: usernameCheckError } = await admin
-    .from("profiles")
-    .select("id")
-    .eq("username", username)
-    .maybeSingle();
+  if (!usernameCheck.ok) {
+    if (usernameCheck.error !== "admin_db_error") {
+      return { ok: false, message: mapAdminOperationConfigError(usernameCheck) };
+    }
 
-  if (usernameCheckError) {
-    logSupabaseDbError("[AUTH] Register username pre-check failed", usernameCheckError);
-    return { ok: false, message: mapProfileDbError(usernameCheckError) };
+    const error = usernameCheck.dbError;
+    if (error) logSupabaseDbError("[AUTH] Register username pre-check failed", error);
+    if (error && isSchemaMismatchCode(error.code)) return { ok: false, message: "schema_mismatch" };
+    return { ok: false, message: formatAdminDbError(error) };
   }
 
-  if (existingProfile) {
+  if (usernameCheck.result.data) {
     console.warn("[AUTH] Register failed: username_taken");
     return { ok: false, message: "username_taken" };
   }
@@ -161,30 +174,38 @@ export async function registerWithPassword(input: {
     return { ok: false, message: "auth_signup_failed" };
   }
 
-  const { data: profile, error: profileError } = await admin
-    .from("profiles")
-    .upsert(
-      {
-        user_id: data.user.id,
-        username,
-        display_name: username,
-        is_published: false,
-      },
-      { onConflict: "user_id" }
-    )
-    .select("id")
-    .single();
+  const user = data.user;
+  const profileInsert = await runSupabaseAdminOperation((admin) =>
+    admin
+      .from("profiles")
+      .upsert(
+        {
+          user_id: user.id,
+          username,
+          display_name: username,
+          is_published: false,
+        },
+        { onConflict: "user_id" }
+      )
+      .select("id")
+      .single()
+  );
 
-  if (profileError) {
-    logSupabaseDbError("[AUTH] Register profile insert failed", profileError);
-    return { ok: false, message: mapProfileDbError(profileError) };
+  if (!profileInsert.ok) {
+    if (profileInsert.error !== "admin_db_error") {
+      return { ok: false, message: mapAdminOperationConfigError(profileInsert) };
+    }
+
+    const error = profileInsert.dbError;
+    if (error) logSupabaseDbError("[AUTH] Register profile insert failed", error);
+    return { ok: false, message: error ? mapProfileDbError(error) : "profile_insert_failed" };
   }
 
   await auditLog({
-    userId: data.user.id,
+    userId: user.id,
     action: "create",
     entityType: "profile",
-    entityId: profile?.id,
+    entityId: profileInsert.result.data?.id,
     metadata: { source: "email_signup" },
   });
 

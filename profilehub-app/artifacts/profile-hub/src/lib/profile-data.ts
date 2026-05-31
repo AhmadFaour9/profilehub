@@ -2,23 +2,72 @@ import "server-only";
 
 import type { User } from "@supabase/supabase-js";
 import { unstable_cache } from "next/cache";
-import { createSupabaseServerClient, createSupabaseAdminClient } from "@/modules/auth";
+import { createSupabaseServerClient } from "@/modules/auth";
 import { createProfileService } from "@/modules/profile";
 import { mockGallery, mockLinks, mockProjects, mockServices, mockUser } from "./mock-data";
 import { isSupabaseConfigured } from "@/lib/env";
-import { getSupabaseAdminConfig } from "@/lib/supabase-admin-env";
+import {
+  formatAdminDbError,
+  isSupabasePermissionError,
+  runSupabaseAdminOperation,
+  type SupabaseDbError,
+} from "@/lib/supabase-admin-resolver";
 import type { Profile, PublicProfile } from "@/modules/shared";
+
+function mapProfileRow(row: any): Profile {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    username: row.username,
+    displayName: row.display_name,
+    title: row.title,
+    profession: row.title,
+    bio: row.bio,
+    avatarUrl: row.avatar_url,
+    coverUrl: row.cover_url,
+    location: row.location,
+    website: row.website,
+    themeId: row.theme_id,
+    isPublished: row.is_published,
+    seoTitle: row.seo_title,
+    seoDescription: row.seo_description,
+    theme: row.theme ? { id: row.theme.id, ...row.theme.tokens } : { id: "default" },
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function logProfileDbError(message: string, error: SupabaseDbError) {
+  console.error(message, {
+    code: error.code,
+    message: error.message,
+  });
+}
+
+function profileInsertErrorMessage(error: SupabaseDbError | null | undefined): string {
+  if (!error) return "profile_insert_error:unknown";
+  if (error.code === "23505") return "username_taken";
+  if (error.code === "42P01") return "schema_mismatch";
+  if (isSupabasePermissionError(error)) return formatAdminDbError(error);
+  return `profile_insert_error:${error.code || "unknown"}`;
+}
 
 /**
  * Get the current user's profile, or create a default one if it doesn't exist.
  * Called after auth signup/login to ensure every user has a profile row.
  */
 export async function getOrCreateProfile(user: User): Promise<Profile | null> {
-  const client = await createSupabaseServerClient();
-  const service = createProfileService(client, user.id);
+  const existingProfile = await runSupabaseAdminOperation((admin) =>
+    admin.from("profiles").select("*, theme:themes(*)").eq("user_id", user.id).maybeSingle()
+  );
 
-  const profile = await service.getMyProfile();
-  if (profile) return profile;
+  if (!existingProfile.ok) {
+    if (existingProfile.error !== "admin_db_error") throw new Error(existingProfile.error);
+    if (existingProfile.dbError) logProfileDbError("Failed to look up default profile:", existingProfile.dbError);
+    throw new Error(formatAdminDbError(existingProfile.dbError));
+  }
+
+  if (existingProfile.result.data) return mapProfileRow(existingProfile.result.data);
 
   // Build a safe username from auth metadata
   const rawName = user.user_metadata?.user_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "user";
@@ -26,55 +75,29 @@ export async function getOrCreateProfile(user: User): Promise<Profile | null> {
   const username = (slug.length >= 3 ? slug : "user" + slug).slice(0, 25) + Math.floor(Math.random() * 1000);
   const displayName = user.user_metadata?.full_name || user.email?.split("@")[0] || "New User";
 
-  // Use admin client to insert so we bypass RLS (server-side only)
-  const adminConfig = getSupabaseAdminConfig();
-  if (!adminConfig.ok) {
-    throw new Error(adminConfig.error === "public_supabase_missing" ? "public_supabase_missing" : adminConfig.error);
+  const createdProfile = await runSupabaseAdminOperation((admin) =>
+    admin
+      .from("profiles")
+      .upsert(
+        {
+          user_id: user.id,
+          username,
+          display_name: displayName,
+          is_published: false,
+        },
+        { onConflict: "user_id" }
+      )
+      .select("*, theme:themes(*)")
+      .single()
+  );
+
+  if (!createdProfile.ok) {
+    if (createdProfile.error !== "admin_db_error") throw new Error(createdProfile.error);
+    if (createdProfile.dbError) logProfileDbError("Failed to create default profile:", createdProfile.dbError);
+    throw new Error(profileInsertErrorMessage(createdProfile.dbError));
   }
 
-  const admin = createSupabaseAdminClient(adminConfig);
-  if (!admin) throw new Error("service_role_invalid");
-
-  const { data, error } = await admin
-    .from("profiles")
-    .upsert({
-      user_id: user.id,
-      username,
-      display_name: displayName,
-      is_published: false,
-    }, { onConflict: "user_id" })
-    .select("*")
-    .single();
-
-  if (error) {
-    console.error("Failed to create default profile:", {
-      code: error.code,
-      message: error.message,
-    });
-    if (error.code === '23505') throw new Error("username_taken");
-    if (error.code === '42501') throw new Error("profile_rls_denied");
-    if (error.code === '42P01') throw new Error("schema_mismatch");
-    throw new Error(`profile_insert_error:${error.code}`);
-  }
-
-  return {
-    id: data.id,
-    userId: data.user_id,
-    username: data.username,
-    displayName: data.display_name,
-    title: data.title,
-    bio: data.bio,
-    avatarUrl: data.avatar_url,
-    coverUrl: data.cover_url,
-    location: data.location,
-    website: data.website,
-    themeId: data.theme_id,
-    isPublished: data.is_published,
-    seoTitle: data.seo_title,
-    seoDescription: data.seo_description,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
-  } as Profile;
+  return mapProfileRow(createdProfile.result.data);
 }
 
 export async function getMyProfile(): Promise<Profile | null> {
@@ -131,14 +154,20 @@ export async function getPublicProfile(username: string): Promise<PublicProfile 
 
   // Use admin client for public reads — RLS allows public SELECT on published profiles,
   // but admin client ensures we always get the data regardless of auth state.
-  const admin = createSupabaseAdminClient();
-  if (!admin) return null;
+  const profileLookup = await runSupabaseAdminOperation((admin) =>
+    admin.from("profiles").select("*, theme:themes(*)").eq("username", username).maybeSingle()
+  );
 
-  const service = createProfileService(admin);
-  const profile = await service.getProfile(username);
+  if (!profileLookup.ok) {
+    if (profileLookup.dbError) logProfileDbError("Failed to look up public profile:", profileLookup.dbError);
+    return null;
+  }
+
+  const profile = profileLookup.result.data ? mapProfileRow(profileLookup.result.data) : null;
   if (!profile || !profile.isPublished) return null;
 
   const profileId = profile.id;
+  const admin = profileLookup.client;
 
   // Fetch public relations (active only)
   const [links, projects, services, media] = await Promise.all([

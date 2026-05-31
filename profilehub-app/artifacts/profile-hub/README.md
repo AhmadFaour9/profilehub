@@ -39,6 +39,8 @@ Admin/server-only Supabase keys are selected in this order:
 
 Admin keys must stay server-side only. Do not expose them with a `NEXT_PUBLIC_` prefix. The app rejects admin keys that are publishable keys, anon JWTs, malformed JWTs, or JWTs without `role: "service_role"`. `sb_secret_` keys are accepted as server-only admin keys.
 
+Admin database operations try validated admin keys in order. If `SUPABASE_SECRET_KEY` receives a Supabase permission/RLS error, the same operation is retried with `SUPABASE_SERVICE_ROLE_KEY`; public keys are never used as admin fallbacks.
+
 ## Supabase Migrations
 
 Apply the SQL in:

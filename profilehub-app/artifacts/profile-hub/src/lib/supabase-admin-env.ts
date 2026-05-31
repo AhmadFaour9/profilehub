@@ -2,7 +2,10 @@ import "server-only";
 
 import { getSupabasePublicConfig } from "@/lib/env";
 
-export type SupabaseAdminKeySource = "SUPABASE_SECRET_KEY" | "SUPABASE_SERVICE_ROLE_KEY" | "missing";
+const ADMIN_KEY_SOURCES = ["SUPABASE_SECRET_KEY", "SUPABASE_SERVICE_ROLE_KEY"] as const;
+
+export type ConcreteSupabaseAdminKeySource = (typeof ADMIN_KEY_SOURCES)[number];
+export type SupabaseAdminKeySource = ConcreteSupabaseAdminKeySource | "missing";
 export type SupabaseAdminKeyType =
   | "sb_secret"
   | "jwt_service_role"
@@ -16,7 +19,7 @@ export type SupabaseAdminConfig =
       ok: true;
       url: string;
       adminKey: string;
-      keySource: Exclude<SupabaseAdminKeySource, "missing">;
+      keySource: ConcreteSupabaseAdminKeySource;
       keyType: "sb_secret" | "jwt_service_role";
     }
   | {
@@ -28,22 +31,24 @@ export type SupabaseAdminConfig =
 
 export type ValidSupabaseAdminConfig = Extract<SupabaseAdminConfig, { ok: true }>;
 
+export type SupabaseAdminKeyDiagnostic = {
+  keySource: ConcreteSupabaseAdminKeySource;
+  keyType: SupabaseAdminKeyType;
+  present: boolean;
+  valid: boolean;
+};
+
 function readEnv(name: string): string | null {
   const value = process.env[name]?.trim();
   return value || null;
 }
 
 export function getSupabaseAdminKeySelection():
-  | { key: string; source: Exclude<SupabaseAdminKeySource, "missing"> }
+  | { key: string; source: ConcreteSupabaseAdminKeySource }
   | { key: null; source: "missing" } {
-  const secretKey = readEnv("SUPABASE_SECRET_KEY");
-  if (secretKey) {
-    return { key: secretKey, source: "SUPABASE_SECRET_KEY" };
-  }
-
-  const serviceRoleKey = readEnv("SUPABASE_SERVICE_ROLE_KEY");
-  if (serviceRoleKey) {
-    return { key: serviceRoleKey, source: "SUPABASE_SERVICE_ROLE_KEY" };
+  for (const source of ADMIN_KEY_SOURCES) {
+    const key = readEnv(source);
+    if (key) return { key, source };
   }
 
   return { key: null, source: "missing" };
@@ -76,6 +81,45 @@ export function getSupabaseAdminKeyType(key: string | null): SupabaseAdminKeyTyp
   return "unknown";
 }
 
+export function getSupabaseAdminKeyDiagnostics(): SupabaseAdminKeyDiagnostic[] {
+  return ADMIN_KEY_SOURCES.map((source) => {
+    const key = readEnv(source);
+    const keyType = getSupabaseAdminKeyType(key);
+
+    return {
+      keySource: source,
+      keyType,
+      present: Boolean(key),
+      valid: keyType === "sb_secret" || keyType === "jwt_service_role",
+    };
+  });
+}
+
+export function getSupabaseAdminConfigs(): ValidSupabaseAdminConfig[] {
+  const publicConfig = getSupabasePublicConfig();
+  if (!publicConfig.ok) return [];
+
+  const seenKeys = new Set<string>();
+  return ADMIN_KEY_SOURCES.flatMap((source) => {
+    const key = readEnv(source);
+    if (!key || seenKeys.has(key)) return [];
+
+    const keyType = getSupabaseAdminKeyType(key);
+    if (keyType !== "sb_secret" && keyType !== "jwt_service_role") return [];
+
+    seenKeys.add(key);
+    return [
+      {
+        ok: true,
+        url: publicConfig.url,
+        adminKey: key,
+        keySource: source,
+        keyType,
+      } satisfies ValidSupabaseAdminConfig,
+    ];
+  });
+}
+
 export function getSupabaseAdminConfig(): SupabaseAdminConfig {
   const selectedKey = getSupabaseAdminKeySelection();
   const keyType = getSupabaseAdminKeyType(selectedKey.key);
@@ -89,6 +133,9 @@ export function getSupabaseAdminConfig(): SupabaseAdminConfig {
       keyType,
     };
   }
+
+  const validConfigs = getSupabaseAdminConfigs();
+  if (validConfigs[0]) return validConfigs[0];
 
   if (!selectedKey.key) {
     return {
