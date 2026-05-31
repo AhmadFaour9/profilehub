@@ -8,7 +8,7 @@ export const usernameSchema = z
   .max(30, "Username must be 30 characters or fewer.")
   .regex(/^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])$/, "Use letters, numbers, dashes, or underscores.")
   .refine((value) => !value.includes("--"), "Avoid repeated dashes.")
-  .refine((value) => !["admin", "api", "auth", "dashboard", "login", "register", "settings", "www"].includes(value), {
+  .refine((value) => !["admin", "api", "auth", "dashboard", "login", "register", "settings", "www", "onboarding", "forgot-password"].includes(value), {
     message: "This username is reserved.",
   });
 

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useTranslation } from "@/hooks/use-translation";
-import { mockUser, mockAnalyticsOverview } from "@/lib/mock-data";
 import type { AnalyticsOverview, Link as ProfileLink, LinkAnalytics, Profile, Project } from "@/modules/shared";
 import { AnalyticsCards } from "@/components/dashboard/AnalyticsCards";
 import { AIHelperPanel } from "@/components/dashboard/AIHelperPanel";
@@ -10,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Link as LinkIcon, Briefcase } from "lucide-react";
 
 export default function Overview({
-  profile = mockUser,
-  analytics = mockAnalyticsOverview,
+  profile,
+  analytics,
   topLinks = [],
   links = [],
   projects = [],
@@ -23,7 +22,7 @@ export default function Overview({
   projects?: Project[];
 }) {
   const { t } = useTranslation();
-  const firstName = (profile.displayName || profile.username).split(" ")[0];
+  const firstName = profile ? (profile.displayName || profile.username).split(" ")[0] : "there";
 
   return (
     <div className="space-y-8 max-w-5xl">
@@ -32,7 +31,7 @@ export default function Overview({
         <p className="text-muted-foreground mt-1">Here is how your profile is performing today.</p>
       </div>
 
-      <AnalyticsCards data={analytics} />
+      {analytics && <AnalyticsCards data={analytics} />}
 
       <div className="grid md:grid-cols-2 gap-6">
         <div className="p-6 border rounded-xl bg-card">
@@ -70,7 +69,7 @@ export default function Overview({
         </div>
       </div>
 
-      <AIHelperPanel profile={profile} links={links} projects={projects} />
+      {profile && <AIHelperPanel profile={profile} links={links} projects={projects} />}
     </div>
   );
 }

@@ -1,15 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { mockUser } from "@/lib/mock-data";
-import type { Profile } from "@/modules/shared";
+import type { Profile, Link, Project, Service, GalleryItem } from "@/modules/shared";
 import { MobilePreview } from "@/components/dashboard/MobilePreview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import { Copy, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { updateProfile } from "@/app/auth/actions";
 import { usernameSchema } from "@/modules/shared";
@@ -21,11 +22,23 @@ const profileSchema = z.object({
   bio: z.string().max(500).optional(),
   location: z.string().optional(),
   website: z.string().url().optional().or(z.literal("")),
+  avatarUrl: z.string().url().optional().or(z.literal("")),
+  coverUrl: z.string().url().optional().or(z.literal("")),
 });
 
-export default function ProfileEditor({ profile = mockUser }: { profile?: Profile }) {
+export default function ProfileEditor({ content }: { content: { profile: Profile, links: Link[], projects: Project[], services: Service[], media: GalleryItem[] } }) {
+  const profile = content.profile;
   const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
   
+  const handleCopyUrl = () => {
+    const url = `${window.location.origin}/${form.getValues("username")}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast({ description: "Public URL copied to clipboard!" });
+  };
+
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -35,6 +48,8 @@ export default function ProfileEditor({ profile = mockUser }: { profile?: Profil
       bio: profile.bio || "",
       location: profile.location || "",
       website: profile.website || "",
+      avatarUrl: profile.avatarUrl || "",
+      coverUrl: profile.coverUrl || "",
     },
   });
 
@@ -46,6 +61,8 @@ export default function ProfileEditor({ profile = mockUser }: { profile?: Profil
       bio: values.bio || "",
       location: values.location || "",
       website: values.website || "",
+      avatarUrl: values.avatarUrl || "",
+      coverUrl: values.coverUrl || "",
       isPublished: profile.isPublished,
     });
 
@@ -89,7 +106,19 @@ export default function ProfileEditor({ profile = mockUser }: { profile?: Profil
                     <FormControl>
                       <Input {...field} data-testid="input-username" />
                     </FormControl>
-                    <FormDescription>profilehub.app/{field.value}</FormDescription>
+                    <FormDescription className="flex items-center gap-2">
+                      <span>profilehub.app/{field.value}</span>
+                      {field.value && (
+                        <button
+                          type="button"
+                          onClick={handleCopyUrl}
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                          title="Copy Public URL"
+                        >
+                          {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+                      )}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -159,12 +188,58 @@ export default function ProfileEditor({ profile = mockUser }: { profile?: Profil
               />
             </div>
 
+            <div className="grid md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="avatarUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Avatar Image URL</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="https://..." data-testid="input-avatar-url" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="coverUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cover Image URL</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="https://..." data-testid="input-cover-url" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <Button type="submit" data-testid="btn-save-profile">Save Changes</Button>
           </form>
         </Form>
       </div>
       
-      <MobilePreview username={form.watch("username")} />
+      <MobilePreview 
+        profile={{ 
+          ...profile, 
+          username: form.watch("username"),
+          displayName: form.watch("displayName"),
+          title: form.watch("profession") || profile.title,
+          profession: form.watch("profession") || profile.profession,
+          bio: form.watch("bio"),
+          location: form.watch("location"),
+          website: form.watch("website"),
+          avatarUrl: form.watch("avatarUrl") || profile.avatarUrl,
+          coverUrl: form.watch("coverUrl") || profile.coverUrl,
+        }} 
+        links={content.links}
+        projects={content.projects}
+        services={content.services}
+        gallery={content.media}
+      />
     </div>
   );
 }

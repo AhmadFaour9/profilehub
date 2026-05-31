@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { mockLinks } from "@/lib/mock-data";
 import type { Link } from "@/modules/shared";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Link as LinkIcon, Plus, GripVertical, ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 
-export default function LinksManager({ initialLinks = mockLinks }: { initialLinks?: Link[] }) {
+export default function LinksManager({ initialLinks = [] }: { initialLinks?: Link[] }) {
   const [links] = useState(initialLinks);
 
   if (links.length === 0) {

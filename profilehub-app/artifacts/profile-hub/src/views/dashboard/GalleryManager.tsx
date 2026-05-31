@@ -1,12 +1,11 @@
 "use client";
 
-import { mockGallery } from "@/lib/mock-data";
 import type { GalleryItem } from "@/modules/shared";
 import { Button } from "@/components/ui/button";
 import { Plus, Image as ImageIcon, Trash2 } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 
-export default function GalleryManager({ gallery = mockGallery }: { gallery?: GalleryItem[] }) {
+export default function GalleryManager({ gallery = [] }: { gallery?: GalleryItem[] }) {
 
   return (
     <div className="max-w-5xl space-y-8">

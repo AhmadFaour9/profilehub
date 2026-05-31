@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { mockUser } from "@/lib/mock-data";
 import { ThemePicker } from "@/components/dashboard/ThemePicker";
 import { MobilePreview } from "@/components/dashboard/MobilePreview";
-import { Profile, ProfileTheme } from "@/modules/shared";
+import type { Profile, ProfileTheme, Link, Project, Service, GalleryItem } from "@/modules/shared";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
-export default function ThemeEditor({ profile = mockUser }: { profile?: Profile }) {
+export default function ThemeEditor({ content }: { content: { profile: Profile, links: Link[], projects: Project[], services: Service[], media: GalleryItem[] } }) {
+  const profile = content.profile;
   const [theme, setTheme] = useState<ProfileTheme>(profile.theme || { id: "default" });
   const { toast } = useToast();
 
@@ -34,7 +34,13 @@ export default function ThemeEditor({ profile = mockUser }: { profile?: Profile 
         </div>
       </div>
       
-      <MobilePreview username={profile.username} />
+      <MobilePreview 
+        profile={{ ...profile, theme }} 
+        links={content.links}
+        projects={content.projects}
+        services={content.services}
+        gallery={content.media}
+      />
     </div>
   );
 }

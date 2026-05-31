@@ -3,14 +3,21 @@
 import { Sun, Moon, Globe, Menu } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
 import { useTheme } from "@/components/ThemeProvider";
-import { Button } from "./ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
-import { mockUser } from "@/lib/mock-data";
+import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import Link from "next/link";
 import type { Profile } from "@/modules/shared";
 
-export function Topbar({ profile = mockUser }: { profile?: Profile }) {
+const emptyProfile: Profile = {
+  id: "", userId: "", username: "user", displayName: "User",
+  title: "", profession: "", bio: "", avatarUrl: "", coverUrl: "",
+  location: "", website: "", themeId: null, isPublished: false,
+  seoTitle: "", seoDescription: "",
+  theme: { id: "default" }, createdAt: "", updatedAt: ""
+};
+
+export function Topbar({ profile = emptyProfile }: { profile?: Profile }) {
   const { resolvedTheme, setTheme } = useTheme();
   const { setLanguage } = useTranslation();
 

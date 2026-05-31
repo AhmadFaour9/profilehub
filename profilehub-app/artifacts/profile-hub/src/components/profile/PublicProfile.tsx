@@ -1,4 +1,5 @@
 import { getPublicProfileCached } from "@/lib/profile-data";
+import { notFound } from "next/navigation";
 import { ProfileHeader } from "./ProfileHeader";
 import { SmartLinkCard } from "./SmartLinkCard";
 import { ProjectCard } from "./ProjectCard";
@@ -10,7 +11,7 @@ export async function PublicProfile({ username }: { username: string }) {
   const profile = await getPublicProfileCached(username);
 
   if (!profile) {
-    return <div className="p-8 text-center text-muted-foreground">Profile not found</div>;
+    notFound();
   }
 
   return (

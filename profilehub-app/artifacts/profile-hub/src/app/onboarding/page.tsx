@@ -1,22 +1,35 @@
 import ProfileEditor from "@/views/dashboard/ProfileEditor";
 import { isSupabaseConfigured } from "@/lib/env";
-import { getOrCreateProfile } from "@/lib/profile-data";
+import { getOrCreateProfile, getMyProfileContent } from "@/lib/profile-data";
 import { getCurrentUser } from "@/modules/auth";
 import { redirect } from "next/navigation";
+import { mockUser } from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage() {
-  let profile = undefined;
+  let content: any = undefined;
   if (isSupabaseConfigured()) {
     const user = await getCurrentUser();
     if (!user) redirect("/login");
-    profile = (await getOrCreateProfile(user, { source: "onboarding" })) || undefined;
+    await getOrCreateProfile(user, { source: "onboarding" });
+    content = await getMyProfileContent();
+  }
+
+  // Fallback if not configured or failed to load
+  if (!content) {
+    content = {
+      profile: mockUser,
+      links: [],
+      projects: [],
+      services: [],
+      media: [],
+    };
   }
 
   return (
     <main className="min-h-screen bg-background p-4 md:p-8">
-      <ProfileEditor profile={profile} />
+      <ProfileEditor content={content} />
     </main>
   );
 }

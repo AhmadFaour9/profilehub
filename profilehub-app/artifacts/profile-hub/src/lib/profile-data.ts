@@ -218,24 +218,13 @@ export function getPublicProfileCached(username: string) {
 
 export async function getPublicProfile(username: string): Promise<PublicProfile | null> {
   if (!isSupabaseConfigured()) {
-    // Fallback to mock data for local dev without Supabase
-    if (mockUser.username === username || username === "sara-dev") {
-      return {
-        ...mockUser,
-        username,
-        links: mockLinks,
-        projects: mockProjects,
-        services: mockServices,
-        gallery: mockGallery,
-      };
-    }
     return null;
   }
 
   // Use admin client for public reads — RLS allows public SELECT on published profiles,
   // but admin client ensures we always get the data regardless of auth state.
   const profileLookup = await runSupabaseAdminOperation((admin) =>
-    admin.from("profiles").select("*").eq("username", username).maybeSingle()
+    admin.from("profiles").select("*").ilike("username", username).maybeSingle()
   );
 
   if (!profileLookup.ok) {

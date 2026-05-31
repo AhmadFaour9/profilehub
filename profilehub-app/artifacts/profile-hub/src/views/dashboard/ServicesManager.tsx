@@ -1,13 +1,12 @@
 "use client";
 
-import { mockServices } from "@/lib/mock-data";
 import type { Service } from "@/modules/shared";
 import { Button } from "@/components/ui/button";
 import { Plus, Box } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ServiceCard } from "@/components/profile/ServiceCard";
 
-export default function ServicesManager({ services = mockServices }: { services?: Service[] }) {
+export default function ServicesManager({ services = [] }: { services?: Service[] }) {
 
   return (
     <div className="max-w-5xl space-y-8">

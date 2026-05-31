@@ -1,12 +1,22 @@
-import { mockGallery, mockLinks, mockProjects, mockServices, mockUser } from "@/lib/mock-data";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { SmartLinkCard } from "@/components/profile/SmartLinkCard";
 import { ProjectCard } from "@/components/profile/ProjectCard";
 import { ServiceCard } from "@/components/profile/ServiceCard";
 import { GalleryGrid } from "@/components/profile/GalleryGrid";
+import type { Profile, Link, Project, Service, GalleryItem } from "@/modules/shared";
 
-export function MobilePreview({ username }: { username: string }) {
-  const profile = { ...mockUser, username };
+interface MobilePreviewProps {
+  profile: Profile;
+  links?: Link[];
+  projects?: Project[];
+  services?: Service[];
+  gallery?: GalleryItem[];
+}
+
+export function MobilePreview({ profile, links = [], projects = [], services = [], gallery = [] }: MobilePreviewProps) {
+  if (profile.username === "sara-dev" || profile.displayName === "Sara Al-Hassan") {
+    console.warn("[WARNING] Dashboard preview received demo data while authenticated.");
+  }
 
   return (
     <div className="hidden lg:block sticky top-8" data-testid="mobile-preview">
@@ -17,22 +27,43 @@ export function MobilePreview({ username }: { username: string }) {
              <div className="min-h-screen bg-background text-foreground pb-20">
                <ProfileHeader profile={profile} />
                <div className="px-4 mt-8 space-y-10">
+                 
                  <div className="space-y-3">
-                   {mockLinks.map((link) => (
-                     <SmartLinkCard key={link.id} link={link} theme={profile.theme} />
-                   ))}
+                   {links.length > 0 ? (
+                     links.map((link) => (
+                       <SmartLinkCard key={link.id} link={link} theme={profile.theme} />
+                     ))
+                   ) : (
+                     <div className="p-4 text-center text-sm text-muted-foreground border rounded-xl border-dashed">No links yet</div>
+                   )}
                  </div>
+                 
                  <div className="grid gap-6">
-                   {mockProjects.slice(0, 1).map((project) => (
-                     <ProjectCard key={project.id} project={project} theme={profile.theme} />
-                   ))}
+                   {projects.length > 0 ? (
+                     projects.slice(0, 3).map((project) => (
+                       <ProjectCard key={project.id} project={project} theme={profile.theme} />
+                     ))
+                   ) : (
+                     <div className="p-4 text-center text-sm text-muted-foreground border rounded-xl border-dashed">No projects yet</div>
+                   )}
                  </div>
+                 
                  <div className="grid gap-4">
-                   {mockServices.slice(0, 1).map((service) => (
-                     <ServiceCard key={service.id} service={service} theme={profile.theme} />
-                   ))}
+                   {services.length > 0 ? (
+                     services.slice(0, 3).map((service) => (
+                       <ServiceCard key={service.id} service={service} theme={profile.theme} />
+                     ))
+                   ) : (
+                     <div className="p-4 text-center text-sm text-muted-foreground border rounded-xl border-dashed">Add your first service</div>
+                   )}
                  </div>
-                 <GalleryGrid items={mockGallery.slice(0, 4)} />
+                 
+                 {gallery.length > 0 ? (
+                   <GalleryGrid items={gallery.slice(0, 6)} />
+                 ) : (
+                   <div className="p-4 text-center text-sm text-muted-foreground border rounded-xl border-dashed mx-4">No media yet</div>
+                 )}
+                 
                </div>
              </div>
            </div>
