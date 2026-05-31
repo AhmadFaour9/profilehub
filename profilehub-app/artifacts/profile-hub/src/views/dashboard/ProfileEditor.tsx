@@ -9,6 +9,7 @@ import { MobilePreview } from "@/components/dashboard/MobilePreview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageUpload } from "@/components/ui/image-upload";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Copy, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -188,15 +189,20 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
               />
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-6 items-start">
               <FormField
                 control={form.control}
                 name="avatarUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Avatar Image URL</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="https://..." data-testid="input-avatar-url" />
+                      <ImageUpload
+                        bucket="avatars"
+                        variant="avatar"
+                        label="Profile Photo"
+                        value={field.value}
+                        onChange={(url) => form.setValue("avatarUrl", url, { shouldDirty: true })}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -207,9 +213,14 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
                 name="coverUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cover Image URL</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="https://..." data-testid="input-cover-url" />
+                      <ImageUpload
+                        bucket="covers"
+                        variant="cover"
+                        label="Cover Image"
+                        value={field.value}
+                        onChange={(url) => form.setValue("coverUrl", url, { shouldDirty: true })}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
