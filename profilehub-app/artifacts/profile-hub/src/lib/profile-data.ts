@@ -127,7 +127,7 @@ async function upsertProfileForUser(user: User, username: string, displayName: s
         },
         { onConflict: "user_id" }
       )
-      .select("*, theme:themes(*)")
+      .select("*")
       .single()
   );
 }
@@ -138,8 +138,9 @@ async function upsertProfileForUser(user: User, username: string, displayName: s
  */
 export async function getOrCreateProfile(user: User, options: ProfileEnsureOptions = {}): Promise<Profile | null> {
   const source = options.source || "dashboard";
+  console.info("[PROFILE] profile_query_without_theme_embed", { auth_user_id: user.id });
   const existingProfile = await runSupabaseAdminOperation((admin) =>
-    admin.from("profiles").select("*, theme:themes(*)").eq("user_id", user.id).maybeSingle()
+    admin.from("profiles").select("*").eq("user_id", user.id).maybeSingle()
   );
 
   if (!existingProfile.ok) {
@@ -148,7 +149,10 @@ export async function getOrCreateProfile(user: User, options: ProfileEnsureOptio
     throw new Error(formatAdminDbError(existingProfile.dbError));
   }
 
-  if (existingProfile.result.data) return mapProfileRow(existingProfile.result.data);
+  if (existingProfile.result.data) {
+    console.info("[PROFILE] profile_lookup_success", { auth_user_id: user.id });
+    return mapProfileRow(existingProfile.result.data);
+  }
 
   const defaults = buildProfileDefaults(user, options);
   let createdProfile = await upsertProfileForUser(user, defaults.username, defaults.displayName);
@@ -231,7 +235,7 @@ export async function getPublicProfile(username: string): Promise<PublicProfile 
   // Use admin client for public reads — RLS allows public SELECT on published profiles,
   // but admin client ensures we always get the data regardless of auth state.
   const profileLookup = await runSupabaseAdminOperation((admin) =>
-    admin.from("profiles").select("*, theme:themes(*)").eq("username", username).maybeSingle()
+    admin.from("profiles").select("*").eq("username", username).maybeSingle()
   );
 
   if (!profileLookup.ok) {
@@ -246,12 +250,17 @@ export async function getPublicProfile(username: string): Promise<PublicProfile 
   const admin = profileLookup.client;
 
   // Fetch public relations (active only)
-  const [links, projects, services, media] = await Promise.all([
+  const [links, projects, services, media, themeRes] = await Promise.all([
     admin.from("links").select("*").eq("profile_id", profileId).eq("is_active", true).order("position"),
     admin.from("projects").select("*").eq("profile_id", profileId).eq("is_active", true).order("position"),
     admin.from("services").select("*").eq("profile_id", profileId).eq("is_active", true).order("position"),
     admin.from("media").select("*").eq("profile_id", profileId).order("position"),
+    profile.themeId ? admin.from("themes").select("*").eq("id", profile.themeId).maybeSingle() : Promise.resolve({ data: null })
   ]);
+
+  if (themeRes.data) {
+    profile.theme = { id: themeRes.data.id, ...(themeRes.data.tokens || {}) };
+  }
 
   return {
     ...profile,

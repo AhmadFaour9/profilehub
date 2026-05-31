@@ -59,7 +59,7 @@ export class SupabaseProfileRepository implements IProfileRepository {
   async getProfileByUserId(userId: string): Promise<Profile | null> {
     const { data, error } = await this.client
       .from("profiles")
-      .select("*, theme:themes(*)")
+      .select("*")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -70,7 +70,7 @@ export class SupabaseProfileRepository implements IProfileRepository {
   async getProfileByUsername(username: string): Promise<Profile | null> {
     const { data, error } = await this.client
       .from("profiles")
-      .select("*, theme:themes(*)")
+      .select("*")
       .eq("username", username)
       .maybeSingle();
 
