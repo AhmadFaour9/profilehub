@@ -186,26 +186,37 @@ export async function getMyProfile(): Promise<Profile | null> {
 }
 
 export async function getMyProfileContent() {
+  console.info("[DASHBOARD] dashboard_load_started");
+  const emptyContent = { profile: mockUser, links: [], projects: [], services: [], media: [] };
+  
   if (!isSupabaseConfigured()) {
     return { profile: mockUser, links: mockLinks, projects: mockProjects, services: mockServices, media: mockGallery };
   }
 
-  const client = await createSupabaseServerClient();
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) {
-    return { profile: mockUser, links: mockLinks, projects: mockProjects, services: mockServices, media: mockGallery };
-  }
-  const profile = await getOrCreateProfile(user, { source: "dashboard" });
-  if (!profile) {
-    return { profile: mockUser, links: mockLinks, projects: mockProjects, services: mockServices, media: mockGallery };
-  }
+  try {
+    const client = await createSupabaseServerClient();
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) {
+      return emptyContent;
+    }
+    
+    const profile = await getOrCreateProfile(user, { source: "dashboard" });
+    if (!profile) {
+      console.info("[DASHBOARD] dashboard_profile_auto_created_failed");
+      return emptyContent;
+    }
+    console.info("[DASHBOARD] dashboard_profile_loaded", { profile_id: profile.id });
 
-  const service = createProfileService(client, user.id);
-  const content = await service.getMyProfileContent();
-  if (!content) {
-    return { profile, links: [], projects: [], services: [], media: [] };
+    const service = createProfileService(client, user.id);
+    const content = await service.getMyProfileContent();
+    if (!content) {
+      return { profile, links: [], projects: [], services: [], media: [] };
+    }
+    return content;
+  } catch (error: any) {
+    console.error("[DASHBOARD] dashboard_load_failed", { error: error?.message || error });
+    return emptyContent;
   }
-  return content;
 }
 
 export function getPublicProfileCached(username: string) {
