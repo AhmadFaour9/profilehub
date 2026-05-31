@@ -28,7 +28,10 @@ export class SupabaseLinkRepository implements ILinkRepository {
       .eq("profile_id", profileId)
       .order("position");
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.warn(`[SupabaseLinkRepository] getLinksByProfileId error:`, error.message);
+      return [];
+    }
     return (data || []).map(mapLink);
   }
 

@@ -30,7 +30,10 @@ export class SupabaseProjectRepository implements IProjectRepository {
       .eq("profile_id", profileId)
       .order("position");
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.warn(`[SupabaseProjectRepository] getProjectsByProfileId error:`, error.message);
+      return [];
+    }
     return (data || []).map(mapProject);
   }
 

@@ -145,7 +145,10 @@ export class SupabaseProfileRepository implements IProfileRepository {
       .eq("profile_id", profileId)
       .order("position");
     
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.warn(`[SupabaseProfileRepository] getServicesByProfileId error:`, error.message);
+      return [];
+    }
     return (data || []).map(mapService);
   }
 
@@ -201,7 +204,10 @@ export class SupabaseProfileRepository implements IProfileRepository {
       .eq("profile_id", profileId)
       .order("position");
     
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.warn(`[SupabaseProfileRepository] getMediaByProfileId error:`, error.message);
+      return [];
+    }
     return (data || []).map(mapMedia);
   }
 
