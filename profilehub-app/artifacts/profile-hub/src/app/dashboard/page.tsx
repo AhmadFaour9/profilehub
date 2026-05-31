@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
   const content = await getMyProfileContent();
-  if (!content) redirect("/login");
+  if (!content) return <div className="p-8 text-red-500">Error: Could not load profile content (User session may have dropped during navigation). Please do a hard refresh (Ctrl+F5).</div>;
   const analytics = content ? await getDashboardAnalytics(content.profile.id) : null;
   return (
     <Overview
@@ -18,4 +18,5 @@ export default async function DashboardPage() {
     />
   );
 }
+
 
