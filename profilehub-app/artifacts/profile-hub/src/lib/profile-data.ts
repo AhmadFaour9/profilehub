@@ -37,6 +37,7 @@ function mapProfileRow(row: any): Profile {
     website: row.website,
     themeId: row.theme_id,
     isPublished: row.is_published,
+    socialLinks: row.social_links || [],
     seoTitle: row.seo_title,
     seoDescription: row.seo_description,
     theme: row.theme ? { id: row.theme.id, ...row.theme.tokens } : { id: "default" },
@@ -187,39 +188,24 @@ export async function getMyProfile(): Promise<Profile | null> {
 
 export async function getMyProfileContent() {
   console.info("[DASHBOARD] dashboard_load_started");
-  const emptyContent = { 
-    profile: {
-      id: "empty",
-      userId: "empty",
-      username: "user",
-      displayName: "User",
-      title: "",
-      bio: "",
-      themeId: "default",
-      isPublished: false,
-      theme: { id: "default" },
-    } as any, 
-    links: [], 
-    projects: [], 
-    services: [], 
-    media: [] 
-  };
   
   if (!isSupabaseConfigured()) {
-    return emptyContent;
+    return null;
   }
 
   try {
     const client = await createSupabaseServerClient();
     const { data: { user } } = await client.auth.getUser();
     if (!user) {
-      return emptyContent;
+      return null;
     }
+    
+    console.info("[DASHBOARD] dashboard_session_user_id", { dashboard_session_user_id: user.id });
     
     const profile = await getOrCreateProfile(user, { source: "dashboard" });
     if (!profile) {
       console.info("[DASHBOARD] dashboard_profile_auto_created_failed");
-      return emptyContent;
+      return null;
     }
     console.info("[DASHBOARD] dashboard_profile_loaded", { 
       dashboard_current_user_id: user.id,
@@ -235,7 +221,7 @@ export async function getMyProfileContent() {
     return content;
   } catch (error: any) {
     console.error("[DASHBOARD] dashboard_load_failed", { error: error?.message || error });
-    return emptyContent;
+    return null;
   }
 }
 

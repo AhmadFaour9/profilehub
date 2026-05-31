@@ -21,23 +21,7 @@ export default async function OnboardingPage() {
 
   // Fallback if not configured or failed to load
   if (!content) {
-    content = {
-      profile: {
-        id: "empty",
-        userId: "empty",
-        username: "user",
-        displayName: "User",
-        title: "",
-        bio: "",
-        themeId: "default",
-        isPublished: false,
-        theme: { id: "default" },
-      } as any,
-      links: [],
-      projects: [],
-      services: [],
-      media: [],
-    };
+    redirect("/login");
   }
 
   return (

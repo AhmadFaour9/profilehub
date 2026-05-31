@@ -14,8 +14,13 @@ export async function PublicProfile({ username }: { username: string }) {
     notFound();
   }
 
+  const hasBg = Boolean(profile.theme?.backgroundColor);
+
   return (
-    <div className="min-h-screen bg-background text-foreground pb-20">
+    <div
+      className={`min-h-screen pb-20 ${hasBg ? '' : 'bg-background text-foreground'}`}
+      style={hasBg ? { backgroundColor: profile.theme?.backgroundColor } : undefined}
+    >
       <PageViewBeacon profileId={profile.id} />
       <div className="max-w-2xl mx-auto">
         <ProfileHeader profile={profile} />
@@ -63,5 +68,5 @@ export async function PublicProfile({ username }: { username: string }) {
         </div>
       </div>
     </div>
- );
+  );
 }

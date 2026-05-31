@@ -61,6 +61,14 @@ export const profileFormSchema = z.object({
   seoTitle: safeTextSchema(70).optional(),
   seoDescription: safeTextSchema(160).optional(),
   isPublished: z.boolean().optional(),
+  avatarUrl: z.union([httpUrlSchema.transform(normalizeUrl), z.literal("")]).optional(),
+  coverUrl: z.union([httpUrlSchema.transform(normalizeUrl), z.literal("")]).optional(),
+  socialLinks: z.array(
+    z.object({
+      platform: z.string().min(1),
+      url: httpUrlSchema.transform(normalizeUrl),
+    })
+  ).optional(),
 });
 
 export const linkFormSchema = z.object({

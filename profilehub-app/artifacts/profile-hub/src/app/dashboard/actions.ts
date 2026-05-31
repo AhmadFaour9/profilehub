@@ -6,7 +6,7 @@ import { getOrCreateProfile } from "@/lib/profile-data";
 import { createProfileService } from "@/modules/profile";
 import { createStoragePath, validateStorageFile, type StorageBucket } from "@/modules/storage";
 import { log } from "@/modules/logging";
-import { linkFormSchema, projectFormSchema, serviceFormSchema } from "@/modules/shared";
+import { linkFormSchema, projectFormSchema, serviceFormSchema, profileFormSchema } from "@/modules/shared";
 
 type ActionResult<T = unknown> = {
   ok: boolean;
@@ -28,6 +28,44 @@ async function getServices() {
 
   if (!profile) return null;
   return { user, profile, profileService };
+}
+
+export async function updateProfile(input: unknown): Promise<ActionResult> {
+  const ctx = await getServices();
+  if (!ctx) {
+    console.error("[PROFILE] profile_update_session_missing");
+    return { ok: false, message: "You must be logged in." };
+  }
+
+  console.info("[PROFILE] profile_update_user_id", { userId: ctx.user.id });
+  console.info("[PROFILE] profile_update_profile_id", { profileId: ctx.profile.id });
+
+  try {
+    const parsed = profileFormSchema.parse(input);
+    const data = await ctx.profileService.updateProfile(ctx.profile.id, {
+      username: parsed.username,
+      displayName: parsed.displayName,
+      title: parsed.title || "",
+      bio: parsed.bio || "",
+      location: parsed.location || "",
+      website: parsed.website || "",
+      seoTitle: parsed.seoTitle || "",
+      seoDescription: parsed.seoDescription || "",
+      isPublished: parsed.isPublished ?? ctx.profile.isPublished,
+      avatarUrl: parsed.avatarUrl || "",
+      coverUrl: parsed.coverUrl || "",
+      socialLinks: parsed.socialLinks || [],
+    });
+    
+    revalidateProfile(ctx.profile.username, "/dashboard/profile");
+    if (parsed.username !== ctx.profile.username) {
+      revalidateProfile(parsed.username, "/dashboard/profile");
+    }
+    
+    return { ok: true, data };
+  } catch (error) {
+    return { ok: false, message: errorMessage(error) };
+  }
 }
 
 export async function createLink(input: unknown): Promise<ActionResult> {

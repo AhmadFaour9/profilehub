@@ -6,17 +6,35 @@ import { MobilePreview } from "@/components/dashboard/MobilePreview";
 import type { Profile, ProfileTheme, Link, Project, Service, GalleryItem } from "@/modules/shared";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { updateTheme } from "@/app/dashboard/actions";
 
 export default function ThemeEditor({ content }: { content: { profile: Profile, links: Link[], projects: Project[], services: Service[], media: GalleryItem[] } }) {
   const profile = content.profile;
   const [theme, setTheme] = useState<ProfileTheme>(profile.theme || { id: "default" });
+  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
-  const handleSave = () => {
-    toast({
-      title: "Theme saved",
-      description: "Your profile appearance has been updated."
-    });
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const result = await updateTheme({
+        primaryColor: theme.primaryColor,
+        backgroundColor: theme.backgroundColor,
+        fontFamily: theme.fontFamily,
+        buttonStyle: theme.buttonStyle,
+        layout: theme.layout,
+      });
+
+      if (result.ok) {
+        toast({ title: "Theme saved", description: "Your profile appearance has been updated." });
+      } else {
+        toast({ title: "Error", description: result.message || "Failed to save theme.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Error", description: "Failed to save theme.", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -30,7 +48,9 @@ export default function ThemeEditor({ content }: { content: { profile: Profile, 
         <ThemePicker value={theme} onChange={setTheme} />
 
         <div className="pt-6 border-t">
-          <Button onClick={handleSave} data-testid="btn-save-theme">Save Appearance</Button>
+          <Button onClick={handleSave} disabled={saving} data-testid="btn-save-theme">
+            {saving ? "Saving..." : "Save Appearance"}
+          </Button>
         </div>
       </div>
       

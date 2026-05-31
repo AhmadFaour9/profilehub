@@ -17,11 +17,11 @@ export function MobilePreview({ profile, links = [], projects = [], services = [
 
   return (
     <div className="hidden lg:block sticky top-8" data-testid="mobile-preview">
-      <div className="w-[320px] h-[680px] rounded-[3rem] border-8 border-black overflow-hidden shadow-2xl relative bg-background">
+      <div className="w-[320px] h-[680px] rounded-[3rem] border-8 border-black overflow-hidden shadow-2xl relative bg-background" style={profile.theme?.backgroundColor ? { backgroundColor: profile.theme.backgroundColor } : undefined}>
         <div className="absolute top-0 inset-x-0 h-6 bg-black z-20 rounded-b-3xl mx-16"></div>
         <div className="absolute inset-0 overflow-y-auto no-scrollbar pt-6">
            <div className="pointer-events-none origin-top scale-[0.85] w-[117%] -ml-[8.5%]">
-             <div className="min-h-screen bg-background text-foreground pb-20">
+             <div className="min-h-screen text-foreground pb-20">
                <ProfileHeader profile={profile} />
                <div className="px-4 mt-8 space-y-10">
                  
