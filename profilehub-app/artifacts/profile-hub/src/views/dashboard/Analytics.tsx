@@ -1,14 +1,15 @@
 "use client";
 
-import { mockAnalyticsOverview, mockPageViews, mockLinkAnalytics } from "@/lib/mock-data";
 import { AnalyticsCards } from "@/components/dashboard/AnalyticsCards";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import type { AnalyticsOverview, LinkAnalytics, TimeSeriesPoint } from "@/modules/shared";
 
+const emptyOverview: AnalyticsOverview = { totalViews: 0, totalClicks: 0, conversionRate: 0, uniqueVisitors: 0, viewsThisWeek: 0, clicksThisWeek: 0, growthRate: 0, topCountry: null };
+
 export default function Analytics({
-  overview = mockAnalyticsOverview,
-  pageViews = mockPageViews,
-  linkAnalytics = mockLinkAnalytics,
+  overview = emptyOverview,
+  pageViews = [],
+  linkAnalytics = [],
 }: {
   overview?: AnalyticsOverview;
   pageViews?: TimeSeriesPoint[];

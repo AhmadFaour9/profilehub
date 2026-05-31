@@ -14,9 +14,6 @@ interface MobilePreviewProps {
 }
 
 export function MobilePreview({ profile, links = [], projects = [], services = [], gallery = [] }: MobilePreviewProps) {
-  if (profile.username === "sara-dev" || profile.displayName === "Sara Al-Hassan") {
-    console.warn("[WARNING] Dashboard preview received demo data while authenticated.");
-  }
 
   return (
     <div className="hidden lg:block sticky top-8" data-testid="mobile-preview">

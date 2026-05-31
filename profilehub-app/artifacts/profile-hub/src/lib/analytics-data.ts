@@ -2,7 +2,6 @@ import "server-only";
 
 import { createSupabaseAdminClient } from "@/modules/auth";
 import { createAnalyticsService } from "@/modules/analytics";
-import { mockAnalyticsOverview, mockLinkAnalytics, mockPageViews } from "./mock-data";
 import type { AnalyticsOverview, LinkAnalytics, TimeSeriesPoint } from "@/modules/shared";
 
 export async function getDashboardAnalytics(profileId: string): Promise<{
@@ -13,12 +12,9 @@ export async function getDashboardAnalytics(profileId: string): Promise<{
   const client = createSupabaseAdminClient();
   if (!client) {
     return {
-      overview: {
-        ...mockAnalyticsOverview,
-        conversionRate: Math.round((mockAnalyticsOverview.totalClicks / mockAnalyticsOverview.totalViews) * 1000) / 10,
-      },
-      pageViews: mockPageViews.slice(-7),
-      linkAnalytics: mockLinkAnalytics,
+      overview: emptyOverview(),
+      pageViews: lastSevenDays(),
+      linkAnalytics: [],
     };
   }
 

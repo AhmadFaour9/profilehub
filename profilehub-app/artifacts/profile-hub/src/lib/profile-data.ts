@@ -177,7 +177,7 @@ export async function getOrCreateProfile(user: User, options: ProfileEnsureOptio
 }
 
 export async function getMyProfile(): Promise<Profile | null> {
-  if (!isSupabaseConfigured()) return mockUser;
+  if (!isSupabaseConfigured()) return null;
 
   const client = await createSupabaseServerClient();
   const { data: { user } } = await client.auth.getUser();
@@ -187,10 +187,26 @@ export async function getMyProfile(): Promise<Profile | null> {
 
 export async function getMyProfileContent() {
   console.info("[DASHBOARD] dashboard_load_started");
-  const emptyContent = { profile: mockUser, links: [], projects: [], services: [], media: [] };
+  const emptyContent = { 
+    profile: {
+      id: "empty",
+      userId: "empty",
+      username: "user",
+      displayName: "User",
+      title: "",
+      bio: "",
+      themeId: "default",
+      isPublished: false,
+      theme: { id: "default" },
+    } as any, 
+    links: [], 
+    projects: [], 
+    services: [], 
+    media: [] 
+  };
   
   if (!isSupabaseConfigured()) {
-    return { profile: mockUser, links: mockLinks, projects: mockProjects, services: mockServices, media: mockGallery };
+    return emptyContent;
   }
 
   try {
@@ -205,7 +221,11 @@ export async function getMyProfileContent() {
       console.info("[DASHBOARD] dashboard_profile_auto_created_failed");
       return emptyContent;
     }
-    console.info("[DASHBOARD] dashboard_profile_loaded", { profile_id: profile.id });
+    console.info("[DASHBOARD] dashboard_profile_loaded", { 
+      dashboard_current_user_id: user.id,
+      dashboard_profile_id: profile.id,
+      dashboard_using_demo_data: false
+    });
 
     const service = createProfileService(client, user.id);
     const content = await service.getMyProfileContent();

@@ -3,7 +3,7 @@ import { isSupabaseConfigured } from "@/lib/env";
 import { getOrCreateProfile, getMyProfileContent } from "@/lib/profile-data";
 import { getCurrentUser } from "@/modules/auth";
 import { redirect } from "next/navigation";
-import { mockUser } from "@/lib/mock-data";
+
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +22,17 @@ export default async function OnboardingPage() {
   // Fallback if not configured or failed to load
   if (!content) {
     content = {
-      profile: mockUser,
+      profile: {
+        id: "empty",
+        userId: "empty",
+        username: "user",
+        displayName: "User",
+        title: "",
+        bio: "",
+        themeId: "default",
+        isPublished: false,
+        theme: { id: "default" },
+      } as any,
       links: [],
       projects: [],
       services: [],
