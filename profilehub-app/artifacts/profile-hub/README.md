@@ -17,15 +17,27 @@ Create `.env.local` in `artifacts/profile-hub`:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SECRET_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-AI_PROVIDER=gemini
+AI_PROVIDER=mock
 GEMINI_API_KEY=
 APP_URL=http://localhost:24359
 LOG_LEVEL=info
 ```
 
-`SUPABASE_SERVICE_ROLE_KEY` must stay server-side only. Do not expose it with a `NEXT_PUBLIC_` prefix.
+Public/client Supabase keys are selected in this order:
+
+1. `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+2. `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+Admin/server-only Supabase keys are selected in this order:
+
+1. `SUPABASE_SECRET_KEY`
+2. `SUPABASE_SERVICE_ROLE_KEY`
+
+Admin keys must stay server-side only. Do not expose them with a `NEXT_PUBLIC_` prefix. The app rejects admin keys that are publishable keys, anon JWTs, malformed JWTs, or JWTs without `role: "service_role"`. `sb_secret_` keys are accepted as server-only admin keys.
 
 ## Supabase Migrations
 
@@ -82,10 +94,23 @@ corepack pnpm --filter @workspace/profile-hub run test
 ## Deploy to Vercel
 
 1. Set project root to `artifacts/profile-hub`.
-2. Add the environment variables above.
+2. Add the environment variables below.
 3. Set `APP_URL` to the production URL.
 4. Add the production OAuth callback URL in Supabase.
 5. Apply Supabase migration before first production login.
+
+Expected Vercel values:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=https://kjwdeufxrhcckwvsekcd.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
+SUPABASE_SECRET_KEY=sb_secret_...
+SUPABASE_SERVICE_ROLE_KEY=service_role_jwt_or_sb_secret_...
+APP_URL=https://profilehub-two.vercel.app
+AI_PROVIDER=mock
+LOG_LEVEL=info
+```
 
 ## AI
 

@@ -2,9 +2,11 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { z } from "zod";
 import { createSupabaseAdminClient } from "@/modules/auth";
 import { createSupabaseServerClient, getCurrentUser } from "@/modules/auth";
-import { getAppUrl, isSupabaseConfigured } from "@/lib/env";
+import { getAppUrl, getSupabasePublicConfig, isSupabaseConfigured } from "@/lib/env";
+import { getSupabaseAdminConfig, type SupabaseAdminConfig } from "@/lib/supabase-admin-env";
 import { getOrCreateProfile, getMyProfile } from "@/lib/profile-data";
 import { auditLog, log } from "@/modules/logging";
 import {  hashValue  } from "@/modules/shared/security";
@@ -14,6 +16,52 @@ export type AuthActionResult = {
   ok: boolean;
   message?: string;
 };
+
+type RegisterMessage =
+  | "public_supabase_missing"
+  | "service_role_missing"
+  | "service_role_invalid"
+  | "username_taken"
+  | "auth_signup_failed"
+  | "profile_insert_failed"
+  | "schema_mismatch"
+  | "register_success";
+
+type SupabaseDbError = {
+  code?: string;
+  message: string;
+};
+
+const registerInputSchema = z.object({
+  username: usernameSchema,
+  email: z.string().trim().email(),
+  password: z.string().min(8),
+});
+
+function isSchemaMismatchCode(code: string | undefined): boolean {
+  return Boolean(code && ["42P01", "42703", "23502", "23514"].includes(code));
+}
+
+function mapProfileDbError(error: SupabaseDbError): RegisterMessage {
+  if (error.code === "23505") return "username_taken";
+  if (isSchemaMismatchCode(error.code)) return "schema_mismatch";
+  return "profile_insert_failed";
+}
+
+function logRegisterConfig(publicConfig: ReturnType<typeof getSupabasePublicConfig>, adminConfig: SupabaseAdminConfig) {
+  console.info("[AUTH] Register Supabase config", {
+    publicKeySource: publicConfig.keySource,
+    adminKeySource: adminConfig.keySource,
+    adminKeyType: adminConfig.keyType,
+  });
+}
+
+function logSupabaseDbError(message: string, error: SupabaseDbError) {
+  console.error(message, {
+    code: error.code,
+    message: error.message,
+  });
+}
 
 export async function loginWithPassword(input: { email: string; password: string }): Promise<AuthActionResult> {
   if (!isSupabaseConfigured()) {
@@ -40,32 +88,57 @@ export async function registerWithPassword(input: {
   email: string;
   password: string;
 }): Promise<AuthActionResult> {
-  if (!isSupabaseConfigured()) {
-    console.error("[AUTH] Register failed: Supabase env is not configured.");
-    return { ok: false, message: "invalid_config" };
+  const parsed = registerInputSchema.safeParse(input);
+  if (!parsed.success) {
+    console.warn("[AUTH] Register failed: invalid form input", {
+      fields: parsed.error.issues.map((issue) => issue.path.join(".")),
+    });
+    return { ok: false, message: "auth_signup_failed" };
   }
 
-  const username = usernameSchema.parse(input.username);
-  const admin = createSupabaseAdminClient();
-  if (admin) {
-    const { data, error: adminErr } = await admin.from("profiles").select("id").eq("username", username).maybeSingle();
-    if (adminErr) {
-      console.error("[AUTH] Register failed: Admin DB error (RLS or missing table)", adminErr.message, adminErr.code);
-      return { ok: false, message: `admin_db_error:${adminErr.code || adminErr.message}` };
-    }
-    if (data) {
-      console.warn(`[AUTH] Register failed: Username ${username} already taken`);
-      return { ok: false, message: "username_taken" };
-    }
-  } else {
-    console.error("[AUTH] Register failed: Missing service role key.");
-    return { ok: false, message: "invalid_config" };
+  const publicConfig = getSupabasePublicConfig();
+  const adminConfig = getSupabaseAdminConfig();
+  logRegisterConfig(publicConfig, adminConfig);
+
+  if (!publicConfig.ok) {
+    console.error("[AUTH] Register failed: public_supabase_missing", {
+      publicKeySource: publicConfig.keySource,
+    });
+    return { ok: false, message: "public_supabase_missing" };
+  }
+
+  if (!adminConfig.ok) {
+    console.error(`[AUTH] Register failed: ${adminConfig.error}`, {
+      adminKeySource: adminConfig.keySource,
+      adminKeyType: adminConfig.keyType,
+    });
+    return { ok: false, message: adminConfig.error };
+  }
+
+  const { username, email, password } = parsed.data;
+  const admin = createSupabaseAdminClient(adminConfig);
+  if (!admin) return { ok: false, message: "service_role_invalid" };
+
+  const { data: existingProfile, error: usernameCheckError } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("username", username)
+    .maybeSingle();
+
+  if (usernameCheckError) {
+    logSupabaseDbError("[AUTH] Register username pre-check failed", usernameCheckError);
+    return { ok: false, message: mapProfileDbError(usernameCheckError) };
+  }
+
+  if (existingProfile) {
+    console.warn("[AUTH] Register failed: username_taken");
+    return { ok: false, message: "username_taken" };
   }
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signUp({
-    email: input.email,
-    password: input.password,
+    email,
+    password,
     options: {
       data: {
         username,
@@ -76,32 +149,47 @@ export async function registerWithPassword(input: {
   });
 
   if (error) {
-    console.error("[AUTH] Register failed: Supabase signUp error", error.message);
-    if (error.message.includes("Signups not allowed") || error.message.includes("disabled")) {
-      return { ok: false, message: "email_signup_disabled" };
-    }
-    return { ok: false, message: "profile_creation_failed" };
+    console.error("[AUTH] Register failed: Supabase signUp error", {
+      message: error.message,
+      status: error.status,
+    });
+    return { ok: false, message: "auth_signup_failed" };
   }
 
-  if (data.user) {
-    try {
-      const profile = await getOrCreateProfile(data.user);
-      await auditLog({
-        userId: data.user.id,
-        action: "create",
-        entityType: "profile",
-        entityId: profile?.id,
-        metadata: { source: "email_signup" },
-      });
-    } catch (profileErr: any) {
-      const msg = profileErr instanceof Error ? profileErr.message : "profile_creation_failed";
-      console.error("[AUTH] Register failed: getOrCreateProfile threw an error", profileErr?.message || profileErr);
-      return { ok: false, message: msg };
-    }
+  if (!data.user) {
+    console.error("[AUTH] Register failed: Supabase signUp returned no user.");
+    return { ok: false, message: "auth_signup_failed" };
   }
+
+  const { data: profile, error: profileError } = await admin
+    .from("profiles")
+    .upsert(
+      {
+        user_id: data.user.id,
+        username,
+        display_name: username,
+        is_published: false,
+      },
+      { onConflict: "user_id" }
+    )
+    .select("id")
+    .single();
+
+  if (profileError) {
+    logSupabaseDbError("[AUTH] Register profile insert failed", profileError);
+    return { ok: false, message: mapProfileDbError(profileError) };
+  }
+
+  await auditLog({
+    userId: data.user.id,
+    action: "create",
+    entityType: "profile",
+    entityId: profile?.id,
+    metadata: { source: "email_signup" },
+  });
 
   if (data.session) redirect("/onboarding");
-  return { ok: true, message: "Check your email to confirm your account." };
+  return { ok: true, message: "register_success" };
 }
 
 export async function sendPasswordReset(email: string): Promise<AuthActionResult> {

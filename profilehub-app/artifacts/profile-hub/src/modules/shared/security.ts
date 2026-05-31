@@ -8,7 +8,7 @@ const REDACTED_KEYS = ["password", "token", "secret", "key", "authorization", "c
 export function hashValue(value: string | null | undefined): string | null {
   if (!value) return null;
 
-  const salt = process.env.LOG_HASH_SALT || process.env.SUPABASE_SERVICE_ROLE_KEY || "profilehub-local";
+  const salt = process.env.LOG_HASH_SALT || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "profilehub-local";
   return createHash("sha256").update(`${salt}:${value}`).digest("hex");
 }
 

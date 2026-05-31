@@ -31,14 +31,16 @@ export default function Register() {
     if (!result.ok) {
       const code = result.message;
       let uiMessage = "An unexpected error occurred.";
-      if (code === "invalid_config") uiMessage = "System configuration error. Please try again later.";
-      else if (code === "username_taken") uiMessage = "This username is already taken. Please choose another.";
-      else if (code === "email_signup_disabled") uiMessage = "Email signup is currently disabled.";
-      else if (code === "profile_creation_failed") uiMessage = "Could not initialize your profile. Please contact support.";
+      if (code === "public_supabase_missing" || code === "service_role_missing" || code === "service_role_invalid") {
+        uiMessage = "System configuration error. Please try again later.";
+      } else if (code === "username_taken") uiMessage = "This username is already taken. Please choose another.";
+      else if (code === "auth_signup_failed") uiMessage = "Could not create your account. Please try again.";
+      else if (code === "profile_insert_failed") uiMessage = "Could not initialize your profile. Please contact support.";
+      else if (code === "schema_mismatch") uiMessage = "Database setup is incomplete. Please contact support.";
       else uiMessage = code || "An unexpected error occurred.";
       setMessage(`DEBUG_REGISTER_ERROR: ${uiMessage}`);
     } else {
-      setMessage(result.message || "Account created.");
+      setMessage(result.message === "register_success" ? "Check your email to confirm your account." : result.message || "Account created.");
     }
   }
 

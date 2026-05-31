@@ -6,6 +6,7 @@ import { createSupabaseServerClient, createSupabaseAdminClient } from "@/modules
 import { createProfileService } from "@/modules/profile";
 import { mockGallery, mockLinks, mockProjects, mockServices, mockUser } from "./mock-data";
 import { isSupabaseConfigured } from "@/lib/env";
+import { getSupabaseAdminConfig } from "@/lib/supabase-admin-env";
 import type { Profile, PublicProfile } from "@/modules/shared";
 
 /**
@@ -26,15 +27,13 @@ export async function getOrCreateProfile(user: User): Promise<Profile | null> {
   const displayName = user.user_metadata?.full_name || user.email?.split("@")[0] || "New User";
 
   // Use admin client to insert so we bypass RLS (server-side only)
-  const admin = createSupabaseAdminClient();
-  if (!admin) {
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (serviceRoleKey && serviceRoleKey === anonKey) {
-      throw new Error("service_role_invalid");
-    }
-    throw new Error("service_role_missing");
+  const adminConfig = getSupabaseAdminConfig();
+  if (!adminConfig.ok) {
+    throw new Error(adminConfig.error === "public_supabase_missing" ? "public_supabase_missing" : adminConfig.error);
   }
+
+  const admin = createSupabaseAdminClient(adminConfig);
+  if (!admin) throw new Error("service_role_invalid");
 
   const { data, error } = await admin
     .from("profiles")
@@ -48,7 +47,10 @@ export async function getOrCreateProfile(user: User): Promise<Profile | null> {
     .single();
 
   if (error) {
-    console.error("Failed to create default profile:", error);
+    console.error("Failed to create default profile:", {
+      code: error.code,
+      message: error.message,
+    });
     if (error.code === '23505') throw new Error("username_taken");
     if (error.code === '42501') throw new Error("profile_rls_denied");
     if (error.code === '42P01') throw new Error("schema_mismatch");
