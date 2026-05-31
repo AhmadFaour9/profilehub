@@ -26,20 +26,8 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const pathname = request.nextUrl.pathname;
 
-  // Protected routes
-  if (!user && (pathname.startsWith('/dashboard') || pathname.startsWith('/onboarding'))) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = '/login';
-    loginUrl.searchParams.set('redirectTo', pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // Already authenticated users
-  if (user && (pathname === '/login' || pathname === '/register')) {
-    const dashboardUrl = request.nextUrl.clone();
-    dashboardUrl.pathname = '/dashboard';
-    return NextResponse.redirect(dashboardUrl);
-  }
+  // Let the application layout and pages handle authorization redirects.
+  // We only use the middleware to reliably refresh the Supabase session token.
 
   return supabaseResponse;
 }
