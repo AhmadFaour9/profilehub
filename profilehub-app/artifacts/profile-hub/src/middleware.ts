@@ -2,19 +2,12 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { getSupabasePublicEnv, isSupabaseConfigured } from '@/lib/env';
 
-function isProtectedPath(pathname: string): boolean {
+function isAuthSensitivePath(pathname: string): boolean {
   return pathname === "/onboarding" || pathname === "/account/preview" || pathname.startsWith("/dashboard");
 }
 
 function isAuthPath(pathname: string): boolean {
   return pathname === "/login" || pathname === "/register";
-}
-
-function withRefreshedCookies(response: NextResponse, refreshedResponse: NextResponse): NextResponse {
-  refreshedResponse.cookies.getAll().forEach((cookie) => {
-    response.cookies.set(cookie);
-  });
-  return response;
 }
 
 function preventAuthCache(response: NextResponse): NextResponse {
@@ -44,21 +37,10 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const { data: { user } } = await supabase.auth.getUser();
+  await supabase.auth.getUser();
   const pathname = request.nextUrl.pathname;
 
-  if (!user && isProtectedPath(pathname)) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/login";
-    redirectUrl.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
-    return preventAuthCache(withRefreshedCookies(NextResponse.redirect(redirectUrl), supabaseResponse));
-  }
-
-  if (user && isAuthPath(pathname)) {
-    return preventAuthCache(withRefreshedCookies(NextResponse.redirect(new URL("/dashboard", request.url)), supabaseResponse));
-  }
-
-  if (isProtectedPath(pathname) || isAuthPath(pathname)) {
+  if (isAuthSensitivePath(pathname) || isAuthPath(pathname)) {
     return preventAuthCache(supabaseResponse);
   }
 
