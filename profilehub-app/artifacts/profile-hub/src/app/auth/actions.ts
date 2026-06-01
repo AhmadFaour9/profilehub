@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
-import { createSupabaseServerClient, getCurrentUser } from "@/modules/auth";
+import { createSupabaseServerClient } from "@/modules/auth";
 import { getAppUrl, getSupabasePublicConfig, isSupabaseConfigured } from "@/lib/env";
 import { getSupabaseAdminConfig, type SupabaseAdminConfig } from "@/lib/supabase-admin-env";
 import {
@@ -83,7 +83,7 @@ export async function loginWithPassword(input: { email: string; password: string
     return { ok: false, message: "Invalid email or password." };
   }
 
-  if (data.user) await getOrCreateProfile(data.user, { source: "login" });
+  if (data.user) await getOrCreateProfile(data.user, { source: "login", authClient: supabase });
   redirect(isSafeRedirectPath(input.next) ? input.next : "/dashboard");
 }
 
@@ -175,6 +175,7 @@ export async function registerWithPassword(input: {
       username,
       displayName: username,
       source: "signup",
+      authClient: supabase,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "profile_insert_failed";

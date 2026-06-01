@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (data.user) {
-    await getOrCreateProfile(data.user, { source: "auth_callback" });
+    await getOrCreateProfile(data.user, { source: "auth_callback", authClient: supabase });
   }
 
   return NextResponse.redirect(new URL(safeNext, request.url));

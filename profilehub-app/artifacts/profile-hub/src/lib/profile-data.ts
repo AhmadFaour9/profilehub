@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { User } from "@supabase/supabase-js";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { unstable_cache } from "next/cache";
 import { createSupabaseServerClient } from "@/modules/auth";
 import { createProfileService } from "@/modules/profile";
@@ -20,6 +20,7 @@ type ProfileEnsureOptions = {
   username?: string;
   displayName?: string;
   source?: ProfileEnsureSource;
+  authClient?: SupabaseClient;
 };
 
 function mapProfileRow(row: any): Profile {
@@ -133,12 +134,86 @@ async function upsertProfileForUser(user: User, username: string, displayName: s
   );
 }
 
+async function upsertProfileForUserWithAuthClient(
+  client: SupabaseClient,
+  user: User,
+  username: string,
+  displayName: string
+) {
+  return client
+    .from("profiles")
+    .upsert(
+      {
+        user_id: user.id,
+        username,
+        display_name: displayName,
+        is_published: false,
+      },
+      { onConflict: "user_id" }
+    )
+    .select("*")
+    .single();
+}
+
+async function getOrCreateProfileWithAuthClient(
+  client: SupabaseClient,
+  user: User,
+  options: ProfileEnsureOptions
+): Promise<Profile | null> {
+  const source = options.source || "dashboard";
+  const existingProfile = await client.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
+
+  if (existingProfile.error) {
+    logProfileLookupFailed(user.id, source, existingProfile.error);
+    throw new Error(formatAdminDbError(existingProfile.error));
+  }
+
+  if (existingProfile.data) {
+    console.info("[PROFILE] profile_lookup_success", { auth_user_id: user.id, source: `${source}:auth_client` });
+    return mapProfileRow(existingProfile.data);
+  }
+
+  const defaults = buildProfileDefaults(user, options);
+  let createdProfile = await upsertProfileForUserWithAuthClient(client, user, defaults.username, defaults.displayName);
+
+  if (createdProfile.error?.code === "23505" && !options.username) {
+    createdProfile = await upsertProfileForUserWithAuthClient(
+      client,
+      user,
+      `user${Math.floor(100000 + Math.random() * 900000)}`,
+      defaults.displayName
+    );
+  }
+
+  if (createdProfile.error) {
+    logProfileDbError("Failed to create default profile with auth client:", createdProfile.error);
+    throw new Error(profileInsertErrorMessage(createdProfile.error));
+  }
+
+  const profile = mapProfileRow(createdProfile.data);
+  logProfileCreated(user.id, profile.id, source);
+  return profile;
+}
+
 /**
  * Get the current user's profile, or create a default one if it doesn't exist.
  * Called after auth signup/login to ensure every user has a profile row.
  */
 export async function getOrCreateProfile(user: User, options: ProfileEnsureOptions = {}): Promise<Profile | null> {
   const source = options.source || "dashboard";
+
+  if (options.authClient) {
+    try {
+      return await getOrCreateProfileWithAuthClient(options.authClient, user, options);
+    } catch (error: any) {
+      console.warn("[PROFILE] auth_client_profile_ensure_failed_using_admin_fallback", {
+        auth_user_id: user.id,
+        source,
+        error: error?.message || error,
+      });
+    }
+  }
+
   console.info("[PROFILE] profile_query_without_theme_embed", { auth_user_id: user.id });
   const existingProfile = await runSupabaseAdminOperation((admin) =>
     admin.from("profiles").select("*").eq("user_id", user.id).maybeSingle()
@@ -183,7 +258,7 @@ export async function getMyProfile(): Promise<Profile | null> {
   const client = await createSupabaseServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return null;
-  return getOrCreateProfile(user, { source: "dashboard" });
+  return getOrCreateProfile(user, { source: "dashboard", authClient: client });
 }
 
 export async function getMyProfileContent() {
@@ -203,7 +278,7 @@ export async function getMyProfileContent() {
     
     console.info("[DASHBOARD] dashboard_session_user_id", { dashboard_session_user_id: user.id });
     
-    const profile = await getOrCreateProfile(user, { source: "dashboard" });
+    const profile = await getOrCreateProfile(user, { source: "dashboard", authClient: client });
     if (!profile) {
       console.info("[DASHBOARD] dashboard_profile_auto_created_failed");
       return null;

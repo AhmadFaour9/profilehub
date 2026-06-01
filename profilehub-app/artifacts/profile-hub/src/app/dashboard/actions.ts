@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath, revalidateTag } from "next/cache";
-import { getCurrentUser, createSupabaseServerClient } from "@/modules/auth";
+import { createSupabaseServerClient } from "@/modules/auth";
 import { getOrCreateProfile } from "@/lib/profile-data";
 import { createProfileService } from "@/modules/profile";
 import { createStoragePath, validateStorageFile, type StorageBucket } from "@/modules/storage";
@@ -19,12 +19,14 @@ const projectUpdateSchema = projectFormSchema.partial();
 const serviceUpdateSchema = serviceFormSchema.partial();
 
 async function getServices() {
-  const user = await getCurrentUser();
+  const client = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await client.auth.getUser();
   if (!user) return null;
 
-  const client = await createSupabaseServerClient();
   const profileService = createProfileService(client, user.id);
-  const profile = await getOrCreateProfile(user, { source: "dashboard" });
+  const profile = await getOrCreateProfile(user, { source: "dashboard", authClient: client });
 
   if (!profile) return null;
   return { user, profile, profileService };

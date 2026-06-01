@@ -14,7 +14,7 @@ export default async function TestPage() {
   let profileError = "N/A";
   if (user) {
     try {
-      const p = await getOrCreateProfile(user, { source: "dashboard" });
+      const p = await getOrCreateProfile(user, { source: "dashboard", authClient: client });
       profileStr = JSON.stringify(p, null, 2);
     } catch (e: any) {
       profileError = e?.message || String(e);
