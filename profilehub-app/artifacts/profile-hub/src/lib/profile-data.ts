@@ -246,6 +246,28 @@ function emptyProfileContent(profile: Profile): ProfileContent {
   return { profile, links: [], projects: [], services: [], media: [] };
 }
 
+async function ensureProfilePublished(client: SupabaseClient, profile: Profile): Promise<Profile> {
+  if (profile.isPublished) return profile;
+
+  const { data, error } = await client
+    .from("profiles")
+    .update({ is_published: true })
+    .eq("id", profile.id)
+    .select("*")
+    .single();
+
+  if (error || !data) {
+    console.warn("[PROFILE] profile_auto_publish_failed", {
+      profile_id: profile.id,
+      code: error?.code,
+      message: error?.message,
+    });
+    return profile;
+  }
+
+  return mapProfileRow(data);
+}
+
 async function loadProfileContentFromClient(client: SupabaseClient, profile: Profile): Promise<ProfileContent> {
   const [links, projects, services, media] = await Promise.all([
     client.from("links").select("*").eq("profile_id", profile.id).order("position"),
@@ -304,7 +326,7 @@ async function upsertProfileForUser(user: User, username: string, displayName: s
           user_id: user.id,
           username,
           display_name: displayName,
-          is_published: false,
+          is_published: true,
         },
         { onConflict: "user_id" }
       )
@@ -326,7 +348,7 @@ async function upsertProfileForUserWithAuthClient(
         user_id: user.id,
         username,
         display_name: displayName,
-        is_published: false,
+        is_published: true,
       },
       { onConflict: "user_id" }
     )
@@ -349,7 +371,7 @@ async function getOrCreateProfileWithAuthClient(
 
   if (existingProfile.data) {
     console.info("[PROFILE] profile_lookup_success", { auth_user_id: user.id, source: `${source}:auth_client` });
-    return mapProfileRow(existingProfile.data);
+    return ensureProfilePublished(client, mapProfileRow(existingProfile.data));
   }
 
   const defaults = buildProfileDefaults(user, options);
@@ -425,7 +447,7 @@ export async function getOrCreateProfile(user: User, options: ProfileEnsureOptio
 
   if (existingProfile.result.data) {
     console.info("[PROFILE] profile_lookup_success", { auth_user_id: user.id });
-    return mapProfileRow(existingProfile.result.data);
+    return ensureProfilePublished(existingProfile.client, mapProfileRow(existingProfile.result.data));
   }
 
   const defaults = buildProfileDefaults(user, options);
@@ -586,7 +608,10 @@ export async function getPublicProfile(username: string, options: PublicProfileO
   }
   const canViewUnpublished =
     Boolean(options.includeUnpublishedForUserId) && profile?.userId === options.includeUnpublishedForUserId;
-  if (!profile || (!profile.isPublished && !canViewUnpublished)) return null;
+  if (!profile) return null;
+  if (!profile.isPublished && canViewUnpublished && options.authClient) {
+    profile = await ensureProfilePublished(options.authClient, profile);
+  }
 
   const relations = await loadPublicProfileRelations(readClient, profile);
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from "next/link";
@@ -9,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { SiGoogle } from "react-icons/si";
-import { loginWithPassword } from "@/app/auth/actions";
+import { createSupabaseBrowserClient } from "@/modules/auth/client";
 
 
 const formSchema = z.object({
@@ -19,15 +20,34 @@ const formSchema = z.object({
 
 export default function Login({ nextPath = "/dashboard" }: { nextPath?: string }) {
   const [message, setMessage] = useState<string | null>(null);
+  const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { email: "", password: "" },
   });
 
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    supabase.auth.getSession().then((result: any) => {
+      if (result.data.session) {
+        router.replace(nextPath);
+        router.refresh();
+      }
+    });
+  }, [nextPath, router]);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setMessage(null);
-    const result = await loginWithPassword({ ...values, next: nextPath });
-    if (!result.ok) setMessage(result.message || "Could not log in.");
+    const supabase = createSupabaseBrowserClient();
+    const { error } = await supabase.auth.signInWithPassword(values);
+
+    if (error) {
+      setMessage("Invalid email or password.");
+      return;
+    }
+
+    router.replace(nextPath);
+    router.refresh();
   }
 
   return (

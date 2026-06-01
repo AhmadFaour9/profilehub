@@ -116,7 +116,7 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
       website: values.website || "",
       avatarUrl: values.avatarUrl || "",
       coverUrl: values.coverUrl || "",
-      isPublished: profile.isPublished,
+      isPublished: true,
       socialLinks,
     });
 
