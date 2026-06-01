@@ -1,5 +1,6 @@
 import { getPublicProfileCached } from "@/lib/profile-data";
 import { notFound } from "next/navigation";
+import type { PublicProfile as PublicProfileData } from "@/modules/shared";
 import { ProfileHeader } from "./ProfileHeader";
 import { SmartLinkCard } from "./SmartLinkCard";
 import { ProjectCard } from "./ProjectCard";
@@ -7,8 +8,14 @@ import { ServiceCard } from "./ServiceCard";
 import { GalleryGrid } from "./GalleryGrid";
 import { PageViewBeacon } from "./PageViewBeacon";
 
-export async function PublicProfile({ username }: { username: string }) {
-  const profile = await getPublicProfileCached(username);
+export async function PublicProfile({
+  username,
+  profile: initialProfile,
+}: {
+  username: string;
+  profile?: PublicProfileData | null;
+}) {
+  const profile = initialProfile ?? (await getPublicProfileCached(username));
 
   if (!profile) {
     notFound();

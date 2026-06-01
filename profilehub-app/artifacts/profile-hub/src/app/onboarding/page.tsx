@@ -1,6 +1,6 @@
 import ProfileEditor from "@/views/dashboard/ProfileEditor";
 import { isSupabaseConfigured } from "@/lib/env";
-import { getOrCreateProfile, getMyProfileContent } from "@/lib/profile-data";
+import { getMyProfileContent } from "@/lib/profile-data";
 import { getCurrentUser } from "@/modules/auth";
 import { redirect } from "next/navigation";
 
@@ -9,19 +9,29 @@ export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage() {
   let content: any = undefined;
-  if (isSupabaseConfigured()) {
-    try {
-      const user = await getCurrentUser();
-      if (!user) redirect("/login");
-      content = await getMyProfileContent();
-    } catch (error: any) {
-      console.error("[ONBOARDING] load_failed", { error: error?.message || error });
-    }
+  if (!isSupabaseConfigured()) {
+    redirect("/login?next=/onboarding");
   }
 
-  // Fallback if not configured or failed to load
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect("/login?next=/onboarding");
+  }
+
+  try {
+    content = await getMyProfileContent();
+  } catch (error: any) {
+    console.error("[ONBOARDING] load_failed", { error: error?.message || error });
+  }
+
   if (!content) {
-    redirect("/login");
+    return (
+      <main className="min-h-screen bg-background p-4 md:p-8">
+        <div className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          Could not load your profile setup. Your session is valid, but profile data could not be loaded.
+        </div>
+      </main>
+    );
   }
 
   return (

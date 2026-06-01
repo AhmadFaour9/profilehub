@@ -214,12 +214,32 @@ export async function getMyProfileContent() {
       dashboard_using_demo_data: false
     });
 
-    const service = createProfileService(client, user.id);
-    const content = await service.getMyProfileContent();
-    if (!content) {
-      return { profile, links: [], projects: [], services: [], media: [] };
+    const emptyContent = { profile, links: [], projects: [], services: [], media: [] };
+
+    let contentLookup;
+    try {
+      contentLookup = await runSupabaseAdminOperation(async (admin) => {
+        const service = createProfileService(admin, user.id);
+        const data = await service.getMyProfileContent();
+        return { data, error: null };
+      });
+    } catch (error: any) {
+      console.error("[DASHBOARD] dashboard_content_load_failed", {
+        error: error?.message || error,
+      });
+      return emptyContent;
     }
-    return content;
+
+    if (!contentLookup.ok) {
+      console.error("[DASHBOARD] dashboard_content_admin_load_failed", {
+        error: contentLookup.error,
+        code: contentLookup.dbError?.code,
+        message: contentLookup.dbError?.message,
+      });
+      return emptyContent;
+    }
+
+    return contentLookup.result.data || emptyContent;
   } catch (error: any) {
     console.error("[DASHBOARD] dashboard_load_failed", { error: error?.message || error });
     return null;
@@ -234,7 +254,11 @@ export function getPublicProfileCached(username: string) {
   )();
 }
 
-export async function getPublicProfile(username: string): Promise<PublicProfile | null> {
+type PublicProfileOptions = {
+  includeUnpublishedForUserId?: string;
+};
+
+export async function getPublicProfile(username: string, options: PublicProfileOptions = {}): Promise<PublicProfile | null> {
   if (!isSupabaseConfigured()) {
     return null;
   }
@@ -251,7 +275,9 @@ export async function getPublicProfile(username: string): Promise<PublicProfile 
   }
 
   const profile = profileLookup.result.data ? mapProfileRow(profileLookup.result.data) : null;
-  if (!profile || !profile.isPublished) return null;
+  const canViewUnpublished =
+    Boolean(options.includeUnpublishedForUserId) && profile?.userId === options.includeUnpublishedForUserId;
+  if (!profile || (!profile.isPublished && !canViewUnpublished)) return null;
 
   const profileId = profile.id;
   const admin = profileLookup.client;

@@ -14,7 +14,7 @@ import {
 import { getOrCreateProfile } from "@/lib/profile-data";
 import { auditLog, log } from "@/modules/logging";
 import {  hashValue  } from "@/modules/shared/security";
-import { profileFormSchema, usernameSchema } from "@/modules/shared";
+import { isSafeRedirectPath, profileFormSchema, usernameSchema } from "@/modules/shared";
 
 export type AuthActionResult = {
   ok: boolean;
@@ -67,7 +67,7 @@ function logSupabaseDbError(message: string, error: SupabaseDbError) {
   });
 }
 
-export async function loginWithPassword(input: { email: string; password: string }): Promise<AuthActionResult> {
+export async function loginWithPassword(input: { email: string; password: string; next?: string }): Promise<AuthActionResult> {
   if (!isSupabaseConfigured()) {
     return { ok: false, message: "Supabase env is not configured." };
   }
@@ -84,7 +84,7 @@ export async function loginWithPassword(input: { email: string; password: string
   }
 
   if (data.user) await getOrCreateProfile(data.user, { source: "login" });
-  redirect("/dashboard");
+  redirect(isSafeRedirectPath(input.next) ? input.next : "/dashboard");
 }
 
 export async function registerWithPassword(input: {
@@ -229,4 +229,3 @@ export async function logout() {
   }
   redirect("/login");
 }
-

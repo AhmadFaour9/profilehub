@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { PublicProfile } from "@/components/profile/PublicProfile";
-import { getPublicProfileCached } from "@/lib/profile-data";
+import { getPublicProfile, getPublicProfileCached } from "@/lib/profile-data";
+import { getCurrentUser } from "@/modules/auth";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -28,5 +29,16 @@ export default async function PublicProfileRoute({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
-  return <PublicProfile username={username} />;
+  const publishedProfile = await getPublicProfileCached(username);
+
+  if (publishedProfile) {
+    return <PublicProfile username={username} profile={publishedProfile} />;
+  }
+
+  const user = await getCurrentUser();
+  const ownerPreviewProfile = user
+    ? await getPublicProfile(username, { includeUnpublishedForUserId: user.id })
+    : null;
+
+  return <PublicProfile username={username} profile={ownerPreviewProfile} />;
 }

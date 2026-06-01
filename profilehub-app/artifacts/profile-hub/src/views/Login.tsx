@@ -17,7 +17,7 @@ const formSchema = z.object({
   password: z.string().min(8),
 });
 
-export default function Login() {
+export default function Login({ nextPath = "/dashboard" }: { nextPath?: string }) {
   const [message, setMessage] = useState<string | null>(null);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -26,7 +26,7 @@ export default function Login() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setMessage(null);
-    const result = await loginWithPassword(values);
+    const result = await loginWithPassword({ ...values, next: nextPath });
     if (!result.ok) setMessage(result.message || "Could not log in.");
   }
 
@@ -39,7 +39,7 @@ export default function Login() {
         </div>
 
         <Button variant="outline" className="w-full mb-6" data-testid="btn-google-login" asChild>
-          <Link href="/auth/google?next=/dashboard">
+          <Link href={`/auth/google?next=${encodeURIComponent(nextPath)}`}>
             <SiGoogle className="mr-2 h-4 w-4" />
             Continue with Google
           </Link>
