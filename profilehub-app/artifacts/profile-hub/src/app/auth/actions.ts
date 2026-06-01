@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/modules/auth";
-import { getAppUrl, getSupabasePublicConfig, isSupabaseConfigured } from "@/lib/env";
+import { getSupabasePublicConfig, isSupabaseConfigured } from "@/lib/env";
+import { getRequestOrigin } from "@/lib/request-url";
 import { getSupabaseAdminConfig, type SupabaseAdminConfig } from "@/lib/supabase-admin-env";
 import {
   formatAdminDbError,
@@ -158,7 +159,7 @@ export async function registerWithPassword(input: {
         username,
         display_name: username,
       },
-      emailRedirectTo: `${getAppUrl()}/auth/callback?next=/onboarding`,
+      emailRedirectTo: `${await getRequestOrigin()}/auth/callback?next=/onboarding`,
     },
   });
 
@@ -221,7 +222,7 @@ export async function sendPasswordReset(email: string): Promise<AuthActionResult
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${getAppUrl()}/auth/callback?next=/dashboard/settings`,
+    redirectTo: `${await getRequestOrigin()}/auth/callback?next=/dashboard/settings`,
   });
 
   if (error) {
