@@ -5,7 +5,7 @@ import { QRButton } from "./QRButton";
 import { SiX, SiInstagram, SiDribbble, SiGithub, SiYoutube } from "react-icons/si";
 import { Linkedin, Facebook, Link2 } from "lucide-react";
 
-export function ProfileHeader({ profile }: { profile: Profile }) {
+export function ProfileHeader({ profile, profileUrl }: { profile: Profile; profileUrl?: string }) {
   const getSocialIcon = (platform: string) => {
     switch (platform) {
       case 'twitter': return <SiX className="w-5 h-5" />;
@@ -41,7 +41,7 @@ export function ProfileHeader({ profile }: { profile: Profile }) {
           </Avatar>
           
           <div className="pb-2">
-            <QRButton url={`https://profilehub.app/${profile.username}`} />
+            <QRButton username={profile.username} url={profileUrl} />
           </div>
         </div>
 

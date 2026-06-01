@@ -16,7 +16,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
     if (!user) redirect("/login?next=/dashboard");
 
     try {
-      profile = (await getOrCreateProfile(user, { source: "dashboard", authClient: supabase })) || undefined;
+      profile = (await getOrCreateProfile(user, {
+        source: "dashboard",
+        authClient: supabase,
+        allowFallbackProfile: true,
+      })) || undefined;
     } catch (error: any) {
       console.error("[DASHBOARD_LAYOUT] load_failed", { error: error?.message || error });
       // If we completely fail to load or create a profile, fallback to undefined

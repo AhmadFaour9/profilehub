@@ -26,7 +26,16 @@ async function getServices() {
   if (!user) return null;
 
   const profileService = createProfileService(client, user.id);
-  const profile = await getOrCreateProfile(user, { source: "dashboard", authClient: client });
+  let profile;
+  try {
+    profile = await getOrCreateProfile(user, { source: "dashboard", authClient: client });
+  } catch (error: any) {
+    console.error("[DASHBOARD_ACTION] profile_load_failed", {
+      auth_user_id: user.id,
+      error: error?.message || error,
+    });
+    return null;
+  }
 
   if (!profile) return null;
   return { user, profile, profileService };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -58,9 +58,16 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
   const profile = content.profile;
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const [origin, setOrigin] = useState("");
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
   
+  const getPublicUrl = (username: string) => (origin ? new URL(`/${username}`, origin).toString() : `/${username}`);
+
   const handleCopyUrl = () => {
-    const url = `${window.location.origin}/${form.getValues("username")}`;
+    const url = getPublicUrl(form.getValues("username"));
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -154,7 +161,7 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
                       <Input {...field} data-testid="input-username" />
                     </FormControl>
                     <FormDescription className="flex items-center gap-2">
-                      <span>profilehub.app/{field.value}</span>
+                      <span>{getPublicUrl(field.value)}</span>
                       {field.value && (
                         <button
                           type="button"

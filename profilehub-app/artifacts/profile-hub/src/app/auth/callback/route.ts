@@ -21,7 +21,14 @@ export async function GET(request: NextRequest) {
   }
 
   if (data.user) {
-    await getOrCreateProfile(data.user, { source: "auth_callback", authClient: supabase });
+    try {
+      await getOrCreateProfile(data.user, { source: "auth_callback", authClient: supabase });
+    } catch (error: any) {
+      console.warn("[AUTH] callback_profile_ensure_failed_continuing", {
+        auth_user_id: data.user.id,
+        error: error?.message || error,
+      });
+    }
   }
 
   return NextResponse.redirect(new URL(safeNext, request.url));

@@ -1,10 +1,23 @@
 "use client";
 
-import { QrCode } from "lucide-react";
+import { ExternalLink, QrCode } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-export function QRButton({ url }: { url: string }) {
+export function QRButton({ username, url }: { username: string; url?: string }) {
+  const fallbackUrl = useMemo(() => `/${username}`, [username]);
+  const [shareUrl, setShareUrl] = useState(url || fallbackUrl);
+
+  useEffect(() => {
+    if (url) {
+      setShareUrl(url);
+      return;
+    }
+
+    setShareUrl(new URL(`/${username}`, window.location.origin).toString());
+  }, [url, username]);
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -28,12 +41,17 @@ export function QRButton({ url }: { url: string }) {
           <div className="grid flex-1 gap-2">
             <input
               className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm text-center"
-              value={url}
+              value={shareUrl}
               readOnly
             />
           </div>
-          <Button type="button" onClick={() => navigator.clipboard.writeText(url)}>
+          <Button type="button" onClick={() => navigator.clipboard.writeText(shareUrl)}>
             Copy
+          </Button>
+          <Button type="button" variant="outline" asChild>
+            <a href={shareUrl} target="_blank" rel="noopener noreferrer" aria-label="Open profile">
+              <ExternalLink className="h-4 w-4" />
+            </a>
           </Button>
         </div>
       </DialogContent>

@@ -1,18 +1,24 @@
 import "server-only";
 
-import type { SupabaseClient, User } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { unstable_cache } from "next/cache";
 import { createSupabaseServerClient } from "@/modules/auth";
-import { createProfileService } from "@/modules/profile";
-import { mockGallery, mockLinks, mockProjects, mockServices, mockUser } from "./mock-data";
-import { isSupabaseConfigured } from "@/lib/env";
+import { getSupabasePublicEnv, isSupabaseConfigured } from "@/lib/env";
 import {
   formatAdminDbError,
   isSupabasePermissionError,
   runSupabaseAdminOperation,
   type SupabaseDbError,
 } from "@/lib/supabase-admin-resolver";
-import { usernameSchema, type Profile, type PublicProfile } from "@/modules/shared";
+import {
+  usernameSchema,
+  type GalleryItem,
+  type Link,
+  type Profile,
+  type Project,
+  type PublicProfile,
+  type Service,
+} from "@/modules/shared";
 
 type ProfileEnsureSource = "signup" | "login" | "auth_callback" | "dashboard" | "onboarding" | "profile_update";
 
@@ -21,6 +27,15 @@ type ProfileEnsureOptions = {
   displayName?: string;
   source?: ProfileEnsureSource;
   authClient?: SupabaseClient;
+  allowFallbackProfile?: boolean;
+};
+
+type ProfileContent = {
+  profile: Profile;
+  links: Link[];
+  projects: Project[];
+  services: Service[];
+  media: GalleryItem[];
 };
 
 function mapProfileRow(row: any): Profile {
@@ -44,6 +59,78 @@ function mapProfileRow(row: any): Profile {
     theme: row.theme ? { id: row.theme.id, ...row.theme.tokens } : { id: "default" },
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+function mapLinkRow(row: any): Link {
+  return {
+    id: row.id,
+    profileId: row.profile_id,
+    title: row.title,
+    url: row.url,
+    description: row.description,
+    icon: row.icon,
+    thumbnailUrl: row.thumbnail_url,
+    type: row.type,
+    position: row.position,
+    order: row.position,
+    isActive: row.is_active,
+    clickCount: row.click_count || 0,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapProjectRow(row: any): Project {
+  return {
+    id: row.id,
+    profileId: row.profile_id,
+    title: row.title,
+    description: row.description,
+    imageUrl: row.image_url,
+    projectUrl: row.project_url,
+    repoUrl: row.repo_url,
+    url: row.project_url,
+    tags: row.tags || [],
+    position: row.position,
+    order: row.position,
+    isFeatured: row.is_featured,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapServiceRow(row: any): Service {
+  return {
+    id: row.id,
+    profileId: row.profile_id,
+    title: row.title,
+    description: row.description,
+    priceLabel: row.price_label,
+    price: row.price_label,
+    ctaLabel: row.cta_label,
+    ctaUrl: row.cta_url,
+    position: row.position,
+    order: row.position,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapMediaRow(row: any): GalleryItem {
+  return {
+    id: row.id,
+    profileId: row.profile_id,
+    url: row.url,
+    imageUrl: row.url,
+    alt: row.alt,
+    caption: row.alt,
+    type: row.type,
+    position: row.position,
+    order: row.position,
+    createdAt: row.created_at,
   };
 }
 
@@ -114,6 +201,98 @@ function buildProfileDefaults(user: User, options: ProfileEnsureOptions) {
     username;
 
   return { username, displayName };
+}
+
+function createSupabasePublicReadClient(): SupabaseClient | null {
+  if (!isSupabaseConfigured()) return null;
+  const { url, publicKey } = getSupabasePublicEnv();
+
+  return createClient(url, publicKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}
+
+function buildFallbackProfileFromUser(user: User, options: ProfileEnsureOptions = {}): Profile {
+  const defaults = buildProfileDefaults(user, options);
+  const now = new Date().toISOString();
+
+  return {
+    id: user.id,
+    userId: user.id,
+    username: defaults.username,
+    displayName: defaults.displayName,
+    title: null,
+    profession: null,
+    bio: null,
+    avatarUrl: typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : null,
+    coverUrl: null,
+    location: null,
+    website: null,
+    themeId: null,
+    theme: { id: "default" },
+    socialLinks: [],
+    isPublished: false,
+    seoTitle: null,
+    seoDescription: null,
+    createdAt: user.created_at || now,
+    updatedAt: now,
+  };
+}
+
+function emptyProfileContent(profile: Profile): ProfileContent {
+  return { profile, links: [], projects: [], services: [], media: [] };
+}
+
+async function loadProfileContentFromClient(client: SupabaseClient, profile: Profile): Promise<ProfileContent> {
+  const [links, projects, services, media] = await Promise.all([
+    client.from("links").select("*").eq("profile_id", profile.id).order("position"),
+    client.from("projects").select("*").eq("profile_id", profile.id).order("position"),
+    client.from("services").select("*").eq("profile_id", profile.id).order("position"),
+    client.from("media").select("*").eq("profile_id", profile.id).order("position"),
+  ]);
+
+  const errors = [links.error, projects.error, services.error, media.error].filter(Boolean);
+  if (errors.length > 0) {
+    console.warn("[DASHBOARD] profile_relation_load_partial_failure", {
+      profile_id: profile.id,
+      errors: errors.map((error) => ({
+        code: error?.code,
+        message: error?.message,
+      })),
+    });
+  }
+
+  return {
+    profile,
+    links: (links.data || []).map(mapLinkRow),
+    projects: (projects.data || []).map(mapProjectRow),
+    services: (services.data || []).map(mapServiceRow),
+    media: (media.data || []).map(mapMediaRow),
+  };
+}
+
+async function loadPublicProfileRelations(client: SupabaseClient, profile: Profile): Promise<Omit<PublicProfile, keyof Profile>> {
+  const [links, projects, services, media, themeRes] = await Promise.all([
+    client.from("links").select("*").eq("profile_id", profile.id).eq("is_active", true).order("position"),
+    client.from("projects").select("*").eq("profile_id", profile.id).eq("is_active", true).order("position"),
+    client.from("services").select("*").eq("profile_id", profile.id).eq("is_active", true).order("position"),
+    client.from("media").select("*").eq("profile_id", profile.id).order("position"),
+    profile.themeId ? client.from("themes").select("*").eq("id", profile.themeId).maybeSingle() : Promise.resolve({ data: null, error: null }),
+  ]);
+
+  if (themeRes.data) {
+    profile.theme = { id: themeRes.data.id, ...(themeRes.data.tokens || {}) };
+  }
+
+  return {
+    links: (links.data || []).map(mapLinkRow),
+    projects: (projects.data || []).map(mapProjectRow),
+    services: (services.data || []).map(mapServiceRow),
+    gallery: (media.data || []).map(mapMediaRow),
+  };
 }
 
 async function upsertProfileForUser(user: User, username: string, displayName: string) {
@@ -220,8 +399,27 @@ export async function getOrCreateProfile(user: User, options: ProfileEnsureOptio
   );
 
   if (!existingProfile.ok) {
-    if (existingProfile.error !== "admin_db_error") throw new Error(existingProfile.error);
+    if (existingProfile.error !== "admin_db_error") {
+      if (options.allowFallbackProfile) {
+        console.warn("[PROFILE] profile_admin_unavailable_using_session_fallback", {
+          auth_user_id: user.id,
+          source,
+          error: existingProfile.error,
+        });
+        return buildFallbackProfileFromUser(user, options);
+      }
+      throw new Error(existingProfile.error);
+    }
     logProfileLookupFailed(user.id, source, existingProfile.dbError);
+    if (options.allowFallbackProfile) {
+      console.warn("[PROFILE] profile_admin_lookup_failed_using_session_fallback", {
+        auth_user_id: user.id,
+        source,
+        code: existingProfile.dbError?.code,
+        message: existingProfile.dbError?.message,
+      });
+      return buildFallbackProfileFromUser(user, options);
+    }
     throw new Error(formatAdminDbError(existingProfile.dbError));
   }
 
@@ -242,6 +440,16 @@ export async function getOrCreateProfile(user: User, options: ProfileEnsureOptio
   }
 
   if (!createdProfile.ok) {
+    if (options.allowFallbackProfile) {
+      console.warn("[PROFILE] profile_create_failed_using_session_fallback", {
+        auth_user_id: user.id,
+        source,
+        error: createdProfile.error,
+        code: createdProfile.dbError?.code,
+        message: createdProfile.dbError?.message,
+      });
+      return buildFallbackProfileFromUser(user, options);
+    }
     if (createdProfile.error !== "admin_db_error") throw new Error(createdProfile.error);
     if (createdProfile.dbError) logProfileDbError("Failed to create default profile:", createdProfile.dbError);
     throw new Error(profileInsertErrorMessage(createdProfile.dbError));
@@ -258,7 +466,7 @@ export async function getMyProfile(): Promise<Profile | null> {
   const client = await createSupabaseServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return null;
-  return getOrCreateProfile(user, { source: "dashboard", authClient: client });
+  return getOrCreateProfile(user, { source: "dashboard", authClient: client, allowFallbackProfile: true });
 }
 
 export async function getMyProfileContent() {
@@ -278,7 +486,11 @@ export async function getMyProfileContent() {
     
     console.info("[DASHBOARD] dashboard_session_user_id", { dashboard_session_user_id: user.id });
     
-    const profile = await getOrCreateProfile(user, { source: "dashboard", authClient: client });
+    const profile = await getOrCreateProfile(user, {
+      source: "dashboard",
+      authClient: client,
+      allowFallbackProfile: true,
+    });
     if (!profile) {
       console.info("[DASHBOARD] dashboard_profile_auto_created_failed");
       return null;
@@ -289,20 +501,26 @@ export async function getMyProfileContent() {
       dashboard_using_demo_data: false
     });
 
-    const emptyContent = { profile, links: [], projects: [], services: [], media: [] };
+    try {
+      return await loadProfileContentFromClient(client, profile);
+    } catch (error: any) {
+      console.warn("[DASHBOARD] dashboard_auth_client_content_load_failed_using_admin_fallback", {
+        profile_id: profile.id,
+        error: error?.message || error,
+      });
+    }
 
     let contentLookup;
     try {
-      contentLookup = await runSupabaseAdminOperation(async (admin) => {
-        const service = createProfileService(admin, user.id);
-        const data = await service.getMyProfileContent();
-        return { data, error: null };
-      });
+      contentLookup = await runSupabaseAdminOperation(async (admin) => ({
+        data: await loadProfileContentFromClient(admin, profile),
+        error: null,
+      }));
     } catch (error: any) {
       console.error("[DASHBOARD] dashboard_content_load_failed", {
         error: error?.message || error,
       });
-      return emptyContent;
+      return emptyProfileContent(profile);
     }
 
     if (!contentLookup.ok) {
@@ -311,10 +529,10 @@ export async function getMyProfileContent() {
         code: contentLookup.dbError?.code,
         message: contentLookup.dbError?.message,
       });
-      return emptyContent;
+      return emptyProfileContent(profile);
     }
 
-    return contentLookup.result.data || emptyContent;
+    return contentLookup.result.data || emptyProfileContent(profile);
   } catch (error: any) {
     console.error("[DASHBOARD] dashboard_load_failed", { error: error?.message || error });
     return null;
@@ -331,6 +549,7 @@ export function getPublicProfileCached(username: string) {
 
 type PublicProfileOptions = {
   includeUnpublishedForUserId?: string;
+  authClient?: SupabaseClient;
 };
 
 export async function getPublicProfile(username: string, options: PublicProfileOptions = {}): Promise<PublicProfile | null> {
@@ -339,42 +558,40 @@ export async function getPublicProfile(username: string, options: PublicProfileO
   }
 
   // Use admin client for public reads — RLS allows public SELECT on published profiles,
-  // but admin client ensures we always get the data regardless of auth state.
   const profileLookup = await runSupabaseAdminOperation((admin) =>
     admin.from("profiles").select("*").ilike("username", username).maybeSingle()
   );
 
-  if (!profileLookup.ok) {
-    if (profileLookup.dbError) logProfileDbError("Failed to look up public profile:", profileLookup.dbError);
-    return null;
-  }
+  let profile: Profile | null = null;
+  let readClient: SupabaseClient | null = null;
 
-  const profile = profileLookup.result.data ? mapProfileRow(profileLookup.result.data) : null;
+  if (profileLookup.ok) {
+    profile = profileLookup.result.data ? mapProfileRow(profileLookup.result.data) : null;
+    readClient = profileLookup.client;
+  } else {
+    if (profileLookup.dbError) {
+      logProfileDbError("Failed to look up public profile with admin client:", profileLookup.dbError);
+    }
+
+    readClient = options.authClient || createSupabasePublicReadClient();
+    if (!readClient) return null;
+
+    const publicLookup = await readClient.from("profiles").select("*").ilike("username", username).maybeSingle();
+    if (publicLookup.error) {
+      logProfileDbError("Failed to look up public profile with session/public client:", publicLookup.error);
+      return null;
+    }
+
+    profile = publicLookup.data ? mapProfileRow(publicLookup.data) : null;
+  }
   const canViewUnpublished =
     Boolean(options.includeUnpublishedForUserId) && profile?.userId === options.includeUnpublishedForUserId;
   if (!profile || (!profile.isPublished && !canViewUnpublished)) return null;
 
-  const profileId = profile.id;
-  const admin = profileLookup.client;
-
-  // Fetch public relations (active only)
-  const [links, projects, services, media, themeRes] = await Promise.all([
-    admin.from("links").select("*").eq("profile_id", profileId).eq("is_active", true).order("position"),
-    admin.from("projects").select("*").eq("profile_id", profileId).eq("is_active", true).order("position"),
-    admin.from("services").select("*").eq("profile_id", profileId).eq("is_active", true).order("position"),
-    admin.from("media").select("*").eq("profile_id", profileId).order("position"),
-    profile.themeId ? admin.from("themes").select("*").eq("id", profile.themeId).maybeSingle() : Promise.resolve({ data: null })
-  ]);
-
-  if (themeRes.data) {
-    profile.theme = { id: themeRes.data.id, ...(themeRes.data.tokens || {}) };
-  }
+  const relations = await loadPublicProfileRelations(readClient, profile);
 
   return {
     ...profile,
-    links: links.data || [],
-    projects: projects.data || [],
-    services: services.data || [],
-    gallery: media.data || [],
-  } as any;
+    ...relations,
+  };
 }

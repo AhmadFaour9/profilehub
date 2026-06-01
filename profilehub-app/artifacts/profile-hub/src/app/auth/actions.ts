@@ -83,7 +83,16 @@ export async function loginWithPassword(input: { email: string; password: string
     return { ok: false, message: "Invalid email or password." };
   }
 
-  if (data.user) await getOrCreateProfile(data.user, { source: "login", authClient: supabase });
+  if (data.user) {
+    try {
+      await getOrCreateProfile(data.user, { source: "login", authClient: supabase });
+    } catch (error: any) {
+      console.warn("[AUTH] login_profile_ensure_failed_continuing", {
+        auth_user_id: data.user.id,
+        error: error?.message || error,
+      });
+    }
+  }
   redirect(isSafeRedirectPath(input.next) ? input.next : "/dashboard");
 }
 

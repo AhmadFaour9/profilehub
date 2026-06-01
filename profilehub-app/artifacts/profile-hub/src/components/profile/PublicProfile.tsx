@@ -11,9 +11,11 @@ import { PageViewBeacon } from "./PageViewBeacon";
 export async function PublicProfile({
   username,
   profile: initialProfile,
+  profileUrl,
 }: {
   username: string;
   profile?: PublicProfileData | null;
+  profileUrl?: string;
 }) {
   const profile = initialProfile ?? (await getPublicProfileCached(username));
 
@@ -30,7 +32,7 @@ export async function PublicProfile({
     >
       <PageViewBeacon profileId={profile.id} />
       <div className="max-w-2xl mx-auto">
-        <ProfileHeader profile={profile} />
+        <ProfileHeader profile={profile} profileUrl={profileUrl} />
         
         <div className="px-4 mt-8 space-y-12">
           {profile.links.length > 0 && (
