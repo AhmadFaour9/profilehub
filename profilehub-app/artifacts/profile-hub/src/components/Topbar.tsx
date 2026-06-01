@@ -96,10 +96,10 @@ export function Topbar({ profile }: { profile?: Profile }) {
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/dashboard/profile" className="cursor-pointer">{t("nav.profile")}</Link>
+              <Link href="/dashboard/profile" prefetch={false} className="cursor-pointer">{t("nav.profile")}</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/dashboard/settings" className="cursor-pointer">{t("nav.settings")}</Link>
+              <Link href="/dashboard/settings" prefetch={false} className="cursor-pointer">{t("nav.settings")}</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
