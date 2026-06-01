@@ -46,7 +46,7 @@ export function Topbar({ profile }: { profile?: Profile }) {
             className="hidden sm:flex"
             asChild
           >
-            <Link href={`/${username}`} target="_blank" prefetch={false} data-testid="preview-link">
+            <Link href="/account/preview" target="_blank" prefetch={false} data-testid="preview-link">
               Preview Profile
             </Link>
           </Button>
