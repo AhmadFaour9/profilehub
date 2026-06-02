@@ -1,8 +1,9 @@
 import "server-only";
 
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
+import { redirect } from "next/navigation";
 import { unstable_cache } from "next/cache";
-import { getAuthenticatedUser } from "@/modules/auth";
+import { getDashboardAuthenticatedUser } from "@/modules/auth";
 import { getSupabasePublicEnv, isSupabaseConfigured } from "@/lib/env";
 import {
   formatAdminDbError,
@@ -485,7 +486,7 @@ export async function getOrCreateProfile(user: User, options: ProfileEnsureOptio
 export async function getMyProfile(): Promise<Profile | null> {
   if (!isSupabaseConfigured()) return null;
 
-  const { supabase: client, user } = await getAuthenticatedUser("dashboard_route");
+  const { supabase: client, user } = await getDashboardAuthenticatedUser();
   if (!user) return null;
   return getOrCreateProfile(user, { source: "dashboard", authClient: client, allowFallbackProfile: true });
 }
@@ -497,13 +498,14 @@ export async function getMyProfileContent() {
     return null;
   }
 
+  const { supabase: client, user } = await getDashboardAuthenticatedUser();
+  if (!user) {
+    console.warn("[AUTH] redirect_to_login_reason", { reason: "dashboard_content_user_missing", path: "/dashboard" });
+    console.warn("[DASHBOARD] getUser returned null");
+    return null;
+  }
+
   try {
-    const { supabase: client, user } = await getAuthenticatedUser("dashboard_route");
-    if (!user) {
-      console.warn("[DASHBOARD] getUser returned null");
-      return null;
-    }
-    
     console.info("[DASHBOARD] dashboard_session_user_id", { dashboard_session_user_id: user.id });
     
     const profile = await getOrCreateProfile(user, {
@@ -555,8 +557,21 @@ export async function getMyProfileContent() {
     return contentLookup.result.data || emptyProfileContent(profile);
   } catch (error: any) {
     console.error("[DASHBOARD] dashboard_load_failed", { error: error?.message || error });
-    return null;
+    return emptyProfileContent(buildFallbackProfileFromUser(user, { source: "dashboard" }));
   }
+}
+
+export async function requireMyProfileContent(path: string = "/dashboard") {
+  const content = await getMyProfileContent();
+  if (!content) {
+    console.warn("[AUTH] redirect_to_login_reason", {
+      reason: "dashboard_content_missing_after_layout",
+      path,
+    });
+    redirect(`/login?next=${encodeURIComponent(path)}`);
+  }
+
+  return content;
 }
 
 export function getPublicProfileCached(username: string) {

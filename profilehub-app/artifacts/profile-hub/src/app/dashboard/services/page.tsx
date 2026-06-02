@@ -1,11 +1,9 @@
 export const dynamic = "force-dynamic";
 import ServicesManager from "@/views/dashboard/ServicesManager";
-import { getMyProfileContent } from "@/lib/profile-data";
-import { DashboardDataPending } from "@/components/dashboard/DashboardDataPending";
+import { requireMyProfileContent } from "@/lib/profile-data";
 
 export default async function DashboardServicesPage() {
-  const content = await getMyProfileContent();
-  if (!content) return <DashboardDataPending />;
+  const content = await requireMyProfileContent("/dashboard/services");
   return <ServicesManager services={content.services} />;
 }
 

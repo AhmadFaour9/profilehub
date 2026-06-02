@@ -1,11 +1,9 @@
 export const dynamic = "force-dynamic";
 import ProfileEditor from "@/views/dashboard/ProfileEditor";
-import { getMyProfileContent } from "@/lib/profile-data";
-import { DashboardDataPending } from "@/components/dashboard/DashboardDataPending";
+import { requireMyProfileContent } from "@/lib/profile-data";
 
 export default async function DashboardProfilePage() {
-  const content = await getMyProfileContent();
-  if (!content) return <DashboardDataPending />;
+  const content = await requireMyProfileContent("/dashboard/profile");
   return <ProfileEditor content={content} />;
 }
 

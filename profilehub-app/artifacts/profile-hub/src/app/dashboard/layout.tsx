@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { isSupabaseConfigured } from "@/lib/env";
-import { getAuthenticatedUser } from "@/modules/auth";
+import { getDashboardAuthenticatedUser } from "@/modules/auth";
 import { getOrCreateProfile } from "@/lib/profile-data";
 import { redirect } from "next/navigation";
 
@@ -9,9 +9,10 @@ export const dynamic = "force-dynamic";
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   let profile = undefined;
   if (isSupabaseConfigured()) {
-    const { supabase, user } = await getAuthenticatedUser("dashboard_layout");
+    const { supabase, user } = await getDashboardAuthenticatedUser();
 
     if (!user) {
+      console.warn("[AUTH] redirect_to_login_reason", { reason: "dashboard_layout_user_missing", path: "/dashboard" });
       console.warn("[AUTH] dashboard_route_redirect_login", { path: "/dashboard" });
       redirect("/login?next=/dashboard");
     }

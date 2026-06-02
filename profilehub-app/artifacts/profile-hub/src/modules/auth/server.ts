@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { getSupabasePublicEnv, isSupabaseConfigured } from "@/lib/env";
@@ -68,6 +69,8 @@ export async function getAuthenticatedUser(source: AuthDiagnosticSource = "gener
 
   return { supabase, user: user ?? null };
 }
+
+export const getDashboardAuthenticatedUser = cache(() => getAuthenticatedUser("dashboard_layout"));
 
 export async function getCurrentUser() {
   if (!isSupabaseConfigured()) return null;
