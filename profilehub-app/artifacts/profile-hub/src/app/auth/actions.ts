@@ -12,6 +12,7 @@ import {
   type SupabaseAdminOperationFailure,
 } from "@/lib/supabase-admin-resolver";
 import { getOrCreateProfile } from "@/lib/profile-data";
+import { debugLog, measureServer, startServerTimer } from "@/lib/perf";
 import { auditLog, log } from "@/modules/logging";
 import { isSafeRedirectPath, usernameSchema } from "@/modules/shared";
 
@@ -52,7 +53,7 @@ function mapAdminOperationConfigError(failure: SupabaseAdminOperationFailure): R
 }
 
 function logRegisterConfig(publicConfig: ReturnType<typeof getSupabasePublicConfig>, adminConfig: SupabaseAdminConfig) {
-  console.info("[AUTH] Register Supabase config", {
+  debugLog("AUTH", "register_supabase_config", {
     publicKeySource: publicConfig.keySource,
     adminKeySource: adminConfig.keySource,
     adminKeyType: adminConfig.keyType,
@@ -67,33 +68,40 @@ function logSupabaseDbError(message: string, error: SupabaseDbError) {
 }
 
 export async function loginWithPassword(input: { email: string; password: string; next?: string }): Promise<AuthActionResult> {
-  console.info("[AUTH] login_started", {
+  const stopLoginTimer = startServerTimer("login_total", { has_next: Boolean(input.next) });
+  debugLog("AUTH", "login_started", {
     has_next: Boolean(input.next),
   });
 
   if (!isSupabaseConfigured()) {
+    stopLoginTimer({ result: "supabase_not_configured" });
     return { ok: false, message: "Supabase env is not configured." };
   }
 
   const { supabase, cookieDiagnostics } = await createSupabaseServerActionClient("login");
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: input.email,
-    password: input.password,
-  });
+  const { data, error } = await measureServer("login_signInWithPassword", () =>
+    supabase.auth.signInWithPassword({
+      email: input.email,
+      password: input.password,
+    })
+  );
 
   if (error) {
     await log("warn", "auth", "Password login failed", { reason: error.message });
+    stopLoginTimer({ result: "invalid_credentials" });
     return { ok: false, message: "Invalid email or password." };
   }
 
-  console.info("[AUTH] login_returned_session_exists", {
+  debugLog("AUTH", "login_returned_session_exists", {
     exists: Boolean(data.session),
   });
 
   if (data.user) {
-    console.info("[AUTH] login_success_user_id", { user_id: data.user.id });
+    debugLog("AUTH", "login_success_user_id", { user_id: data.user.id });
     try {
-      await getOrCreateProfile(data.user, { source: "login", authClient: supabase });
+      await measureServer("login_profile_query", () => getOrCreateProfile(data.user, { source: "login", authClient: supabase }), {
+        user_id: data.user.id,
+      });
     } catch (error: any) {
       console.warn("[AUTH] login_profile_ensure_failed_continuing", {
         auth_user_id: data.user.id,
@@ -102,7 +110,7 @@ export async function loginWithPassword(input: { email: string; password: string
     }
   }
 
-  console.info("[AUTH] login_set_cookie_attempted", {
+  debugLog("AUTH", "login_set_cookie_attempted", {
     cookie_names: cookieDiagnostics.setAttempted,
     count: cookieDiagnostics.setAttempted.length,
   });
@@ -118,9 +126,11 @@ export async function loginWithPassword(input: { email: string; password: string
       set_success_count: cookieDiagnostics.setSucceeded.length,
       set_failed_count: cookieDiagnostics.setFailed.length,
     });
+    stopLoginTimer({ result: "cookie_write_failed" });
     return { ok: false, message: "login_cookie_write_failed" };
   }
 
+  stopLoginTimer({ result: "redirect" });
   redirect(isSafeRedirectPath(input.next) ? input.next : "/dashboard");
 }
 
@@ -204,7 +214,7 @@ export async function registerWithPassword(input: {
   }
 
   const user = data.user;
-  console.info("[AUTH] auth_user_id", { auth_user_id: user.id });
+  debugLog("AUTH", "auth_user_id", { auth_user_id: user.id });
 
   let profile;
   try {
@@ -262,7 +272,7 @@ export async function sendPasswordReset(email: string): Promise<AuthActionResult
 
 export async function logout() {
   if (isSupabaseConfigured()) {
-    console.info("[AUTH] logout_called", { source: "server_action" });
+    debugLog("AUTH", "logout_called", { source: "server_action" });
     const { supabase } = await createSupabaseServerActionClient("logout");
     await supabase.auth.signOut();
   }

@@ -3,7 +3,7 @@ import { PublicProfile } from "@/components/profile/PublicProfile";
 import { getPublicProfileCached } from "@/lib/profile-data";
 import { getProfileUrl, getRequestOrigin } from "@/lib/request-url";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export async function generateMetadata({
   params,

@@ -3,8 +3,10 @@ import "server-only";
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { unstable_cache } from "next/cache";
+import { cache } from "react";
 import { getDashboardAuthenticatedUser } from "@/modules/auth";
 import { getSupabasePublicEnv, isSupabaseConfigured } from "@/lib/env";
+import { debugLog, measureServer } from "@/lib/perf";
 import {
   formatAdminDbError,
   isSupabasePermissionError,
@@ -153,14 +155,14 @@ function logProfileLookupFailed(userId: string, source: ProfileEnsureSource, err
 
 function logProfileCreated(userId: string, profileId: string | undefined, source: ProfileEnsureSource) {
   if (source === "signup") {
-    console.info("[PROFILE] profile_created_after_signup", {
+    debugLog("PROFILE", "profile_created_after_signup", {
       auth_user_id: userId,
       profile_id: profileId,
     });
     return;
   }
 
-  console.info("[PROFILE] profile_auto_created_on_dashboard", {
+  debugLog("PROFILE", "profile_auto_created_on_dashboard", {
     auth_user_id: userId,
     profile_id: profileId,
     source,
@@ -274,12 +276,25 @@ async function loadProfileContentFromClient(
   profile: Profile,
   options: { throwOnErrors?: boolean } = {}
 ): Promise<ProfileContent> {
-  const [links, projects, services, media] = await Promise.all([
-    client.from("links").select("*").eq("profile_id", profile.id).order("position"),
-    client.from("projects").select("*").eq("profile_id", profile.id).order("position"),
-    client.from("services").select("*").eq("profile_id", profile.id).order("position"),
-    client.from("media").select("*").eq("profile_id", profile.id).order("position"),
-  ]);
+  const [links, projects, services, media] = await measureServer(
+    "dashboard_relations_query",
+    () =>
+      Promise.all([
+        measureServer("dashboard_links_query", () =>
+          client.from("links").select("*").eq("profile_id", profile.id).order("position")
+        ),
+        measureServer("dashboard_projects_query", () =>
+          client.from("projects").select("*").eq("profile_id", profile.id).order("position")
+        ),
+        measureServer("dashboard_services_query", () =>
+          client.from("services").select("*").eq("profile_id", profile.id).order("position")
+        ),
+        measureServer("dashboard_media_query", () =>
+          client.from("media").select("*").eq("profile_id", profile.id).order("position")
+        ),
+      ]),
+    { profile_id: profile.id }
+  );
 
   const errors = [links.error, projects.error, services.error, media.error].filter(Boolean);
   if (errors.length > 0) {
@@ -379,7 +394,7 @@ async function getOrCreateProfileWithAuthClient(
   }
 
   if (existingProfile.data) {
-    console.info("[PROFILE] profile_lookup_success", { auth_user_id: user.id, source: `${source}:auth_client` });
+    debugLog("PROFILE", "profile_lookup_success", { auth_user_id: user.id, source: `${source}:auth_client` });
     return ensureProfilePublished(client, mapProfileRow(existingProfile.data));
   }
 
@@ -424,7 +439,7 @@ export async function getOrCreateProfile(user: User, options: ProfileEnsureOptio
     }
   }
 
-  console.info("[PROFILE] profile_query_without_theme_embed", { auth_user_id: user.id });
+  debugLog("PROFILE", "profile_query_without_theme_embed", { auth_user_id: user.id });
   const existingProfile = await runSupabaseAdminOperation((admin) =>
     admin.from("profiles").select("*").eq("user_id", user.id).maybeSingle()
   );
@@ -455,7 +470,7 @@ export async function getOrCreateProfile(user: User, options: ProfileEnsureOptio
   }
 
   if (existingProfile.result.data) {
-    console.info("[PROFILE] profile_lookup_success", { auth_user_id: user.id });
+    debugLog("PROFILE", "profile_lookup_success", { auth_user_id: user.id });
     return ensureProfilePublished(existingProfile.client, mapProfileRow(existingProfile.result.data));
   }
 
@@ -491,41 +506,59 @@ export async function getOrCreateProfile(user: User, options: ProfileEnsureOptio
   return profile;
 }
 
-export async function getMyProfile(): Promise<Profile | null> {
-  if (!isSupabaseConfigured()) return null;
+export const getDashboardProfile = cache(async (): Promise<{
+  supabase: SupabaseClient | null;
+  user: User | null;
+  profile: Profile | null;
+}> => {
+  if (!isSupabaseConfigured()) return { supabase: null, user: null, profile: null };
 
   const { supabase: client, user } = await getDashboardAuthenticatedUser();
-  if (!user) return null;
-  return getOrCreateProfile(user, { source: "dashboard", authClient: client, allowFallbackProfile: true });
+  if (!user) return { supabase: client, user: null, profile: null };
+
+  const profile = await measureServer(
+    "dashboard_profile_query",
+    () => getOrCreateProfile(user, { source: "dashboard", authClient: client, allowFallbackProfile: true }),
+    { user_id: user.id }
+  );
+
+  return { supabase: client, user, profile };
+});
+
+export async function getMyProfile(): Promise<Profile | null> {
+  const dashboardProfile = await getDashboardProfile();
+  return dashboardProfile?.profile || null;
 }
 
 export async function getMyProfileContent() {
-  console.info("[DASHBOARD] dashboard_load_started");
+  debugLog("DASHBOARD", "dashboard_load_started");
   
   if (!isSupabaseConfigured()) {
     return null;
   }
 
-  const { supabase: client, user } = await getDashboardAuthenticatedUser();
+  const dashboardProfile = await getDashboardProfile();
+  const client = dashboardProfile?.supabase;
+  const user = dashboardProfile?.user;
   if (!user) {
     console.warn("[AUTH] redirect_to_login_reason", { reason: "dashboard_auth_user_missing", path: "/dashboard" });
     console.warn("[DASHBOARD] getUser returned null");
     return null;
   }
 
+  if (!client) {
+    return emptyProfileContent(buildFallbackProfileFromUser(user, { source: "dashboard" }));
+  }
+
   try {
-    console.info("[DASHBOARD] dashboard_session_user_id", { dashboard_session_user_id: user.id });
+    debugLog("DASHBOARD", "dashboard_session_user_id", { dashboard_session_user_id: user.id });
     
-    const profile = await getOrCreateProfile(user, {
-      source: "dashboard",
-      authClient: client,
-      allowFallbackProfile: true,
-    });
+    const profile = dashboardProfile?.profile;
     if (!profile) {
-      console.info("[DASHBOARD] dashboard_profile_auto_created_failed");
+      debugLog("DASHBOARD", "dashboard_profile_auto_created_failed");
       return emptyProfileContent(buildFallbackProfileFromUser(user, { source: "dashboard" }));
     }
-    console.info("[DASHBOARD] dashboard_profile_loaded", { 
+    debugLog("DASHBOARD", "dashboard_profile_loaded", { 
       dashboard_current_user_id: user.id,
       dashboard_profile_id: profile.id,
       dashboard_using_demo_data: false

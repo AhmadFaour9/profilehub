@@ -14,7 +14,8 @@ const LEVEL_WEIGHT: Record<LogLevel, number> = {
 };
 
 function shouldLog(level: LogLevel): boolean {
-  const configured = (process.env.LOG_LEVEL as LogLevel | undefined) || "info";
+  const defaultLevel = process.env.NODE_ENV === "production" ? "warn" : "info";
+  const configured = (process.env.LOG_LEVEL as LogLevel | undefined) || defaultLevel;
   return LEVEL_WEIGHT[level] >= (LEVEL_WEIGHT[configured] ?? LEVEL_WEIGHT.info);
 }
 

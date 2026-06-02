@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { type NextRequest } from "next/server";
 import { createSupabaseServerActionClient, getAuthenticatedUser } from "@/modules/auth";
 import { isSupabaseConfigured } from "@/lib/env";
+import { debugLog } from "@/lib/perf";
 
 function safeRefererParts(referer: string | null) {
   if (!referer) return { referer_host: null, referer_path: null };
@@ -16,7 +17,7 @@ function safeRefererParts(referer: string | null) {
 
 export async function GET(request: NextRequest) {
   if (isSupabaseConfigured()) {
-    console.info("[AUTH] logout_called", {
+    debugLog("AUTH", "logout_called", {
       source: "route_handler",
       ...safeRefererParts(request.headers.get("referer")),
     });

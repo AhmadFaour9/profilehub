@@ -1,11 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerActionClient, getAuthenticatedUser } from "@/modules/auth";
 import { getOrCreateProfile } from "@/lib/profile-data";
+import { debugLog, measureServer } from "@/lib/perf";
 import { isSafeRedirectPath } from "@/modules/shared/validation";
 import { log } from "@/modules/logging";
 
 export async function GET(request: NextRequest) {
-  console.info("[AUTH] auth_callback_started", {
+  debugLog("AUTH", "auth_callback_started", {
     has_code: Boolean(request.nextUrl.searchParams.get("code")),
   });
 
@@ -18,13 +19,13 @@ export async function GET(request: NextRequest) {
   }
 
   const { supabase, cookieDiagnostics } = await createSupabaseServerActionClient("auth_callback");
-  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+  const { data, error } = await measureServer("auth_callback_exchangeCodeForSession", () => supabase.auth.exchangeCodeForSession(code));
   if (error) {
     await log("warn", "auth", "OAuth callback failed", { reason: error.message });
     return NextResponse.redirect(new URL("/login?error=callback", request.url));
   }
 
-  console.info("[AUTH] auth_callback_exchange_success", {
+  debugLog("AUTH", "auth_callback_exchange_success", {
     session_exists: Boolean(data.session),
     set_cookie_names: cookieDiagnostics.setAttempted,
     set_cookie_success_count: cookieDiagnostics.setSucceeded.length,
@@ -32,10 +33,12 @@ export async function GET(request: NextRequest) {
   });
 
   if (data.user) {
-    console.info("[AUTH] auth_callback_session_created", { user_id: data.user.id });
+    debugLog("AUTH", "auth_callback_session_created", { user_id: data.user.id });
     await getAuthenticatedUser("auth_callback");
     try {
-      await getOrCreateProfile(data.user, { source: "auth_callback", authClient: supabase });
+      await measureServer("auth_callback_profile_query", () =>
+        getOrCreateProfile(data.user, { source: "auth_callback", authClient: supabase })
+      );
     } catch (error: any) {
       console.warn("[AUTH] callback_profile_ensure_failed_continuing", {
         auth_user_id: data.user.id,

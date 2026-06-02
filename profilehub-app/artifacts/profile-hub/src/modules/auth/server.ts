@@ -4,6 +4,7 @@ import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { getAppUrl, getSupabasePublicEnv, isSupabaseConfigured } from "@/lib/env";
+import { debugLog, measureServer } from "@/lib/perf";
 import type { User } from "@supabase/supabase-js";
 
 type AuthDiagnosticSource =
@@ -56,7 +57,7 @@ function safeErrorMessage(error: unknown): string {
 }
 
 function logCookieNamesPresent(event: string, source: AuthDiagnosticSource, cookieNames: string[]) {
-  console.info(`[AUTH] ${event}`, {
+  debugLog("AUTH", event, {
     source,
     cookie_names: cookieNames,
     count: cookieNames.length,
@@ -77,7 +78,7 @@ async function logRequestDomainDiagnostic(source: AuthDiagnosticSource) {
     const appUrl = getAppUrl();
     const appUrlHost = new URL(appUrl).host;
 
-    console.info("[AUTH] request_domain", {
+    debugLog("AUTH", "request_domain", {
       source,
       request_host: requestHost,
       request_origin: requestOrigin,
@@ -118,7 +119,7 @@ async function createSupabaseServerClientWithMode(
           diagnostics.attempted.push(name);
           if (operation === "set") diagnostics.setAttempted.push(name);
 
-          console.info("[AUTH] supabase_cookie_set_attempt", {
+          debugLog("AUTH", "supabase_cookie_set_attempt", {
             source,
             mode,
             cookie_name: name,
@@ -127,7 +128,7 @@ async function createSupabaseServerClientWithMode(
 
           if (mode === "read-only") {
             diagnostics.readOnly.push(name);
-            console.warn("[AUTH] read_only_cookie_context", {
+            debugLog("AUTH", "read_only_cookie_context", {
               source,
               cookie_name: name,
               operation,
@@ -139,7 +140,7 @@ async function createSupabaseServerClientWithMode(
             cookieStore.set(name, value, options);
             diagnostics.succeeded.push(name);
             if (operation === "set") diagnostics.setSucceeded.push(name);
-            console.info("[AUTH] supabase_cookie_set_success", {
+            debugLog("AUTH", "supabase_cookie_set_success", {
               source,
               cookie_name: name,
               operation,
@@ -192,10 +193,10 @@ export async function getAuthenticatedUser(source: AuthDiagnosticSource = "gener
   const {
     data: { user },
     error,
-  } = await supabase.auth.getUser();
+  } = await measureServer("getUser", () => supabase.auth.getUser(), { source });
 
   if (isServerAction) {
-    console.info("[AUTH] server_action_user_found", { found: Boolean(user) });
+    debugLog("AUTH", "server_action_user_found", { found: Boolean(user) });
   }
 
   if (!user && error) {
@@ -218,9 +219,9 @@ export const getDashboardAuthenticatedUser = cache(async () => {
   const {
     data: { user },
     error,
-  } = await supabase.auth.getUser();
+  } = await measureServer("getUser", () => supabase.auth.getUser(), { source: "dashboard_layout" });
 
-  console.info("[AUTH] dashboard_layout_user_found", { found: Boolean(user) });
+  debugLog("AUTH", "dashboard_layout_user_found", { found: Boolean(user) });
 
   if (!user && error) {
     console.warn("[AUTH] get_user_failed", {

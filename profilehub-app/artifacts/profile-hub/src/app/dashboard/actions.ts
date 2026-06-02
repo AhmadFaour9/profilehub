@@ -3,6 +3,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { getAuthenticatedUser } from "@/modules/auth";
 import { getOrCreateProfile } from "@/lib/profile-data";
+import { debugLog, measureServer } from "@/lib/perf";
 import { createProfileService } from "@/modules/profile";
 import { createStoragePath, validateStorageFile, type StorageBucket } from "@/modules/storage";
 import { log } from "@/modules/logging";
@@ -25,12 +26,14 @@ async function getServices() {
     return null;
   }
 
-  console.info("[AUTH] server_action_user_id", { user_id: user.id });
+  debugLog("AUTH", "server_action_user_id", { user_id: user.id });
 
   const profileService = createProfileService(client, user.id);
   let profile;
   try {
-    profile = await getOrCreateProfile(user, { source: "dashboard", authClient: client });
+    profile = await measureServer("server_action_profile_query", () =>
+      getOrCreateProfile(user, { source: "dashboard", authClient: client })
+    );
   } catch (error: any) {
     console.error("[DASHBOARD_ACTION] profile_load_failed", {
       auth_user_id: user.id,
@@ -50,8 +53,8 @@ export async function updateProfile(input: unknown): Promise<ActionResult> {
     return { ok: false, message: "You must be logged in." };
   }
 
-  console.info("[PROFILE] profile_update_user_id", { userId: ctx.user.id });
-  console.info("[PROFILE] profile_update_profile_id", { profileId: ctx.profile.id });
+  debugLog("PROFILE", "profile_update_user_id", { userId: ctx.user.id });
+  debugLog("PROFILE", "profile_update_profile_id", { profileId: ctx.profile.id });
 
   try {
     const parsed = profileFormSchema.parse(input);
