@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createSupabaseServerClient } from "@/modules/auth";
+import { createSupabaseServerActionClient } from "@/modules/auth";
 import { isSupabaseConfigured } from "@/lib/env";
 import { isSafeRedirectPath } from "@/modules/shared/validation";
 
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
   const next = request.nextUrl.searchParams.get("next") || "/dashboard";
   const safeNext = isSafeRedirectPath(next) ? next : "/dashboard";
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await createSupabaseServerActionClient("oauth_start");
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {

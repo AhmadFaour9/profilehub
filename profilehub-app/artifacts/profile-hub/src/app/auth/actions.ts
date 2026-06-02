@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { createSupabaseServerClient } from "@/modules/auth";
+import { createSupabaseServerActionClient } from "@/modules/auth";
 import { getSupabasePublicConfig, isSupabaseConfigured } from "@/lib/env";
 import { getRequestOrigin } from "@/lib/request-url";
 import { getSupabaseAdminConfig, type SupabaseAdminConfig } from "@/lib/supabase-admin-env";
@@ -67,11 +67,15 @@ function logSupabaseDbError(message: string, error: SupabaseDbError) {
 }
 
 export async function loginWithPassword(input: { email: string; password: string; next?: string }): Promise<AuthActionResult> {
+  console.info("[AUTH] login_started", {
+    has_next: Boolean(input.next),
+  });
+
   if (!isSupabaseConfigured()) {
     return { ok: false, message: "Supabase env is not configured." };
   }
 
-  const supabase = await createSupabaseServerClient();
+  const { supabase, cookieDiagnostics } = await createSupabaseServerActionClient("login");
   const { data, error } = await supabase.auth.signInWithPassword({
     email: input.email,
     password: input.password,
@@ -82,7 +86,12 @@ export async function loginWithPassword(input: { email: string; password: string
     return { ok: false, message: "Invalid email or password." };
   }
 
+  console.info("[AUTH] login_returned_session_exists", {
+    exists: Boolean(data.session),
+  });
+
   if (data.user) {
+    console.info("[AUTH] login_success_user_id", { user_id: data.user.id });
     try {
       await getOrCreateProfile(data.user, { source: "login", authClient: supabase });
     } catch (error: any) {
@@ -92,6 +101,26 @@ export async function loginWithPassword(input: { email: string; password: string
       });
     }
   }
+
+  console.info("[AUTH] login_set_cookie_attempted", {
+    cookie_names: cookieDiagnostics.setAttempted,
+    count: cookieDiagnostics.setAttempted.length,
+  });
+
+  if (
+    data.session &&
+    (cookieDiagnostics.setAttempted.length === 0 ||
+      cookieDiagnostics.setSucceeded.length === 0 ||
+      cookieDiagnostics.setFailed.length > 0)
+  ) {
+    console.error("[AUTH] login_cookie_write_failed", {
+      set_attempted_count: cookieDiagnostics.setAttempted.length,
+      set_success_count: cookieDiagnostics.setSucceeded.length,
+      set_failed_count: cookieDiagnostics.setFailed.length,
+    });
+    return { ok: false, message: "login_cookie_write_failed" };
+  }
+
   redirect(isSafeRedirectPath(input.next) ? input.next : "/dashboard");
 }
 
@@ -148,7 +177,7 @@ export async function registerWithPassword(input: {
     return { ok: false, message: "username_taken" };
   }
 
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await createSupabaseServerActionClient("register");
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -218,7 +247,7 @@ export async function sendPasswordReset(email: string): Promise<AuthActionResult
     return { ok: false, message: "Supabase env is not configured." };
   }
 
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await createSupabaseServerActionClient("password_reset");
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${await getRequestOrigin()}/auth/callback?next=/dashboard/settings`,
   });
@@ -233,7 +262,8 @@ export async function sendPasswordReset(email: string): Promise<AuthActionResult
 
 export async function logout() {
   if (isSupabaseConfigured()) {
-    const supabase = await createSupabaseServerClient();
+    console.info("[AUTH] logout_called", { source: "server_action" });
+    const { supabase } = await createSupabaseServerActionClient("logout");
     await supabase.auth.signOut();
   }
   redirect("/login");

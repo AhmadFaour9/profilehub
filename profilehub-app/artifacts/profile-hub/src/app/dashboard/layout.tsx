@@ -12,6 +12,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
     const { supabase, user } = await getDashboardAuthenticatedUser();
 
     if (!user) {
+      console.warn("[AUTH] dashboard_layout_redirect_login_reason", {
+        reason: "no_user_session",
+        path: "/dashboard",
+      });
       console.warn("[AUTH] redirect_to_login_reason", { reason: "dashboard_layout_user_missing", path: "/dashboard" });
       console.warn("[AUTH] dashboard_route_redirect_login", { path: "/dashboard" });
       redirect("/login?next=/dashboard");
