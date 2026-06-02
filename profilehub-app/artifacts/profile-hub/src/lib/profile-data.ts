@@ -21,6 +21,7 @@ import {
   type Project,
   type PublicProfile,
   type Service,
+  type SocialLink,
 } from "@/modules/shared";
 
 type ProfileEnsureSource = "signup" | "login" | "auth_callback" | "dashboard" | "onboarding" | "profile_update";
@@ -56,7 +57,7 @@ function mapProfileRow(row: any): Profile {
     website: row.website,
     themeId: row.theme_id,
     isPublished: row.is_published,
-    socialLinks: row.social_links || [],
+    socialLinks: [],
     seoTitle: row.seo_title,
     seoDescription: row.seo_description,
     theme: row.theme ? { id: row.theme.id, ...row.theme.tokens } : { id: "default" },
@@ -249,6 +250,27 @@ function emptyProfileContent(profile: Profile): ProfileContent {
   return { profile, links: [], projects: [], services: [], media: [] };
 }
 
+function platformFromSocialLink(link: Link): string {
+  return (
+    link.icon ||
+    link.title
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, "")
+      .trim()
+  );
+}
+
+function socialLinksFromLinks(links: Link[]): SocialLink[] {
+  return links
+    .filter((link) => link.type === "social" && link.isActive)
+    .map((link) => ({ platform: platformFromSocialLink(link), url: link.url }))
+    .filter((link) => Boolean(link.platform && link.url));
+}
+
+function attachSocialLinks(profile: Profile, links: Link[]): Profile {
+  return { ...profile, socialLinks: socialLinksFromLinks(links) };
+}
+
 async function ensureProfilePublished(client: SupabaseClient, profile: Profile): Promise<Profile> {
   if (profile.isPublished) return profile;
 
@@ -311,9 +333,11 @@ async function loadProfileContentFromClient(
     }
   }
 
+  const mappedLinks = (links.data || []).map(mapLinkRow);
+
   return {
-    profile,
-    links: (links.data || []).map(mapLinkRow),
+    profile: attachSocialLinks(profile, mappedLinks),
+    links: mappedLinks,
     projects: (projects.data || []).map(mapProjectRow),
     services: (services.data || []).map(mapServiceRow),
     media: (media.data || []).map(mapMediaRow),
@@ -333,8 +357,10 @@ async function loadPublicProfileRelations(client: SupabaseClient, profile: Profi
     profile.theme = { id: themeRes.data.id, ...(themeRes.data.tokens || {}) };
   }
 
+  const mappedLinks = (links.data || []).map(mapLinkRow);
+
   return {
-    links: (links.data || []).map(mapLinkRow),
+    links: mappedLinks,
     projects: (projects.data || []).map(mapProjectRow),
     services: (services.data || []).map(mapServiceRow),
     gallery: (media.data || []).map(mapMediaRow),
@@ -671,6 +697,7 @@ export async function getPublicProfile(username: string, options: PublicProfileO
 
   return {
     ...profile,
+    socialLinks: socialLinksFromLinks(relations.links),
     ...relations,
   };
 }

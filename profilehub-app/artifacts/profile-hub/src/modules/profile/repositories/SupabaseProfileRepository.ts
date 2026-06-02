@@ -17,7 +17,7 @@ const mapProfile = (row: any): Profile => ({
   website: row.website,
   themeId: row.theme_id,
   isPublished: row.is_published,
-  socialLinks: row.social_links || [],
+  socialLinks: [],
   seoTitle: row.seo_title,
   seoDescription: row.seo_description,
   theme: row.theme ? { id: row.theme.id, ...row.theme.tokens } : { id: "default" },
@@ -125,7 +125,6 @@ export class SupabaseProfileRepository implements IProfileRepository {
     if (data.coverUrl !== undefined) payload.cover_url = data.coverUrl;
     if (data.seoTitle !== undefined) payload.seo_title = data.seoTitle;
     if (data.seoDescription !== undefined) payload.seo_description = data.seoDescription;
-    if (data.socialLinks !== undefined) payload.social_links = data.socialLinks;
 
     const { data: result, error } = await this.client
       .from("profiles")

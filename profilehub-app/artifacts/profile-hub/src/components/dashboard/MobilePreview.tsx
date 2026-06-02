@@ -14,6 +14,7 @@ interface MobilePreviewProps {
 }
 
 export function MobilePreview({ profile, links = [], projects = [], services = [], gallery = [] }: MobilePreviewProps) {
+  const visibleLinks = links.filter((link) => link.isActive && link.type !== "social");
 
   return (
     <div className="hidden lg:block sticky top-8" data-testid="mobile-preview">
@@ -26,8 +27,8 @@ export function MobilePreview({ profile, links = [], projects = [], services = [
                <div className="px-4 mt-8 space-y-10">
                  
                  <div className="space-y-3">
-                   {links.length > 0 ? (
-                     links.map((link) => (
+                   {visibleLinks.length > 0 ? (
+                     visibleLinks.map((link) => (
                        <SmartLinkCard key={link.id} link={link} theme={profile.theme} />
                      ))
                    ) : (

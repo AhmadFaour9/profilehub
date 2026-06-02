@@ -24,6 +24,7 @@ export async function PublicProfile({
   }
 
   const hasBg = Boolean(profile.theme?.backgroundColor);
+  const visibleLinks = profile.links.filter((link) => link.isActive && link.type !== "social");
 
   return (
     <div
@@ -35,11 +36,11 @@ export async function PublicProfile({
         <ProfileHeader profile={profile} profileUrl={profileUrl} />
         
         <div className="px-4 mt-8 space-y-12">
-          {profile.links.length > 0 && (
+          {visibleLinks.length > 0 && (
             <section className="space-y-4">
               <h2 className="text-lg font-medium sr-only">Links</h2>
               <div className="space-y-3">
-                {profile.links.map((link) => (
+                {visibleLinks.map((link) => (
                   <SmartLinkCard key={link.id} link={link} theme={profile.theme} />
                 ))}
               </div>

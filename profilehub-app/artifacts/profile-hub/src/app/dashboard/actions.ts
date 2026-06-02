@@ -1,5 +1,6 @@
 "use server";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { getAuthenticatedUser } from "@/modules/auth";
 import { getOrCreateProfile } from "@/lib/profile-data";
@@ -18,6 +19,95 @@ type ActionResult<T = unknown> = {
 const linkUpdateSchema = linkFormSchema.partial();
 const projectUpdateSchema = projectFormSchema.partial();
 const serviceUpdateSchema = serviceFormSchema.partial();
+
+const SOCIAL_PLATFORM_LABELS: Record<string, string> = {
+  linkedin: "LinkedIn",
+  github: "GitHub",
+  portfolio: "Portfolio",
+  twitter: "X / Twitter",
+  instagram: "Instagram",
+  youtube: "YouTube",
+  behance: "Behance",
+  dribbble: "Dribbble",
+  tiktok: "TikTok",
+  facebook: "Facebook",
+  whatsapp: "WhatsApp",
+  email: "Email Contact",
+};
+
+const SOCIAL_PLATFORM_IDS = Object.keys(SOCIAL_PLATFORM_LABELS);
+
+function normalizeSocialPlatform(value: string | null | undefined): string {
+  return (value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "")
+    .trim();
+}
+
+async function syncProfileSocialLinks(
+  client: SupabaseClient,
+  profileId: string,
+  socialLinks: Array<{ platform: string; url: string }>
+) {
+  const desired = new Map<string, string>();
+
+  socialLinks.forEach((link) => {
+    const platform = normalizeSocialPlatform(link.platform);
+    const url = link.url.trim();
+    if (SOCIAL_PLATFORM_LABELS[platform] && url) {
+      desired.set(platform, url);
+    }
+  });
+
+  const { data: existingRows, error } = await client
+    .from("links")
+    .select("id,title,icon,type,is_active")
+    .eq("profile_id", profileId)
+    .eq("type", "social");
+
+  if (error) throw new Error(error.message);
+
+  const existingByPlatform = new Map<string, any[]>();
+  (existingRows || []).forEach((row) => {
+    const platform = normalizeSocialPlatform(row.icon || row.title);
+    if (!SOCIAL_PLATFORM_LABELS[platform]) return;
+    const rows = existingByPlatform.get(platform) || [];
+    rows.push(row);
+    existingByPlatform.set(platform, rows);
+  });
+
+  const writes = SOCIAL_PLATFORM_IDS.flatMap((platform, index) => {
+    const url = desired.get(platform);
+    const existing = existingByPlatform.get(platform) || [];
+    const [primary, ...duplicates] = existing;
+
+    if (url) {
+      const payload = {
+        title: SOCIAL_PLATFORM_LABELS[platform],
+        url,
+        icon: platform,
+        type: "social",
+        position: 1000 + index,
+        is_active: true,
+      };
+
+      return [
+        primary
+          ? client.from("links").update(payload).eq("id", primary.id).eq("profile_id", profileId)
+          : client.from("links").insert({ profile_id: profileId, ...payload }),
+        ...duplicates.map((row) => client.from("links").update({ is_active: false }).eq("id", row.id).eq("profile_id", profileId)),
+      ];
+    }
+
+    return existing
+      .filter((row) => row.is_active)
+      .map((row) => client.from("links").update({ is_active: false }).eq("id", row.id).eq("profile_id", profileId));
+  });
+
+  const results = await Promise.all(writes);
+  const failed = results.find((result) => result.error);
+  if (failed?.error) throw new Error(failed.error.message);
+}
 
 async function getServices() {
   const { supabase: client, user } = await getAuthenticatedUser("server_action");
@@ -70,8 +160,9 @@ export async function updateProfile(input: unknown): Promise<ActionResult> {
       isPublished: parsed.isPublished ?? ctx.profile.isPublished,
       avatarUrl: parsed.avatarUrl || "",
       coverUrl: parsed.coverUrl || "",
-      socialLinks: parsed.socialLinks || [],
     });
+
+    await syncProfileSocialLinks(ctx.client, ctx.profile.id, parsed.socialLinks || []);
     
     revalidateProfile(ctx.profile.username, "/dashboard/profile");
     if (parsed.username !== ctx.profile.username) {
