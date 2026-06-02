@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { PublicProfile } from "@/components/profile/PublicProfile";
-import { getPublicProfile, getPublicProfileCached } from "@/lib/profile-data";
-import { getAuthenticatedUser } from "@/modules/auth";
+import { getPublicProfileCached } from "@/lib/profile-data";
 import { getProfileUrl, getRequestOrigin } from "@/lib/request-url";
 
 export const dynamic = "force-dynamic";
@@ -32,16 +31,7 @@ export default async function PublicProfileRoute({
   const { username } = await params;
   const origin = await getRequestOrigin();
   const profileUrl = getProfileUrl(origin, username);
-  const publishedProfile = await getPublicProfileCached(username);
+  const profile = await getPublicProfileCached(username);
 
-  if (publishedProfile) {
-    return <PublicProfile username={username} profile={publishedProfile} profileUrl={profileUrl} />;
-  }
-
-  const { supabase, user } = await getAuthenticatedUser("public_profile");
-  const ownerPreviewProfile = user
-    ? await getPublicProfile(username, { includeUnpublishedForUserId: user.id, authClient: supabase })
-    : null;
-
-  return <PublicProfile username={username} profile={ownerPreviewProfile} profileUrl={profileUrl} />;
+  return <PublicProfile username={username} profile={profile} profileUrl={profileUrl} />;
 }

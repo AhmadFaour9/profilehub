@@ -269,7 +269,11 @@ async function ensureProfilePublished(client: SupabaseClient, profile: Profile):
   return mapProfileRow(data);
 }
 
-async function loadProfileContentFromClient(client: SupabaseClient, profile: Profile): Promise<ProfileContent> {
+async function loadProfileContentFromClient(
+  client: SupabaseClient,
+  profile: Profile,
+  options: { throwOnErrors?: boolean } = {}
+): Promise<ProfileContent> {
   const [links, projects, services, media] = await Promise.all([
     client.from("links").select("*").eq("profile_id", profile.id).order("position"),
     client.from("projects").select("*").eq("profile_id", profile.id).order("position"),
@@ -286,6 +290,10 @@ async function loadProfileContentFromClient(client: SupabaseClient, profile: Pro
         message: error?.message,
       })),
     });
+
+    if (options.throwOnErrors) {
+      throw new Error("profile_relation_load_failed");
+    }
   }
 
   return {
@@ -500,7 +508,7 @@ export async function getMyProfileContent() {
 
   const { supabase: client, user } = await getDashboardAuthenticatedUser();
   if (!user) {
-    console.warn("[AUTH] redirect_to_login_reason", { reason: "dashboard_content_user_missing", path: "/dashboard" });
+    console.warn("[AUTH] redirect_to_login_reason", { reason: "dashboard_auth_user_missing", path: "/dashboard" });
     console.warn("[DASHBOARD] getUser returned null");
     return null;
   }
@@ -515,7 +523,7 @@ export async function getMyProfileContent() {
     });
     if (!profile) {
       console.info("[DASHBOARD] dashboard_profile_auto_created_failed");
-      return null;
+      return emptyProfileContent(buildFallbackProfileFromUser(user, { source: "dashboard" }));
     }
     console.info("[DASHBOARD] dashboard_profile_loaded", { 
       dashboard_current_user_id: user.id,
@@ -524,7 +532,7 @@ export async function getMyProfileContent() {
     });
 
     try {
-      return await loadProfileContentFromClient(client, profile);
+      return await loadProfileContentFromClient(client, profile, { throwOnErrors: true });
     } catch (error: any) {
       console.warn("[DASHBOARD] dashboard_auth_client_content_load_failed_using_admin_fallback", {
         profile_id: profile.id,
@@ -565,7 +573,7 @@ export async function requireMyProfileContent(path: string = "/dashboard") {
   const content = await getMyProfileContent();
   if (!content) {
     console.warn("[AUTH] redirect_to_login_reason", {
-      reason: "dashboard_content_missing_after_layout",
+      reason: "dashboard_auth_missing_after_layout",
       path,
     });
     redirect(`/login?next=${encodeURIComponent(path)}`);

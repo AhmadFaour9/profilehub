@@ -50,6 +50,7 @@ export function DashboardSidebar() {
       <div className="p-4 border-t border-sidebar-border">
         <Link
           href="/auth/logout"
+          prefetch={false}
           className="flex w-full items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
           data-testid="nav-logout"
         >

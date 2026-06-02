@@ -103,7 +103,7 @@ export function Topbar({ profile }: { profile?: Profile }) {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/auth/logout" className="cursor-pointer text-destructive">
+              <Link href="/auth/logout" prefetch={false} className="cursor-pointer text-destructive">
                 <LogOut className="w-4 h-4 mr-2" />
                 {t("nav.logout")}
               </Link>

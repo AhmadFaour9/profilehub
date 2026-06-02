@@ -1,6 +1,4 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { getSupabasePublicEnv, isSupabaseConfigured } from '@/lib/env';
 
 function isAuthSensitivePath(pathname: string): boolean {
   return pathname === "/onboarding" || pathname === "/account/preview" || pathname.startsWith("/dashboard");
@@ -17,66 +15,7 @@ function preventAuthCache(response: NextResponse): NextResponse {
 }
 
 export async function middleware(request: NextRequest) {
-  if (!isSupabaseConfigured()) return NextResponse.next();
-
-  const { url, publicKey } = getSupabasePublicEnv();
-  let supabaseResponse = NextResponse.next({ request });
-
-  const supabase = createServerClient(url, publicKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) => {
-          const operation = options?.maxAge === 0 ? "remove" : "set";
-          console.info("[AUTH] supabase_cookie_set_attempt", {
-            source: "middleware",
-            mode: "writable",
-            cookie_name: name,
-            operation,
-          });
-
-          try {
-            request.cookies.set(name, value);
-            console.info("[AUTH] supabase_cookie_set_success", {
-              source: "middleware",
-              cookie_name: name,
-              operation,
-            });
-          } catch (error) {
-            console.warn("[AUTH] supabase_cookie_set_failed", {
-              source: "middleware",
-              cookie_name: name,
-              operation,
-              message: error instanceof Error ? error.message : "unknown_error",
-            });
-          }
-        });
-        supabaseResponse = NextResponse.next({ request });
-        cookiesToSet.forEach(({ name, value, options }) => {
-          const operation = options?.maxAge === 0 ? "remove" : "set";
-          try {
-            supabaseResponse.cookies.set(name, value, options);
-            console.info("[AUTH] supabase_cookie_set_success", {
-              source: "middleware_response",
-              cookie_name: name,
-              operation,
-            });
-          } catch (error) {
-            console.warn("[AUTH] supabase_cookie_set_failed", {
-              source: "middleware_response",
-              cookie_name: name,
-              operation,
-              message: error instanceof Error ? error.message : "unknown_error",
-            });
-          }
-        });
-      },
-    },
-  });
-
-  await supabase.auth.getUser();
+  const supabaseResponse = NextResponse.next({ request });
   const pathname = request.nextUrl.pathname;
 
   if (isAuthSensitivePath(pathname) || isAuthPath(pathname)) {
