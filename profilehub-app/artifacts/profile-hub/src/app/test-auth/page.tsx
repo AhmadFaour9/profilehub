@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/modules/auth";
+import { getAuthenticatedUser } from "@/modules/auth";
 import { getOrCreateProfile } from "@/lib/profile-data";
 import { isSupabaseConfigured } from "@/lib/env";
 
@@ -7,8 +7,7 @@ export default async function TestPage() {
     return <div>Supabase not configured</div>;
   }
 
-  const client = await createSupabaseServerClient();
-  const { data: { user }, error: authError } = await client.auth.getUser();
+  const { supabase: client, user } = await getAuthenticatedUser("test_auth");
 
   let profileStr = "N/A";
   let profileError = "N/A";
@@ -25,7 +24,7 @@ export default async function TestPage() {
     <div style={{ padding: 20 }}>
       <h1>Debug Info</h1>
       <h2>Auth User</h2>
-      <pre>{JSON.stringify({ user, authError }, null, 2)}</pre>
+      <pre>{JSON.stringify({ userId: user?.id || null, email: user?.email || null }, null, 2)}</pre>
       <h2>Profile</h2>
       <pre>{profileStr}</pre>
       <h2>Profile Error</h2>

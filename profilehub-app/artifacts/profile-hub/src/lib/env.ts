@@ -1,5 +1,11 @@
 export function getAppUrl(): string {
-  return process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const configuredUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL;
+  if (configuredUrl) return configuredUrl.replace(/\/$/, "");
+
+  if (process.env.NODE_ENV === "production") return "https://profilehub-two.vercel.app";
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+
+  return "http://localhost:24359";
 }
 
 export function getGatewayUrl(): string {

@@ -2,7 +2,7 @@ import "server-only";
 
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { unstable_cache } from "next/cache";
-import { createSupabaseServerClient } from "@/modules/auth";
+import { getAuthenticatedUser } from "@/modules/auth";
 import { getSupabasePublicEnv, isSupabaseConfigured } from "@/lib/env";
 import {
   formatAdminDbError,
@@ -485,8 +485,7 @@ export async function getOrCreateProfile(user: User, options: ProfileEnsureOptio
 export async function getMyProfile(): Promise<Profile | null> {
   if (!isSupabaseConfigured()) return null;
 
-  const client = await createSupabaseServerClient();
-  const { data: { user } } = await client.auth.getUser();
+  const { supabase: client, user } = await getAuthenticatedUser("dashboard_route");
   if (!user) return null;
   return getOrCreateProfile(user, { source: "dashboard", authClient: client, allowFallbackProfile: true });
 }
@@ -499,10 +498,9 @@ export async function getMyProfileContent() {
   }
 
   try {
-    const client = await createSupabaseServerClient();
-    const { data: { user }, error: authError } = await client.auth.getUser();
+    const { supabase: client, user } = await getAuthenticatedUser("dashboard_route");
     if (!user) {
-      console.warn("[DASHBOARD] getUser returned null", { authError });
+      console.warn("[DASHBOARD] getUser returned null");
       return null;
     }
     

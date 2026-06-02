@@ -1,7 +1,6 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/modules/auth";
 import { getSupabasePublicConfig, isSupabaseConfigured } from "@/lib/env";
@@ -14,8 +13,7 @@ import {
 } from "@/lib/supabase-admin-resolver";
 import { getOrCreateProfile } from "@/lib/profile-data";
 import { auditLog, log } from "@/modules/logging";
-import {  hashValue  } from "@/modules/shared/security";
-import { isSafeRedirectPath, profileFormSchema, usernameSchema } from "@/modules/shared";
+import { isSafeRedirectPath, usernameSchema } from "@/modules/shared";
 
 export type AuthActionResult = {
   ok: boolean;

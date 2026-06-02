@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/modules/auth";
+import { getAuthenticatedUser } from "@/modules/auth";
 import { fetchGithubUserRepos, fetchGithubRepo } from "@/lib/github-extractor";
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
+    const { user } = await getAuthenticatedUser("api_route");
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

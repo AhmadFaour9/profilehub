@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { createAIService, type AIFeature } from "@/modules/ai";
-import { createSupabaseServerClient } from "@/modules/auth";
+import { getAuthenticatedUser } from "@/modules/auth";
 import { isSupabaseConfigured } from "@/lib/env";
 import { log } from "@/modules/logging";
 
@@ -31,11 +31,11 @@ export async function POST(request: NextRequest) {
   let userId = "local-dev-user";
 
   if (isSupabaseConfigured()) {
-    client = await createSupabaseServerClient();
-    const { data: { user } } = await client.auth.getUser();
+    const auth = await getAuthenticatedUser("api_route");
+    client = auth.supabase;
 
-    if (!user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-    userId = user.id;
+    if (!auth.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    userId = auth.user.id;
   }
 
   const aiService = createAIService(client, userId);

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath, revalidateTag } from "next/cache";
-import { createSupabaseServerClient } from "@/modules/auth";
+import { getAuthenticatedUser } from "@/modules/auth";
 import { getOrCreateProfile } from "@/lib/profile-data";
 import { createProfileService } from "@/modules/profile";
 import { createStoragePath, validateStorageFile, type StorageBucket } from "@/modules/storage";
@@ -19,11 +19,13 @@ const projectUpdateSchema = projectFormSchema.partial();
 const serviceUpdateSchema = serviceFormSchema.partial();
 
 async function getServices() {
-  const client = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await client.auth.getUser();
-  if (!user) return null;
+  const { supabase: client, user } = await getAuthenticatedUser("server_action");
+  if (!user) {
+    console.warn("[AUTH] server_action_user_missing");
+    return null;
+  }
+
+  console.info("[AUTH] server_action_user_id", { user_id: user.id });
 
   const profileService = createProfileService(client, user.id);
   let profile;
@@ -38,7 +40,7 @@ async function getServices() {
   }
 
   if (!profile) return null;
-  return { user, profile, profileService };
+  return { client, user, profile, profileService };
 }
 
 export async function updateProfile(input: unknown): Promise<ActionResult> {
@@ -231,7 +233,7 @@ export async function uploadProfileImage(formData: FormData): Promise<ActionResu
   const validationError = validateStorageFile(bucket, file);
   if (validationError) return { ok: false, message: validationError };
 
-  const client = await createSupabaseServerClient();
+  const client = ctx.client;
   const path = createStoragePath(ctx.user.id, file);
   const { error } = await client.storage.from(bucket).upload(path, file, { upsert: false, contentType: file.type });
 

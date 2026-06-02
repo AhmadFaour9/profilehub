@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PublicProfile } from "@/components/profile/PublicProfile";
 import { getPublicProfile, getPublicProfileCached } from "@/lib/profile-data";
-import { createSupabaseServerClient } from "@/modules/auth";
+import { getAuthenticatedUser } from "@/modules/auth";
 import { getProfileUrl, getRequestOrigin } from "@/lib/request-url";
 
 export const dynamic = "force-dynamic";
@@ -38,10 +38,7 @@ export default async function PublicProfileRoute({
     return <PublicProfile username={username} profile={publishedProfile} profileUrl={profileUrl} />;
   }
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthenticatedUser("public_profile");
   const ownerPreviewProfile = user
     ? await getPublicProfile(username, { includeUnpublishedForUserId: user.id, authClient: supabase })
     : null;

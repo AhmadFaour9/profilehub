@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createSupabaseServerClient } from "@/modules/auth";
+import { createSupabaseServerClient, getAuthenticatedUser } from "@/modules/auth";
 import { getOrCreateProfile } from "@/lib/profile-data";
 import { isSafeRedirectPath } from "@/modules/shared/validation";
 import { log } from "@/modules/logging";
@@ -21,6 +21,8 @@ export async function GET(request: NextRequest) {
   }
 
   if (data.user) {
+    console.info("[AUTH] auth_callback_session_created", { user_id: data.user.id });
+    await getAuthenticatedUser("auth_callback");
     try {
       await getOrCreateProfile(data.user, { source: "auth_callback", authClient: supabase });
     } catch (error: any) {

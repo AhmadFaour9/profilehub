@@ -1,7 +1,7 @@
 import ProfileEditor from "@/views/dashboard/ProfileEditor";
 import { isSupabaseConfigured } from "@/lib/env";
 import { getMyProfileContent } from "@/lib/profile-data";
-import { getCurrentUser } from "@/modules/auth";
+import { getAuthenticatedUser } from "@/modules/auth";
 import { redirect } from "next/navigation";
 
 
@@ -13,7 +13,7 @@ export default async function OnboardingPage() {
     redirect("/login?next=/onboarding");
   }
 
-  const user = await getCurrentUser();
+  const { user } = await getAuthenticatedUser("onboarding");
   if (!user) {
     redirect("/login?next=/onboarding");
   }
