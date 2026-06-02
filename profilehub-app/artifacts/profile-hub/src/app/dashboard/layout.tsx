@@ -2,7 +2,6 @@ import { AppShell } from "@/components/AppShell";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createSupabaseServerClient } from "@/modules/auth";
 import { getOrCreateProfile } from "@/lib/profile-data";
-import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -13,18 +12,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) redirect("/login?next=/dashboard");
 
-    try {
-      profile = (await getOrCreateProfile(user, {
-        source: "dashboard",
-        authClient: supabase,
-        allowFallbackProfile: true,
-      })) || undefined;
-    } catch (error: any) {
-      console.error("[DASHBOARD_LAYOUT] load_failed", { error: error?.message || error });
-      // If we completely fail to load or create a profile, fallback to undefined
-      // so the AppShell handles it gracefully instead of a 500 error page.
+    if (user) {
+      try {
+        profile = (await getOrCreateProfile(user, {
+          source: "dashboard",
+          authClient: supabase,
+          allowFallbackProfile: true,
+        })) || undefined;
+      } catch (error: any) {
+        console.error("[DASHBOARD_LAYOUT] load_failed", { error: error?.message || error });
+      }
     }
   }
 
