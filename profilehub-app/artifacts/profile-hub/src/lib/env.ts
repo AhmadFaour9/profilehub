@@ -1,8 +1,10 @@
-export function getAppUrl(): string {
-  const configuredUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL;
-  if (configuredUrl) return configuredUrl.replace(/\/$/, "");
+import { PRODUCTION_APP_URL, normalizeBaseUrl } from "@/lib/profile-url";
 
-  if (process.env.NODE_ENV === "production") return "https://profilehub-two.vercel.app";
+export function getAppUrl(): string {
+  const configuredUrl = normalizeBaseUrl(process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL);
+  if (configuredUrl) return configuredUrl;
+
+  if (process.env.NODE_ENV === "production") return PRODUCTION_APP_URL;
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
 
   return "http://localhost:24359";

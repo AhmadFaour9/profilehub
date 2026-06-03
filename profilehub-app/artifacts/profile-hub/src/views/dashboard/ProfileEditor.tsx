@@ -15,6 +15,7 @@ import { Copy, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { updateProfile } from "@/app/dashboard/actions";
 import { usernameSchema } from "@/modules/shared";
+import { buildProfileUrl, encodeProfileUsername, getClientAppUrl } from "@/lib/profile-url";
 
 const profileSchema = z.object({
   displayName: z.string().min(2),
@@ -58,13 +59,17 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
   const profile = content.profile;
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
-  const [origin, setOrigin] = useState("");
+  const [appBaseUrl, setAppBaseUrl] = useState("");
 
   useEffect(() => {
-    setOrigin(window.location.origin);
+    setAppBaseUrl(getClientAppUrl());
   }, []);
   
-  const getPublicUrl = (username: string) => (origin ? new URL(`/${username}`, origin).toString() : `/${username}`);
+  const getPublicUrl = (username: string) => {
+    const safeUsername = username.trim();
+    if (!safeUsername) return "";
+    return appBaseUrl ? buildProfileUrl(appBaseUrl, safeUsername) : `/${encodeProfileUsername(safeUsername)}`;
+  };
 
   const handleCopyUrl = () => {
     const url = getPublicUrl(form.getValues("username"));

@@ -24,6 +24,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 AI_PROVIDER=mock
 GEMINI_API_KEY=
 APP_URL=http://localhost:24359
+NEXT_PUBLIC_APP_URL=http://localhost:24359
 LOG_LEVEL=info
 ```
 
@@ -97,7 +98,7 @@ corepack pnpm --filter @workspace/profile-hub run test
 
 1. Set project root to `artifacts/profile-hub`.
 2. Add the environment variables below.
-3. Set `APP_URL` to the production URL.
+3. Set `APP_URL` and `NEXT_PUBLIC_APP_URL` to the production URL.
 4. Add the production OAuth callback URL in Supabase.
 5. Apply Supabase migration before first production login.
 
@@ -110,6 +111,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
 SUPABASE_SECRET_KEY=sb_secret_...
 SUPABASE_SERVICE_ROLE_KEY=service_role_jwt_or_sb_secret_...
 APP_URL=https://profilehub-two.vercel.app
+NEXT_PUBLIC_APP_URL=https://profilehub-two.vercel.app
 AI_PROVIDER=mock
 LOG_LEVEL=info
 ```

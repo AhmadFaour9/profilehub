@@ -8,6 +8,7 @@ import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import Link from "next/link";
 import type { Profile } from "@/modules/shared";
+import { encodeProfileUsername } from "@/lib/profile-url";
 
 function getInitials(name: string): string {
   if (!name || !name.trim()) return "?";
@@ -46,7 +47,7 @@ export function Topbar({ profile }: { profile?: Profile }) {
             className="hidden sm:flex"
             asChild
           >
-            <Link href={`/${username}`} target="_blank" prefetch={false} data-testid="preview-link">
+            <Link href={`/${encodeProfileUsername(username)}`} target="_blank" prefetch={false} data-testid="preview-link">
               Preview Profile
             </Link>
           </Button>

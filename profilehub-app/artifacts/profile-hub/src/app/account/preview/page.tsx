@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { PublicProfile } from "@/components/profile/PublicProfile";
 import { getMyProfileContent } from "@/lib/profile-data";
-import { getProfileUrl, getRequestOrigin } from "@/lib/request-url";
+import { getCanonicalProfileUrl } from "@/lib/request-url";
 import type { PublicProfile as PublicProfileData } from "@/modules/shared";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +20,5 @@ export default async function AccountPreviewPage() {
     services: content.services,
     gallery: content.media,
   };
-  const origin = await getRequestOrigin();
-
-  return <PublicProfile username={profile.username} profile={profile} profileUrl={getProfileUrl(origin, profile.username)} />;
+  return <PublicProfile username={profile.username} profile={profile} profileUrl={getCanonicalProfileUrl(profile.username)} />;
 }

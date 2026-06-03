@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PublicProfile } from "@/components/profile/PublicProfile";
 import { getPublicProfileCached } from "@/lib/profile-data";
-import { getProfileUrl, getRequestOrigin } from "@/lib/request-url";
+import { getCanonicalProfileUrl } from "@/lib/request-url";
 
 export const revalidate = 300;
 
@@ -29,9 +29,8 @@ export default async function PublicProfileRoute({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
-  const origin = await getRequestOrigin();
-  const profileUrl = getProfileUrl(origin, username);
   const profile = await getPublicProfileCached(username);
+  const profileUrl = getCanonicalProfileUrl(profile?.username || username);
 
   return <PublicProfile username={username} profile={profile} profileUrl={profileUrl} />;
 }
