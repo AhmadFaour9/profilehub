@@ -8,7 +8,7 @@ import { debugLog, measureServer } from "@/lib/perf";
 import { createProfileService } from "@/modules/profile";
 import { createStoragePath, validateStorageFile, type StorageBucket } from "@/modules/storage";
 import { log } from "@/modules/logging";
-import { linkFormSchema, projectFormSchema, serviceFormSchema, profileFormSchema } from "@/modules/shared";
+import { linkFormSchema, projectFormSchema, serviceFormSchema, profileFormSchema, socialLinksFormSchema } from "@/modules/shared";
 
 type ActionResult<T = unknown> = {
   ok: boolean;
@@ -23,7 +23,6 @@ const serviceUpdateSchema = serviceFormSchema.partial();
 const SOCIAL_PLATFORM_LABELS: Record<string, string> = {
   linkedin: "LinkedIn",
   github: "GitHub",
-  portfolio: "Portfolio",
   twitter: "X / Twitter",
   instagram: "Instagram",
   youtube: "YouTube",
@@ -53,23 +52,23 @@ async function syncProfileSocialLinks(
 
   socialLinks.forEach((link) => {
     const platform = normalizeSocialPlatform(link.platform);
-    const url = link.url.trim();
+    const url = link.url?.trim() || "";
     if (SOCIAL_PLATFORM_LABELS[platform] && url) {
       desired.set(platform, url);
     }
   });
 
   const { data: existingRows, error } = await client
-    .from("links")
-    .select("id,title,icon,type,is_active")
+    .from("social_links")
+    .select("id,platform,is_active")
     .eq("profile_id", profileId)
-    .eq("type", "social");
+    .in("platform", SOCIAL_PLATFORM_IDS);
 
   if (error) throw new Error(error.message);
 
   const existingByPlatform = new Map<string, any[]>();
   (existingRows || []).forEach((row) => {
-    const platform = normalizeSocialPlatform(row.icon || row.title);
+    const platform = normalizeSocialPlatform(row.platform);
     if (!SOCIAL_PLATFORM_LABELS[platform]) return;
     const rows = existingByPlatform.get(platform) || [];
     rows.push(row);
@@ -83,25 +82,25 @@ async function syncProfileSocialLinks(
 
     if (url) {
       const payload = {
+        profile_id: profileId,
+        platform,
         title: SOCIAL_PLATFORM_LABELS[platform],
         url,
-        icon: platform,
-        type: "social",
-        position: 1000 + index,
+        sort_order: index,
         is_active: true,
       };
 
       return [
         primary
-          ? client.from("links").update(payload).eq("id", primary.id).eq("profile_id", profileId)
-          : client.from("links").insert({ profile_id: profileId, ...payload }),
-        ...duplicates.map((row) => client.from("links").update({ is_active: false }).eq("id", row.id).eq("profile_id", profileId)),
+          ? client.from("social_links").update(payload).eq("id", primary.id).eq("profile_id", profileId)
+          : client.from("social_links").upsert(payload, { onConflict: "profile_id,platform" }),
+        ...duplicates.map((row) => client.from("social_links").update({ is_active: false }).eq("id", row.id).eq("profile_id", profileId)),
       ];
     }
 
     return existing
       .filter((row) => row.is_active)
-      .map((row) => client.from("links").update({ is_active: false }).eq("id", row.id).eq("profile_id", profileId));
+      .map((row) => client.from("social_links").update({ is_active: false }).eq("id", row.id).eq("profile_id", profileId));
   });
 
   const results = await Promise.all(writes);
@@ -162,14 +161,30 @@ export async function updateProfile(input: unknown): Promise<ActionResult> {
       coverUrl: parsed.coverUrl || "",
     });
 
-    await syncProfileSocialLinks(ctx.client, ctx.profile.id, parsed.socialLinks || []);
-    
     revalidateProfile(ctx.profile.username, "/dashboard/profile");
     if (parsed.username !== ctx.profile.username) {
       revalidateProfile(parsed.username, "/dashboard/profile");
     }
     
     return { ok: true, data };
+  } catch (error) {
+    return { ok: false, message: errorMessage(error) };
+  }
+}
+
+export async function saveSocialLinks(input: unknown): Promise<ActionResult> {
+  const ctx = await getServices();
+  if (!ctx) return { ok: false, message: "Unauthorized." };
+
+  try {
+    const parsed = socialLinksFormSchema.parse(input);
+    await syncProfileSocialLinks(
+      ctx.client,
+      ctx.profile.id,
+      parsed.map((link) => ({ platform: link.platform, url: link.url || "" }))
+    );
+    revalidateProfile(ctx.profile.username, "/dashboard/links");
+    return { ok: true };
   } catch (error) {
     return { ok: false, message: errorMessage(error) };
   }

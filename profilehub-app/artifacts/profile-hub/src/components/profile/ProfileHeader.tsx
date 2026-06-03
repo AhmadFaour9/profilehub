@@ -1,8 +1,8 @@
 import { Profile } from "@/modules/shared";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Globe } from "lucide-react";
+import { Mail, MapPin, Globe } from "lucide-react";
 import { QRButton } from "./QRButton";
-import { SiX, SiInstagram, SiDribbble, SiGithub, SiYoutube } from "react-icons/si";
+import { SiBehance, SiTiktok, SiWhatsapp, SiX, SiInstagram, SiDribbble, SiGithub, SiYoutube } from "react-icons/si";
 import { Linkedin, Facebook, Link2 } from "lucide-react";
 
 export function ProfileHeader({ profile, profileUrl }: { profile: Profile; profileUrl?: string }) {
@@ -14,7 +14,11 @@ export function ProfileHeader({ profile, profileUrl }: { profile: Profile; profi
       case 'dribbble': return <SiDribbble className="w-5 h-5" />;
       case 'github': return <SiGithub className="w-5 h-5" />;
       case 'youtube': return <SiYoutube className="w-5 h-5" />;
+      case 'behance': return <SiBehance className="w-5 h-5" />;
+      case 'tiktok': return <SiTiktok className="w-5 h-5" />;
+      case 'whatsapp': return <SiWhatsapp className="w-5 h-5" />;
       case 'facebook': return <Facebook className="w-5 h-5" />;
+      case 'email': return <Mail className="w-5 h-5" />;
       default: return <Link2 className="w-5 h-5" />;
     }
   };

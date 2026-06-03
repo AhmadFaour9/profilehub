@@ -14,7 +14,12 @@ interface MobilePreviewProps {
 }
 
 export function MobilePreview({ profile, links = [], projects = [], services = [], gallery = [] }: MobilePreviewProps) {
-  const visibleLinks = links.filter((link) => link.isActive && link.type !== "social");
+  const visibleLinks = links
+    .filter((link) => link.isActive)
+    .sort((a, b) => {
+      if (Boolean(a.isFeatured) !== Boolean(b.isFeatured)) return a.isFeatured ? -1 : 1;
+      return (a.sortOrder ?? a.order ?? a.position ?? 0) - (b.sortOrder ?? b.order ?? b.position ?? 0);
+    });
 
   return (
     <div className="hidden lg:block sticky top-8" data-testid="mobile-preview">

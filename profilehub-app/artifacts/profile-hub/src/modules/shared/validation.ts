@@ -63,12 +63,6 @@ export const profileFormSchema = z.object({
   isPublished: z.boolean().optional(),
   avatarUrl: z.union([httpUrlSchema.transform(normalizeUrl), z.literal("")]).optional(),
   coverUrl: z.union([httpUrlSchema.transform(normalizeUrl), z.literal("")]).optional(),
-  socialLinks: z.array(
-    z.object({
-      platform: z.string().min(1),
-      url: httpUrlSchema.transform(normalizeUrl),
-    })
-  ).optional(),
 });
 
 export const linkFormSchema = z.object({
@@ -76,10 +70,22 @@ export const linkFormSchema = z.object({
   url: httpUrlSchema.transform(normalizeUrl),
   description: safeTextSchema(180).optional(),
   icon: safeTextSchema(40).optional(),
+  thumbnailUrl: optionalHttpUrlSchema,
+  imageUrl: optionalHttpUrlSchema,
+  category: safeTextSchema(60).optional(),
   type: safeTextSchema(40).optional(),
   position: z.coerce.number().int().min(0).optional(),
+  sortOrder: z.coerce.number().int().min(0).optional(),
+  isFeatured: z.coerce.boolean().optional(),
   isActive: z.coerce.boolean().optional(),
 });
+
+export const socialLinksFormSchema = z.array(
+  z.object({
+    platform: safeTextSchema(40).pipe(z.string().min(1)),
+    url: z.union([ctaUrlSchema, z.literal("")]).optional(),
+  })
+);
 
 export const projectFormSchema = z.object({
   title: safeTextSchema(100).pipe(z.string().min(1)),

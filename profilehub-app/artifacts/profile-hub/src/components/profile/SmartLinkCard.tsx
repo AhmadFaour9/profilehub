@@ -5,7 +5,8 @@ export function SmartLinkCard({ link, theme }: { link: Link; theme?: ProfileThem
   const isRounded = theme?.buttonStyle === "rounded";
   const isPill = theme?.buttonStyle === "pill";
   const radiusClass = isPill ? "rounded-full" : isRounded ? "rounded-xl" : "rounded-none";
-  const href = `/api/links/${link.id}/click?to=${encodeURIComponent(link.url)}`;
+  const href = `/go/${link.id}`;
+  const imageUrl = link.thumbnailUrl || link.imageUrl;
 
   return (
     <a
@@ -16,9 +17,9 @@ export function SmartLinkCard({ link, theme }: { link: Link; theme?: ProfileThem
       style={theme?.primaryColor ? { '--hover-bg': theme.primaryColor } as any : {}}
       data-testid={`link-${link.id}`}
     >
-      {link.thumbnailUrl && (
+      {imageUrl && (
         <div className="w-12 h-12 shrink-0 rounded-md overflow-hidden bg-muted mr-4">
-          <img src={link.thumbnailUrl} alt="" className="w-full h-full object-cover" />
+          <img src={imageUrl} alt="" className="w-full h-full object-cover" />
         </div>
       )}
       

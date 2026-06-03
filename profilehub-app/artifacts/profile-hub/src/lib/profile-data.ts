@@ -74,14 +74,30 @@ function mapLinkRow(row: any): Link {
     url: row.url,
     description: row.description,
     icon: row.icon,
-    thumbnailUrl: row.thumbnail_url,
-    type: row.type,
-    position: row.position,
-    order: row.position,
+    thumbnailUrl: row.image_url,
+    imageUrl: row.image_url,
+    category: row.category,
+    type: row.category,
+    position: row.sort_order,
+    order: row.sort_order,
+    sortOrder: row.sort_order,
     isActive: row.is_active,
+    isFeatured: row.is_featured,
     clickCount: row.click_count || 0,
+    lastClickedAt: row.last_clicked_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+function mapSocialLinkRow(row: any): SocialLink {
+  return {
+    id: row.id,
+    platform: row.platform,
+    title: row.title,
+    url: row.url,
+    isActive: row.is_active,
+    sortOrder: row.sort_order,
   };
 }
 
@@ -250,27 +266,6 @@ function emptyProfileContent(profile: Profile): ProfileContent {
   return { profile, links: [], projects: [], services: [], media: [] };
 }
 
-function platformFromSocialLink(link: Link): string {
-  return (
-    link.icon ||
-    link.title
-      .toLowerCase()
-      .replace(/[^a-z0-9_-]/g, "")
-      .trim()
-  );
-}
-
-function socialLinksFromLinks(links: Link[]): SocialLink[] {
-  return links
-    .filter((link) => link.type === "social" && link.isActive)
-    .map((link) => ({ platform: platformFromSocialLink(link), url: link.url }))
-    .filter((link) => Boolean(link.platform && link.url));
-}
-
-function attachSocialLinks(profile: Profile, links: Link[]): Profile {
-  return { ...profile, socialLinks: socialLinksFromLinks(links) };
-}
-
 async function ensureProfilePublished(client: SupabaseClient, profile: Profile): Promise<Profile> {
   if (profile.isPublished) return profile;
 
@@ -298,12 +293,15 @@ async function loadProfileContentFromClient(
   profile: Profile,
   options: { throwOnErrors?: boolean } = {}
 ): Promise<ProfileContent> {
-  const [links, projects, services, media] = await measureServer(
+  const [links, socialLinks, projects, services, media] = await measureServer(
     "dashboard_relations_query",
     () =>
       Promise.all([
         measureServer("dashboard_links_query", () =>
-          client.from("links").select("*").eq("profile_id", profile.id).order("position")
+          client.from("smart_links").select("*").eq("profile_id", profile.id).order("sort_order")
+        ),
+        measureServer("dashboard_social_links_query", () =>
+          client.from("social_links").select("*").eq("profile_id", profile.id).order("sort_order")
         ),
         measureServer("dashboard_projects_query", () =>
           client.from("projects").select("*").eq("profile_id", profile.id).order("position")
@@ -318,7 +316,7 @@ async function loadProfileContentFromClient(
     { profile_id: profile.id }
   );
 
-  const errors = [links.error, projects.error, services.error, media.error].filter(Boolean);
+  const errors = [links.error, socialLinks.error, projects.error, services.error, media.error].filter(Boolean);
   if (errors.length > 0) {
     console.warn("[DASHBOARD] profile_relation_load_partial_failure", {
       profile_id: profile.id,
@@ -336,7 +334,7 @@ async function loadProfileContentFromClient(
   const mappedLinks = (links.data || []).map(mapLinkRow);
 
   return {
-    profile: attachSocialLinks(profile, mappedLinks),
+    profile: { ...profile, socialLinks: (socialLinks.data || []).map(mapSocialLinkRow).filter((link) => link.isActive !== false) },
     links: mappedLinks,
     projects: (projects.data || []).map(mapProjectRow),
     services: (services.data || []).map(mapServiceRow),
@@ -344,9 +342,13 @@ async function loadProfileContentFromClient(
   };
 }
 
-async function loadPublicProfileRelations(client: SupabaseClient, profile: Profile): Promise<Omit<PublicProfile, keyof Profile>> {
-  const [links, projects, services, media, themeRes] = await Promise.all([
-    client.from("links").select("*").eq("profile_id", profile.id).eq("is_active", true).order("position"),
+async function loadPublicProfileRelations(
+  client: SupabaseClient,
+  profile: Profile
+): Promise<Omit<PublicProfile, keyof Profile> & { socialLinks: SocialLink[] }> {
+  const [links, socialLinks, projects, services, media, themeRes] = await Promise.all([
+    client.from("smart_links").select("*").eq("profile_id", profile.id).eq("is_active", true).order("is_featured", { ascending: false }).order("sort_order"),
+    client.from("social_links").select("*").eq("profile_id", profile.id).eq("is_active", true).order("sort_order"),
     client.from("projects").select("*").eq("profile_id", profile.id).eq("is_active", true).order("position"),
     client.from("services").select("*").eq("profile_id", profile.id).eq("is_active", true).order("position"),
     client.from("media").select("*").eq("profile_id", profile.id).order("position"),
@@ -360,6 +362,7 @@ async function loadPublicProfileRelations(client: SupabaseClient, profile: Profi
   const mappedLinks = (links.data || []).map(mapLinkRow);
 
   return {
+    socialLinks: (socialLinks.data || []).map(mapSocialLinkRow),
     links: mappedLinks,
     projects: (projects.data || []).map(mapProjectRow),
     services: (services.data || []).map(mapServiceRow),
@@ -693,11 +696,11 @@ export async function getPublicProfile(username: string, options: PublicProfileO
     profile = await ensureProfilePublished(options.authClient, profile);
   }
 
-  const relations = await loadPublicProfileRelations(readClient, profile);
+  const { socialLinks, ...relations } = await loadPublicProfileRelations(readClient, profile);
 
   return {
     ...profile,
-    socialLinks: socialLinksFromLinks(relations.links),
+    socialLinks,
     ...relations,
   };
 }

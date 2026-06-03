@@ -4,7 +4,7 @@ import { requireMyProfileContent } from "@/lib/profile-data";
 
 export default async function DashboardLinksPage() {
   const content = await requireMyProfileContent("/dashboard/links");
-  return <LinksManager initialLinks={content.links} />;
+  return <LinksManager initialLinks={content.links} initialSocialLinks={content.profile.socialLinks || []} />;
 }
 
 

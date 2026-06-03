@@ -26,34 +26,7 @@ const profileSchema = z.object({
   website: z.string().url().optional().or(z.literal("")),
   avatarUrl: z.string().url().optional().or(z.literal("")),
   coverUrl: z.string().url().optional().or(z.literal("")),
-  linkedin: z.string().optional().or(z.literal("")),
-  github: z.string().optional().or(z.literal("")),
-  portfolio: z.string().optional().or(z.literal("")),
-  twitter: z.string().optional().or(z.literal("")),
-  instagram: z.string().optional().or(z.literal("")),
-  youtube: z.string().optional().or(z.literal("")),
-  behance: z.string().optional().or(z.literal("")),
-  dribbble: z.string().optional().or(z.literal("")),
-  tiktok: z.string().optional().or(z.literal("")),
-  facebook: z.string().optional().or(z.literal("")),
-  whatsapp: z.string().optional().or(z.literal("")),
-  email: z.string().optional().or(z.literal("")),
 });
-
-const SOCIAL_PLATFORMS = [
-  { id: "linkedin", label: "LinkedIn", placeholder: "https://linkedin.com/in/..." },
-  { id: "github", label: "GitHub", placeholder: "https://github.com/..." },
-  { id: "portfolio", label: "Portfolio", placeholder: "https://..." },
-  { id: "twitter", label: "X / Twitter", placeholder: "https://twitter.com/..." },
-  { id: "instagram", label: "Instagram", placeholder: "https://instagram.com/..." },
-  { id: "youtube", label: "YouTube", placeholder: "https://youtube.com/@..." },
-  { id: "behance", label: "Behance", placeholder: "https://behance.net/..." },
-  { id: "dribbble", label: "Dribbble", placeholder: "https://dribbble.com/..." },
-  { id: "tiktok", label: "TikTok", placeholder: "https://tiktok.com/@..." },
-  { id: "facebook", label: "Facebook", placeholder: "https://facebook.com/..." },
-  { id: "whatsapp", label: "WhatsApp", placeholder: "https://wa.me/..." },
-  { id: "email", label: "Email Contact", placeholder: "mailto:..." },
-];
 
 export default function ProfileEditor({ content }: { content: { profile: Profile, links: Link[], projects: Project[], services: Service[], media: GalleryItem[] } }) {
   const profile = content.profile;
@@ -79,8 +52,6 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
     toast({ description: "Public URL copied to clipboard!" });
   };
 
-  const getSocial = (platform: string) => profile.socialLinks?.find(l => l.platform === platform)?.url || "";
-
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -92,26 +63,10 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
       website: profile.website || "",
       avatarUrl: profile.avatarUrl || "",
       coverUrl: profile.coverUrl || "",
-      linkedin: getSocial("linkedin"),
-      github: getSocial("github"),
-      portfolio: getSocial("portfolio"),
-      twitter: getSocial("twitter"),
-      instagram: getSocial("instagram"),
-      youtube: getSocial("youtube"),
-      behance: getSocial("behance"),
-      dribbble: getSocial("dribbble"),
-      tiktok: getSocial("tiktok"),
-      facebook: getSocial("facebook"),
-      whatsapp: getSocial("whatsapp"),
-      email: getSocial("email"),
     },
   });
 
   async function onSubmit(values: z.infer<typeof profileSchema>) {
-    const socialLinks = SOCIAL_PLATFORMS
-      .map(p => ({ platform: p.id, url: values[p.id as keyof typeof values] as string }))
-      .filter(l => Boolean(l.url));
-
     const result = await updateProfile({
       displayName: values.displayName,
       username: values.username,
@@ -122,7 +77,6 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
       avatarUrl: values.avatarUrl || "",
       coverUrl: values.coverUrl || "",
       isPublished: true,
-      socialLinks,
     });
 
     toast({
@@ -286,28 +240,6 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
               />
             </div>
 
-            <div className="pt-6 border-t">
-              <h3 className="text-lg font-medium mb-4">Social Links</h3>
-              <div className="grid md:grid-cols-2 gap-6">
-                {SOCIAL_PLATFORMS.map((platform) => (
-                  <FormField
-                    key={platform.id}
-                    control={form.control}
-                    name={platform.id as keyof typeof profileSchema.shape}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{platform.label}</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder={platform.placeholder} data-testid={`input-${platform.id}`} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                ))}
-              </div>
-            </div>
-
             <Button type="submit" data-testid="btn-save-profile">Save Changes</Button>
           </form>
         </Form>
@@ -325,9 +257,7 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
           website: form.watch("website"),
           avatarUrl: form.watch("avatarUrl") || profile.avatarUrl,
           coverUrl: form.watch("coverUrl") || profile.coverUrl,
-          socialLinks: SOCIAL_PLATFORMS
-            .map(p => ({ platform: p.id, url: form.watch(p.id as keyof typeof profileSchema.shape) as string }))
-            .filter(l => Boolean(l.url)),
+          socialLinks: profile.socialLinks,
         }} 
         links={content.links}
         projects={content.projects}

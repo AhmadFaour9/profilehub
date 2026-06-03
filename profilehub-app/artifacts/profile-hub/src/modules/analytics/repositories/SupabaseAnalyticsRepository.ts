@@ -24,18 +24,18 @@ export class SupabaseAnalyticsRepository implements IAnalyticsRepository {
 
     const [totalViews, totalClicks, weekViews, weekClicks, links, recentViews] = await Promise.all([
       this.client.from("page_views").select("id", { count: "exact", head: true }).eq("profile_id", profileId),
-      this.client.from("link_clicks").select("id", { count: "exact", head: true }).eq("profile_id", profileId),
+      this.client.from("smart_link_clicks").select("id", { count: "exact", head: true }).eq("profile_id", profileId),
       this.client
         .from("page_views")
         .select("id", { count: "exact", head: true })
         .eq("profile_id", profileId)
         .gte("created_at", sevenDaysAgoStr),
       this.client
-        .from("link_clicks")
+        .from("smart_link_clicks")
         .select("id", { count: "exact", head: true })
         .eq("profile_id", profileId)
         .gte("created_at", sevenDaysAgoStr),
-      this.client.from("links").select("id,title,url,click_count").eq("profile_id", profileId).order("click_count", { ascending: false }).limit(5),
+      this.client.from("smart_links").select("id,title,url,click_count").eq("profile_id", profileId).order("click_count", { ascending: false }).limit(5),
       this.client.from("page_views").select("created_at").eq("profile_id", profileId).gte("created_at", sevenDaysAgoStr),
     ]);
 

@@ -1,6 +1,10 @@
 export type SocialLink = {
+  id?: string;
   platform: string;
+  title?: string;
   url: string;
+  isActive?: boolean;
+  sortOrder?: number;
 };
 
 export type ProfileTheme = {
@@ -43,12 +47,17 @@ export type Link = {
   description?: string | null;
   icon?: string | null;
   thumbnailUrl?: string | null;
+  imageUrl?: string | null;
+  category?: string | null;
   type?: string | null;
   position?: number;
   order?: number;
+  sortOrder?: number;
   isActive: boolean;
   isPinned?: boolean;
+  isFeatured?: boolean;
   clickCount: number;
+  lastClickedAt?: string | null;
   createdAt: string;
   updatedAt?: string;
 };

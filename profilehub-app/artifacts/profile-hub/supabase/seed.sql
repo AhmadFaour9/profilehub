@@ -65,21 +65,21 @@ begin
   )
   returning id into v_profile_id;
 
-  -- ── 3. Links ─────────────────────────────────────────────────────────────
-  insert into public.links (id, profile_id, title, url, description, icon, type, position, is_active, click_count)
+  -- ── 3. Smart Links and Social Links ─────────────────────────────────────
+  insert into public.smart_links (id, profile_id, title, url, description, icon, category, is_featured, sort_order, is_active, click_count)
   values
-    (gen_random_uuid(), v_profile_id, 'Portfolio', 'https://sara.dev', 'My personal portfolio', 'globe', 'website', 0, true, 142)
+    (gen_random_uuid(), v_profile_id, 'Book a Consultation', 'https://cal.com/sara-dev', 'One-hour design and product review session.', 'calendar', 'Consulting', true, 0, true, 142)
   returning id into v_link1_id;
 
-  insert into public.links (id, profile_id, title, url, description, icon, type, position, is_active, click_count)
+  insert into public.smart_links (id, profile_id, title, url, description, icon, category, is_featured, sort_order, is_active, click_count)
   values
-    (gen_random_uuid(), v_profile_id, 'GitHub', 'https://github.com/sara-dev', 'Open source projects', 'github', 'social', 1, true, 89)
+    (gen_random_uuid(), v_profile_id, 'Resume PDF', 'https://sara.dev/resume.pdf', 'Download my current resume.', 'file-text', 'Resume', false, 1, true, 89)
   returning id into v_link2_id;
 
-  insert into public.links (id, profile_id, title, url, description, icon, type, position, is_active, click_count)
+  insert into public.social_links (profile_id, platform, title, url, sort_order, is_active)
   values
-    (gen_random_uuid(), v_profile_id, 'LinkedIn', 'https://linkedin.com/in/sara-dev', 'Professional network', 'linkedin', 'social', 2, true, 67)
-  returning id into v_link3_id;
+    (v_profile_id, 'github', 'GitHub', 'https://github.com/sara-dev', 0, true),
+    (v_profile_id, 'linkedin', 'LinkedIn', 'https://linkedin.com/in/sara-dev', 1, true);
 
   -- ── 4. Projects ──────────────────────────────────────────────────────────
   insert into public.projects (id, profile_id, title, description, project_url, tags, position, is_featured, is_active)
@@ -107,10 +107,10 @@ begin
     now() - (random() * interval '14 days')
   from generate_series(1, 50);
 
-  insert into public.link_clicks (profile_id, link_id, visitor_id_hash, created_at)
+  insert into public.smart_link_clicks (profile_id, smart_link_id, visitor_id_hash, created_at)
   select
     v_profile_id,
-    (array[v_link1_id, v_link2_id, v_link3_id])[floor(random() * 3 + 1)],
+    (array[v_link1_id, v_link2_id])[floor(random() * 2 + 1)],
     md5(random()::text),
     now() - (random() * interval '14 days')
   from generate_series(1, 25);
