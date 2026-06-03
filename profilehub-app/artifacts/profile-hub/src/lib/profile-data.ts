@@ -129,10 +129,14 @@ function mapServiceRow(row: any): Service {
     description: row.description,
     priceLabel: row.price_label,
     price: row.price_label,
+    duration: row.duration,
+    icon: row.icon,
+    imageUrl: row.image_url,
     ctaLabel: row.cta_label,
     ctaUrl: row.cta_url,
-    position: row.position,
-    order: row.position,
+    position: row.sort_order ?? row.position,
+    order: row.sort_order ?? row.position,
+    sortOrder: row.sort_order ?? row.position,
     isActive: row.is_active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -307,7 +311,7 @@ async function loadProfileContentFromClient(
           client.from("projects").select("*").eq("profile_id", profile.id).order("position")
         ),
         measureServer("dashboard_services_query", () =>
-          client.from("services").select("*").eq("profile_id", profile.id).order("position")
+          client.from("services").select("*").eq("profile_id", profile.id).order("sort_order")
         ),
         measureServer("dashboard_media_query", () =>
           client.from("media").select("*").eq("profile_id", profile.id).order("position")
@@ -350,7 +354,7 @@ async function loadPublicProfileRelations(
     client.from("smart_links").select("*").eq("profile_id", profile.id).eq("is_active", true).order("is_featured", { ascending: false }).order("sort_order"),
     client.from("social_links").select("*").eq("profile_id", profile.id).eq("is_active", true).order("sort_order"),
     client.from("projects").select("*").eq("profile_id", profile.id).eq("is_active", true).order("position"),
-    client.from("services").select("*").eq("profile_id", profile.id).eq("is_active", true).order("position"),
+    client.from("services").select("*").eq("profile_id", profile.id).eq("is_active", true).order("sort_order"),
     client.from("media").select("*").eq("profile_id", profile.id).order("position"),
     profile.themeId ? client.from("themes").select("*").eq("id", profile.themeId).maybeSingle() : Promise.resolve({ data: null, error: null }),
   ]);

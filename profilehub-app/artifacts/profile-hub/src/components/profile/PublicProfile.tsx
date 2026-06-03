@@ -30,6 +30,9 @@ export async function PublicProfile({
       if (Boolean(a.isFeatured) !== Boolean(b.isFeatured)) return a.isFeatured ? -1 : 1;
       return (a.sortOrder ?? a.order ?? a.position ?? 0) - (b.sortOrder ?? b.order ?? b.position ?? 0);
     });
+  const visibleServices = profile.services
+    .filter((service) => service.isActive)
+    .sort((a, b) => (a.sortOrder ?? a.order ?? a.position ?? 0) - (b.sortOrder ?? b.order ?? b.position ?? 0));
 
   return (
     <div
@@ -63,11 +66,11 @@ export async function PublicProfile({
             </section>
           )}
 
-          {profile.services.length > 0 && (
+          {visibleServices.length > 0 && (
             <section className="space-y-4">
               <h2 className="text-2xl font-serif">Services</h2>
               <div className="grid gap-4">
-                {profile.services.map((service) => (
+                {visibleServices.map((service) => (
                   <ServiceCard key={service.id} service={service} theme={profile.theme} />
                 ))}
               </div>

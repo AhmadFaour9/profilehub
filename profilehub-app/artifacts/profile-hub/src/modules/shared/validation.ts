@@ -102,10 +102,15 @@ export const projectFormSchema = z.object({
 export const serviceFormSchema = z.object({
   title: safeTextSchema(100).pipe(z.string().min(1)),
   description: safeTextSchema(800).optional(),
+  price: safeTextSchema(80).optional(),
   priceLabel: safeTextSchema(80).optional(),
+  duration: safeTextSchema(80).optional(),
+  icon: safeTextSchema(40).optional(),
+  imageUrl: optionalHttpUrlSchema,
   ctaLabel: safeTextSchema(60).optional(),
   ctaUrl: z.union([ctaUrlSchema, z.literal("")]).optional(),
   position: z.coerce.number().int().min(0).optional(),
+  sortOrder: z.coerce.number().int().min(0).optional(),
   isActive: z.coerce.boolean().optional(),
 });
 

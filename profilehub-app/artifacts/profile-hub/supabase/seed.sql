@@ -93,10 +93,10 @@ begin
   returning id into v_project2_id;
 
   -- ── 5. Services ──────────────────────────────────────────────────────────
-  insert into public.services (profile_id, title, description, price_label, cta_label, cta_url, position, is_active)
+  insert into public.services (profile_id, title, description, price_label, duration, icon, cta_label, cta_url, position, sort_order, is_active)
   values
-    (v_profile_id, 'UI/UX Consultation', 'One-hour design review session for your product.', '$120/hr', 'Book Now', 'https://cal.com/sara-dev', 0, true),
-    (v_profile_id, 'Full-Stack Development', 'End-to-end web application development using Next.js and Supabase.', 'From $2,000', 'Get a Quote', 'mailto:hello@sara.dev', 1, true);
+    (v_profile_id, 'UI/UX Consultation', 'One-hour design review session for your product.', '$120/hr', '60 min', 'design', 'Book Now', 'https://cal.com/sara-dev', 0, 0, true),
+    (v_profile_id, 'Full-Stack Development', 'End-to-end web application development using Next.js and Supabase.', 'From $2,000', '2-4 weeks', 'code', 'Get a Quote', 'mailto:hello@sara.dev', 1, 1, true);
 
   -- ── 6. Sample Analytics ──────────────────────────────────────────────────
   insert into public.page_views (profile_id, visitor_id_hash, device, created_at)

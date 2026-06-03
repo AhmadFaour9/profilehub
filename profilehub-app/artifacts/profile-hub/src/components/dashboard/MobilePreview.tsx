@@ -20,6 +20,9 @@ export function MobilePreview({ profile, links = [], projects = [], services = [
       if (Boolean(a.isFeatured) !== Boolean(b.isFeatured)) return a.isFeatured ? -1 : 1;
       return (a.sortOrder ?? a.order ?? a.position ?? 0) - (b.sortOrder ?? b.order ?? b.position ?? 0);
     });
+  const visibleServices = services
+    .filter((service) => service.isActive)
+    .sort((a, b) => (a.sortOrder ?? a.order ?? a.position ?? 0) - (b.sortOrder ?? b.order ?? b.position ?? 0));
 
   return (
     <div className="hidden lg:block sticky top-8" data-testid="mobile-preview">
@@ -52,8 +55,8 @@ export function MobilePreview({ profile, links = [], projects = [], services = [
                  </div>
                  
                  <div className="grid gap-4">
-                   {services.length > 0 ? (
-                     services.slice(0, 3).map((service) => (
+                   {visibleServices.length > 0 ? (
+                     visibleServices.slice(0, 3).map((service) => (
                        <ServiceCard key={service.id} service={service} theme={profile.theme} />
                      ))
                    ) : (

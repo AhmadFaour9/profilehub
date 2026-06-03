@@ -89,10 +89,13 @@ export type Service = {
   price?: string | null;
   currency?: string | null;
   duration?: string | null;
+  icon?: string | null;
+  imageUrl?: string | null;
   ctaLabel?: string | null;
   ctaUrl?: string | null;
   position?: number;
   order?: number;
+  sortOrder?: number;
   isActive: boolean;
   createdAt: string;
   updatedAt?: string;

@@ -32,10 +32,14 @@ const mapService = (row: any): Service => ({
   description: row.description,
   priceLabel: row.price_label,
   price: row.price_label,
+  duration: row.duration,
+  icon: row.icon,
+  imageUrl: row.image_url,
   ctaLabel: row.cta_label,
   ctaUrl: row.cta_url,
-  position: row.position,
-  order: row.position,
+  position: row.sort_order ?? row.position,
+  order: row.sort_order ?? row.position,
+  sortOrder: row.sort_order ?? row.position,
   isActive: row.is_active,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
@@ -142,7 +146,7 @@ export class SupabaseProfileRepository implements IProfileRepository {
       .from("services")
       .select("*")
       .eq("profile_id", profileId)
-      .order("position");
+      .order("sort_order");
     
     if (error) {
       console.warn(`[SupabaseProfileRepository] getServicesByProfileId error:`, error.message);
@@ -158,10 +162,14 @@ export class SupabaseProfileRepository implements IProfileRepository {
         profile_id: data.profileId,
         title: data.title,
         description: data.description,
-        price_label: data.priceLabel,
+        price_label: data.priceLabel ?? data.price,
+        duration: data.duration,
+        icon: data.icon,
+        image_url: data.imageUrl,
         cta_label: data.ctaLabel,
         cta_url: data.ctaUrl,
-        position: data.position,
+        position: data.sortOrder ?? data.position ?? 0,
+        sort_order: data.sortOrder ?? data.position ?? 0,
         is_active: data.isActive ?? true,
       })
       .select("*")
@@ -175,9 +183,20 @@ export class SupabaseProfileRepository implements IProfileRepository {
     if (data.title !== undefined) payload.title = data.title;
     if (data.description !== undefined) payload.description = data.description;
     if (data.priceLabel !== undefined) payload.price_label = data.priceLabel;
+    if (data.price !== undefined) payload.price_label = data.price;
+    if (data.duration !== undefined) payload.duration = data.duration;
+    if (data.icon !== undefined) payload.icon = data.icon;
+    if (data.imageUrl !== undefined) payload.image_url = data.imageUrl;
     if (data.ctaLabel !== undefined) payload.cta_label = data.ctaLabel;
     if (data.ctaUrl !== undefined) payload.cta_url = data.ctaUrl;
-    if (data.position !== undefined) payload.position = data.position;
+    if (data.position !== undefined) {
+      payload.position = data.position;
+      payload.sort_order = data.position;
+    }
+    if (data.sortOrder !== undefined) {
+      payload.position = data.sortOrder;
+      payload.sort_order = data.sortOrder;
+    }
     if (data.isActive !== undefined) payload.is_active = data.isActive;
 
     const { data: result, error } = await this.client
