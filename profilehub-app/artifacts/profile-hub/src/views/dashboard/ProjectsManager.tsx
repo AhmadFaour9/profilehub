@@ -18,6 +18,49 @@ interface GithubProject {
   image_url: string;
 }
 
+const API_ERROR_MESSAGES: Record<string, string> = {
+  not_authenticated: "Please sign in again before importing GitHub projects.",
+  github_rate_limited: "GitHub rate limit reached. Try again later or configure a GitHub token.",
+  target_required: "Enter a GitHub username or repository URL.",
+  invalid_projects_payload: "No valid GitHub projects were selected.",
+  profile_missing: "Could not load your profile before importing projects.",
+};
+
+function safeTextError(text: string): string {
+  return text.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 180);
+}
+
+function errorMessageFromCode(error: unknown, fallback: string): string {
+  if (typeof error === "string" && API_ERROR_MESSAGES[error]) return API_ERROR_MESSAGES[error];
+  if (typeof error === "string" && error) return error;
+  return fallback;
+}
+
+async function parseJsonApiResponse(response: Response, fallback: string): Promise<any> {
+  const contentType = response.headers.get("content-type") || "";
+
+  if (!response.ok) {
+    if (contentType.includes("application/json")) {
+      const data = await response.json().catch(() => null);
+      throw new Error(errorMessageFromCode(data?.error, fallback));
+    }
+
+    const text = safeTextError(await response.text().catch(() => ""));
+    throw new Error(text || fallback);
+  }
+
+  if (!contentType.includes("application/json")) {
+    const text = safeTextError(await response.text().catch(() => ""));
+    throw new Error(text || "Server returned a non-JSON response.");
+  }
+
+  const data = await response.json();
+  if (data?.ok === false) {
+    throw new Error(errorMessageFromCode(data.error, fallback));
+  }
+  return data;
+}
+
 export default function ProjectsManager({ projects = [] }: { projects?: Project[] }) {
   const [allProjects, setAllProjects] = useState<Project[]>(projects);
   const [githubTarget, setGithubTarget] = useState("");
@@ -41,8 +84,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target: githubTarget.trim() }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to fetch GitHub data");
+      const data = await parseJsonApiResponse(res, "Failed to fetch GitHub data");
       if (!data.projects || data.projects.length === 0) {
         setGithubError("No public repositories found.");
         return;
@@ -77,8 +119,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projects: toImport }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to save projects");
+      const data = await parseJsonApiResponse(res, "Failed to save projects");
 
       // Add imported projects to the local list
       const imported: Project[] = (data.saved || []).map((p: any, i: number) => ({
