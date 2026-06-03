@@ -4,20 +4,58 @@ import { useEffect, useMemo, useState } from "react";
 import { Project, ProfileTheme } from "@/modules/shared";
 import { ArrowUpRight, ImageIcon } from "lucide-react";
 
+function githubSocialPreviewFromRepoUrl(repoUrl: string | null | undefined): string {
+  if (!repoUrl) return "";
+
+  try {
+    const url = new URL(repoUrl);
+    if (!url.hostname.endsWith("github.com")) return "";
+
+    const [owner, repo] = url.pathname.split("/").filter(Boolean);
+    if (!owner || !repo) return "";
+
+    return `https://opengraph.githubassets.com/1/${owner}/${repo.replace(/\.git$/, "")}`;
+  } catch {
+    return "";
+  }
+}
+
+function safeImageHost(imageUrl: string): string | null {
+  try {
+    return new URL(imageUrl).hostname;
+  } catch {
+    return null;
+  }
+}
+
 export function ProjectCard({ project, theme }: { project: Project; theme?: ProfileTheme }) {
   const isRounded = theme?.buttonStyle === "rounded";
   const isPill = theme?.buttonStyle === "pill";
   const radiusClass = isPill ? "rounded-[2rem]" : isRounded ? "rounded-xl" : "rounded-none";
-  const imageSrc = useMemo(() => project.imageUrl?.trim() || "", [project.imageUrl]);
+  const imageCandidates = useMemo(() => {
+    const candidates = [project.imageUrl?.trim(), githubSocialPreviewFromRepoUrl(project.repoUrl)].filter(Boolean) as string[];
+    return Array.from(new Set(candidates));
+  }, [project.imageUrl, project.repoUrl]);
+  const [imageIndex, setImageIndex] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageFailed, setImageFailed] = useState(false);
+  const imageSrc = imageCandidates[imageIndex] || "";
 
   useEffect(() => {
+    setImageIndex(0);
     setImageLoaded(false);
-    setImageFailed(false);
-  }, [imageSrc]);
+  }, [imageCandidates.join("|")]);
 
-  const showImage = Boolean(imageSrc && !imageFailed);
+  const showImage = Boolean(imageSrc);
+
+  const handleImageError = () => {
+    console.warn("[PROJECT] image_load_failed", {
+      project_id: project.id,
+      image_host: safeImageHost(imageSrc),
+      fallback_available: imageIndex < imageCandidates.length - 1,
+    });
+    setImageLoaded(false);
+    setImageIndex((current) => current + 1);
+  };
 
   const Content = () => (
     <>
@@ -30,7 +68,7 @@ export function ProjectCard({ project, theme }: { project: Project; theme?: Prof
               alt={project.title} 
               className={`h-full w-full object-cover transition-all duration-500 group-hover:scale-105 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
               onLoad={() => setImageLoaded(true)}
-              onError={() => setImageFailed(true)}
+              onError={handleImageError}
             />
           </>
         ) : (

@@ -58,6 +58,20 @@ function safeErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "github_import_failed";
 }
 
+function githubSocialPreviewFromRepoUrl(repoUrl: string): string {
+  try {
+    const url = new URL(repoUrl);
+    if (!url.hostname.endsWith("github.com")) return "";
+
+    const [owner, repo] = url.pathname.split("/").filter(Boolean);
+    if (!owner || !repo) return "";
+
+    return `https://opengraph.githubassets.com/1/${owner}/${repo.replace(/\.git$/, "")}`;
+  } catch {
+    return "";
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const { supabase: client, user } = await getAuthenticatedUser("api_route");
@@ -98,7 +112,7 @@ export async function POST(req: Request) {
       profile_id: profile.id,
       title: project.title,
       description: project.description,
-      image_url: project.image_url,
+      image_url: project.image_url || githubSocialPreviewFromRepoUrl(project.repo_url),
       project_url: project.project_url,
       repo_url: project.repo_url,
       tags: project.tags,

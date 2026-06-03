@@ -10,7 +10,7 @@ const mapProject = (row: any): Project => ({
   imageUrl: row.image_url,
   projectUrl: row.project_url,
   repoUrl: row.repo_url,
-  url: row.project_url,
+  url: row.project_url || row.repo_url,
   tags: row.tags || [],
   position: row.position,
   order: row.position,

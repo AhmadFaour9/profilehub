@@ -1,13 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import type { Project } from "@/modules/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Briefcase, Github, Loader2, Check, X } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, Briefcase, Github, Loader2, Check } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProjectCard } from "@/components/profile/ProjectCard";
 import { useToast } from "@/hooks/use-toast";
+import { deleteProject, updateProject } from "@/app/dashboard/actions";
 
 interface GithubProject {
   title: string;
@@ -17,6 +30,15 @@ interface GithubProject {
   tags: string[];
   image_url: string;
 }
+
+type ProjectFormState = {
+  title: string;
+  description: string;
+  projectUrl: string;
+  repoUrl: string;
+  imageUrl: string;
+  tags: string;
+};
 
 const API_ERROR_MESSAGES: Record<string, string> = {
   not_authenticated: "Please sign in again before importing GitHub projects.",
@@ -61,6 +83,49 @@ async function parseJsonApiResponse(response: Response, fallback: string): Promi
   return data;
 }
 
+function projectUrl(project: Project): string {
+  return project.projectUrl || project.url || "";
+}
+
+function formFromProject(project: Project): ProjectFormState {
+  return {
+    title: project.title || "",
+    description: project.description || "",
+    projectUrl: projectUrl(project),
+    repoUrl: project.repoUrl || "",
+    imageUrl: project.imageUrl || "",
+    tags: (project.tags || []).join(", "),
+  };
+}
+
+function normalizeTags(value: string): string[] {
+  return value
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .slice(0, 12);
+}
+
+function normalizeProjectFromRow(row: any, fallback?: Project): Project {
+  return {
+    id: row.id || fallback?.id || `project_${Date.now()}`,
+    profileId: row.profileId || row.profile_id || fallback?.profileId,
+    title: row.title || fallback?.title || "",
+    description: row.description ?? fallback?.description ?? "",
+    imageUrl: row.imageUrl ?? row.image_url ?? fallback?.imageUrl ?? "",
+    projectUrl: row.projectUrl ?? row.project_url ?? fallback?.projectUrl ?? "",
+    repoUrl: row.repoUrl ?? row.repo_url ?? fallback?.repoUrl ?? "",
+    url: row.url ?? row.projectUrl ?? row.project_url ?? row.repoUrl ?? row.repo_url ?? fallback?.url ?? "",
+    tags: row.tags || fallback?.tags || [],
+    position: row.position ?? fallback?.position,
+    order: row.order ?? row.position ?? fallback?.order,
+    isFeatured: row.isFeatured ?? row.is_featured ?? fallback?.isFeatured ?? false,
+    isActive: row.isActive ?? row.is_active ?? fallback?.isActive ?? true,
+    createdAt: row.createdAt || row.created_at || fallback?.createdAt || new Date().toISOString(),
+    updatedAt: row.updatedAt || row.updated_at || fallback?.updatedAt,
+  };
+}
+
 export default function ProjectsManager({ projects = [] }: { projects?: Project[] }) {
   const [allProjects, setAllProjects] = useState<Project[]>(projects);
   const [githubTarget, setGithubTarget] = useState("");
@@ -69,6 +134,18 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
   const [githubResults, setGithubResults] = useState<GithubProject[]>([]);
   const [selectedRepos, setSelectedRepos] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [editForm, setEditForm] = useState<ProjectFormState>({
+    title: "",
+    description: "",
+    projectUrl: "",
+    repoUrl: "",
+    imageUrl: "",
+    tags: "",
+  });
+  const [editSaving, setEditSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+  const [deleteSaving, setDeleteSaving] = useState(false);
   const { toast } = useToast();
 
   const handleGithubFetch = async () => {
@@ -124,12 +201,17 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
       // Add imported projects to the local list
       const imported: Project[] = (data.saved || []).map((p: any, i: number) => ({
         id: p.id || `gh_${Date.now()}_${i}`,
+        profileId: p.profile_id,
         title: p.title,
         description: p.description,
         imageUrl: p.image_url,
+        projectUrl: p.project_url,
+        repoUrl: p.repo_url,
         url: p.project_url || p.repo_url,
         tags: p.tags || [],
         isFeatured: false,
+        isActive: true,
+        position: p.position ?? allProjects.length + i,
         order: allProjects.length + i,
         createdAt: new Date().toISOString(),
       }));
@@ -151,6 +233,71 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const openEditDialog = (project: Project) => {
+    setEditingProject(project);
+    setEditForm(formFromProject(project));
+  };
+
+  const handleEditSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editingProject) return;
+
+    setEditSaving(true);
+    try {
+      const result = await updateProject(editingProject.id, {
+        title: editForm.title,
+        description: editForm.description,
+        projectUrl: editForm.projectUrl,
+        repoUrl: editForm.repoUrl,
+        imageUrl: editForm.imageUrl,
+        tags: normalizeTags(editForm.tags),
+        isFeatured: editingProject.isFeatured ?? false,
+        isActive: editingProject.isActive ?? true,
+      });
+
+      if (!result.ok) {
+        throw new Error(result.message || "Could not update project.");
+      }
+
+      const updated = normalizeProjectFromRow(result.data, editingProject);
+      setAllProjects((prev) => prev.map((project) => (project.id === editingProject.id ? updated : project)));
+      setEditingProject(null);
+      toast({ title: "Project updated", description: "Your project changes have been saved." });
+    } catch (error: any) {
+      toast({
+        title: "Update failed",
+        description: error?.message || "Could not update project.",
+        variant: "destructive",
+      });
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    if (!deleteTarget) return;
+
+    setDeleteSaving(true);
+    try {
+      const result = await deleteProject(deleteTarget.id);
+      if (!result.ok) {
+        throw new Error(result.message || "Could not delete project.");
+      }
+
+      setAllProjects((prev) => prev.filter((project) => project.id !== deleteTarget.id));
+      setDeleteTarget(null);
+      toast({ title: "Project deleted", description: "The project has been removed." });
+    } catch (error: any) {
+      toast({
+        title: "Delete failed",
+        description: error?.message || "Could not delete project.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteSaving(false);
     }
   };
 
@@ -279,14 +426,120 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
           {allProjects.map((project) => (
             <div key={project.id} className="relative group">
               <ProjectCard project={project} theme={{ id: "default", buttonStyle: "rounded" }} />
-              <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button size="sm" variant="secondary">Edit</Button>
-                <Button size="sm" variant="destructive">Delete</Button>
+              <div className="absolute top-4 right-4 z-10 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button type="button" size="sm" variant="secondary" onClick={() => openEditDialog(project)}>
+                  Edit
+                </Button>
+                <Button type="button" size="sm" variant="destructive" onClick={() => setDeleteTarget(project)}>
+                  Delete
+                </Button>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      <Dialog open={Boolean(editingProject)} onOpenChange={(open) => !open && setEditingProject(null)}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Project</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="space-y-2 text-sm font-medium">
+                <span>Title</span>
+                <Input
+                  value={editForm.title}
+                  onChange={(event) => setEditForm((prev) => ({ ...prev, title: event.target.value }))}
+                  required
+                  maxLength={100}
+                />
+              </label>
+              <label className="space-y-2 text-sm font-medium">
+                <span>Tags</span>
+                <Input
+                  value={editForm.tags}
+                  onChange={(event) => setEditForm((prev) => ({ ...prev, tags: event.target.value }))}
+                  placeholder="react, supabase, portfolio"
+                />
+              </label>
+            </div>
+
+            <label className="space-y-2 text-sm font-medium block">
+              <span>Description</span>
+              <Textarea
+                value={editForm.description}
+                onChange={(event) => setEditForm((prev) => ({ ...prev, description: event.target.value }))}
+                maxLength={800}
+                rows={4}
+              />
+            </label>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="space-y-2 text-sm font-medium">
+                <span>Project URL</span>
+                <Input
+                  value={editForm.projectUrl}
+                  onChange={(event) => setEditForm((prev) => ({ ...prev, projectUrl: event.target.value }))}
+                  placeholder="https://..."
+                />
+              </label>
+              <label className="space-y-2 text-sm font-medium">
+                <span>Repository URL</span>
+                <Input
+                  value={editForm.repoUrl}
+                  onChange={(event) => setEditForm((prev) => ({ ...prev, repoUrl: event.target.value }))}
+                  placeholder="https://github.com/owner/repo"
+                />
+              </label>
+            </div>
+
+            <label className="space-y-2 text-sm font-medium block">
+              <span>Image URL</span>
+              <Input
+                value={editForm.imageUrl}
+                onChange={(event) => setEditForm((prev) => ({ ...prev, imageUrl: event.target.value }))}
+                placeholder="https://..."
+              />
+            </label>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditingProject(null)} disabled={editSaving}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={editSaving}>
+                {editSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete project?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes {deleteTarget?.title ? `"${deleteTarget.title}"` : "this project"} from your profile.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteSaving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteSaving}
+              onClick={(event) => {
+                event.preventDefault();
+                handleDeleteProject();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
