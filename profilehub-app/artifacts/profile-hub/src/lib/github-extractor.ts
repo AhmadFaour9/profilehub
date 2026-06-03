@@ -26,17 +26,171 @@ async function throwGithubFetchError(response: Response, fallback: string): Prom
   throw new Error(fallback);
 }
 
-function resolveImageUrl(repoFullName: string, defaultBranch: string, imgUrl: string): string {
-  if (imgUrl.startsWith("http://") || imgUrl.startsWith("https://")) {
-    // Ignore shields.io badges
-    if (imgUrl.includes("shields.io") || imgUrl.includes("badge")) {
-      return "";
+type ReadmeImageCandidate = {
+  alt: string;
+  src: string;
+  resolvedUrl: string;
+  sourceText: string;
+  index: number;
+};
+
+const PREFERRED_IMAGE_HINTS = ["screenshot", "preview", "demo", "cover", "app", "ui", "dashboard"];
+const TINY_IMAGE_HINTS = ["icon", "logo", "favicon", "avatar", "mark"];
+const LARGE_IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp"];
+
+function decodeHtmlEntities(value: string): string {
+  return value
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, "\"")
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
+function normalizeRepoPath(path: string): string {
+  const stack: string[] = [];
+  path.split("/").forEach((segment) => {
+    if (!segment || segment === ".") return;
+    if (segment === "..") {
+      stack.pop();
+      return;
     }
-    return imgUrl;
+    stack.push(segment);
+  });
+  return stack.join("/");
+}
+
+function cleanImageSource(src: string): string {
+  return decodeHtmlEntities(src.trim())
+    .replace(/^<|>$/g, "")
+    .replace(/^["']|["']$/g, "")
+    .split(/\s+/)[0];
+}
+
+function resolveImageUrl(repoFullName: string, defaultBranch: string, imgUrl: string, readmePath: string = "README.md"): string {
+  const src = cleanImageSource(imgUrl);
+  if (!src || src.startsWith("data:")) return "";
+
+  const [owner, repoName] = repoFullName.split("/");
+
+  try {
+    const normalizedSrc = src.startsWith("//") ? `https:${src}` : src;
+    const url = new URL(normalizedSrc);
+
+    if (url.hostname === "github.com") {
+      const parts = url.pathname.split("/").filter(Boolean);
+      if (parts[0] === owner && parts[1] === repoName && (parts[2] === "blob" || parts[2] === "raw") && parts.length > 4) {
+        return `https://raw.githubusercontent.com/${owner}/${repoName}/${parts.slice(3).join("/")}${url.search}`;
+      }
+    }
+
+    return url.toString();
+  } catch {
+    const cleanPath = src.replace(/^\.\//, "").replace(/^\//, "");
+    const readmeDir = readmePath.split("/").slice(0, -1).join("/");
+    const resolvedPath = normalizeRepoPath(src.startsWith("/") ? cleanPath : [readmeDir, cleanPath].filter(Boolean).join("/"));
+    return `https://raw.githubusercontent.com/${repoFullName}/${defaultBranch}/${resolvedPath}`;
   }
-  // Convert relative paths to raw github user content URLs
-  const cleanPath = imgUrl.replace(/^\.\//, "").replace(/^\//, "");
-  return `https://raw.githubusercontent.com/${repoFullName}/${defaultBranch}/${cleanPath}`;
+}
+
+function imageExtension(url: string): string {
+  try {
+    const pathname = new URL(url).pathname.toLowerCase();
+    return LARGE_IMAGE_EXTENSIONS.find((extension) => pathname.endsWith(extension)) || (pathname.endsWith(".gif") ? ".gif" : "");
+  } catch {
+    const lower = url.toLowerCase();
+    return LARGE_IMAGE_EXTENSIONS.find((extension) => lower.includes(extension)) || (lower.includes(".gif") ? ".gif" : "");
+  }
+}
+
+function isBadgeImage(candidateText: string): boolean {
+  const lower = candidateText.toLowerCase();
+  return (
+    lower.includes("shields.io") ||
+    lower.includes("img.shields.io") ||
+    lower.includes("badge.fury.io") ||
+    lower.includes("badgen.net") ||
+    lower.includes("badge") ||
+    lower.includes("npm version") ||
+    lower.includes("build status") ||
+    (lower.includes("license") && (lower.includes(".svg") || lower.includes("shield")))
+  );
+}
+
+function scoreReadmeImage(candidate: ReadmeImageCandidate): number {
+  const lowerAlt = candidate.alt.toLowerCase();
+  const lowerPath = `${candidate.src} ${candidate.resolvedUrl}`.toLowerCase();
+  const combined = `${lowerAlt} ${lowerPath} ${candidate.sourceText.toLowerCase()}`;
+  if (!candidate.resolvedUrl || isBadgeImage(combined)) return Number.NEGATIVE_INFINITY;
+
+  let score = 0;
+  PREFERRED_IMAGE_HINTS.forEach((hint) => {
+    if (lowerAlt.includes(hint)) score += 80;
+    if (lowerPath.includes(hint)) score += 50;
+  });
+
+  const extension = imageExtension(candidate.resolvedUrl);
+  if ([".png", ".jpg", ".jpeg", ".webp"].includes(extension)) score += 25;
+  if (extension === ".gif") score += 8;
+  if (lowerPath.includes(".svg")) score -= 35;
+
+  const hasPreferredHint = PREFERRED_IMAGE_HINTS.some((hint) => combined.includes(hint));
+  if (TINY_IMAGE_HINTS.some((hint) => combined.includes(hint))) {
+    score -= hasPreferredHint ? 8 : 45;
+  }
+
+  return score - candidate.index;
+}
+
+function extractMarkdownImageCandidates(content: string, repoFullName: string, defaultBranch: string, readmePath: string): ReadmeImageCandidate[] {
+  const candidates: ReadmeImageCandidate[] = [];
+  const markdownRegex = /!\[([^\]]*)\]\(\s*(<[^>]+>|[^)\s]+)(?:\s+["'][^"']*["'])?\s*\)/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = markdownRegex.exec(content))) {
+    const alt = decodeHtmlEntities(match[1] || "");
+    const src = match[2] || "";
+    candidates.push({
+      alt,
+      src,
+      resolvedUrl: resolveImageUrl(repoFullName, defaultBranch, src, readmePath),
+      sourceText: match[0],
+      index: candidates.length,
+    });
+  }
+
+  return candidates;
+}
+
+function extractHtmlImageCandidates(content: string, repoFullName: string, defaultBranch: string, readmePath: string): ReadmeImageCandidate[] {
+  const candidates: ReadmeImageCandidate[] = [];
+  const htmlRegex = /<img\b[^>]*>/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = htmlRegex.exec(content))) {
+    const tag = match[0];
+    const src = /src\s*=\s*["']([^"']+)["']/i.exec(tag)?.[1] || "";
+    if (!src) continue;
+
+    candidates.push({
+      alt: decodeHtmlEntities(/alt\s*=\s*["']([^"']*)["']/i.exec(tag)?.[1] || ""),
+      src,
+      resolvedUrl: resolveImageUrl(repoFullName, defaultBranch, src, readmePath),
+      sourceText: tag,
+      index: candidates.length + 100,
+    });
+  }
+
+  return candidates;
+}
+
+function selectBestReadmeImage(candidates: ReadmeImageCandidate[]): string {
+  const ranked = candidates
+    .map((candidate) => ({ candidate, score: scoreReadmeImage(candidate) }))
+    .filter((entry) => entry.score >= 0)
+    .sort((a, b) => b.score - a.score);
+
+  return ranked[0]?.candidate.resolvedUrl || "";
 }
 
 async function extractReadmeImage(repoFullName: string, defaultBranch: string, token?: string): Promise<string> {
@@ -56,34 +210,64 @@ async function extractReadmeImage(repoFullName: string, defaultBranch: string, t
     if (data.encoding !== "base64" || !data.content) return "";
 
     const content = Buffer.from(data.content, "base64").toString("utf-8");
-    
-    // Simple regex to find markdown images: ![alt](url)
-    // Matches first one. We can also look for HTML <img src="...">
-    const markdownRegex = /!\[[^\]]*\]\(([^)]+)\)/;
-    const match = markdownRegex.exec(content);
-    if (match && match[1]) {
-      return resolveImageUrl(repoFullName, defaultBranch, match[1].split(" ")[0]);
-    }
-
-    const htmlRegex = /<img[^>]+src=["']([^"']+)["']/i;
-    const htmlMatch = htmlRegex.exec(content);
-    if (htmlMatch && htmlMatch[1]) {
-      return resolveImageUrl(repoFullName, defaultBranch, htmlMatch[1]);
-    }
+    const readmePath = typeof data.path === "string" ? data.path : "README.md";
+    return selectBestReadmeImage([
+      ...extractMarkdownImageCandidates(content, repoFullName, defaultBranch, readmePath),
+      ...extractHtmlImageCandidates(content, repoFullName, defaultBranch, readmePath),
+    ]);
   } catch (error) {
     console.warn(`Failed to extract README for ${repoFullName}`);
   }
   return "";
 }
 
-function mapToProject(repo: any, readmeImageUrl: string): GithubProject {
+function githubSocialPreviewImage(repoFullName: string): string {
+  return repoFullName ? `https://opengraph.githubassets.com/1/${repoFullName}` : "";
+}
+
+function generatedPlaceholderImage(repoName: string): string {
+  return `https://placehold.co/1200x675/111827/ffffff.png?text=${encodeURIComponent(repoName || "Project")}`;
+}
+
+async function extractHomepageOgImage(homepage: string | null | undefined): Promise<string> {
+  if (!homepage) return "";
+
+  try {
+    const homepageUrl = new URL(homepage);
+    if (homepageUrl.protocol !== "http:" && homepageUrl.protocol !== "https:") return "";
+
+    const res = await fetch(homepageUrl.toString(), {
+      headers: { Accept: "text/html" },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return "";
+
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType && !contentType.includes("text/html")) return "";
+
+    const html = await res.text();
+    const match =
+      /<meta\s+[^>]*(?:property|name)=["'](?:og:image|twitter:image)["'][^>]*content=["']([^"']+)["'][^>]*>/i.exec(html) ||
+      /<meta\s+[^>]*content=["']([^"']+)["'][^>]*(?:property|name)=["'](?:og:image|twitter:image)["'][^>]*>/i.exec(html);
+    const imageUrl = match?.[1] ? new URL(decodeHtmlEntities(match[1]), homepageUrl).toString() : "";
+
+    return imageUrl && !isBadgeImage(imageUrl) ? imageUrl : "";
+  } catch {
+    return "";
+  }
+}
+
+async function mapToProject(repo: any, readmeImageUrl: string): Promise<GithubProject> {
+  const socialPreviewImage = githubSocialPreviewImage(repo.full_name);
+  const homepageOgImage = readmeImageUrl || socialPreviewImage ? "" : await extractHomepageOgImage(repo.homepage);
+
   return {
     title: repo.name,
     description: repo.description || "",
     repo_url: repo.html_url,
     project_url: repo.homepage || "",
     tags: repo.topics || (repo.language ? [repo.language] : []),
-    image_url: readmeImageUrl || "",
+    image_url: readmeImageUrl || socialPreviewImage || homepageOgImage || generatedPlaceholderImage(repo.name),
   };
 }
 
@@ -105,7 +289,7 @@ export async function fetchGithubUserRepos(username: string, token?: string): Pr
   const projects: GithubProject[] = [];
   for (const repo of validRepos) {
     const readmeImage = await extractReadmeImage(repo.full_name, repo.default_branch, token);
-    projects.push(mapToProject(repo, readmeImage));
+    projects.push(await mapToProject(repo, readmeImage));
   }
   return projects;
 }
