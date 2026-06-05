@@ -196,7 +196,7 @@ export async function registerWithPassword(input: {
         username,
         display_name: username,
       },
-      emailRedirectTo: `${await getRequestOrigin()}/auth/callback?next=/onboarding`,
+      emailRedirectTo: `${await getRequestOrigin()}/auth/callback?type=email_confirm&next=/onboarding`,
     },
   });
 
@@ -259,7 +259,7 @@ export async function sendPasswordReset(email: string): Promise<AuthActionResult
 
   const { supabase } = await createSupabaseServerActionClient("password_reset");
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${await getRequestOrigin()}/auth/callback?next=/dashboard/settings`,
+    redirectTo: `${await getRequestOrigin()}/auth/callback?type=password_recovery`,
   });
 
   if (error) {

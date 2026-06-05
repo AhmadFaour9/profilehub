@@ -5,11 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { changeAccountPassword, updateAccountEmail } from "@/app/dashboard/settings/actions";
-
-function passwordMeetsMinimum(value: string) {
-  return value.length >= 8 && /[a-z]/.test(value) && /[A-Z]/.test(value) && /[0-9]/.test(value);
-}
+import { sendAccountPasswordRecoveryEmail, updateAccountEmail } from "@/app/dashboard/settings/actions";
 
 export default function Settings({ currentEmail = "" }: { currentEmail?: string }) {
   const { toast } = useToast();
@@ -17,8 +13,6 @@ export default function Settings({ currentEmail = "" }: { currentEmail?: string 
   const [newEmail, setNewEmail] = useState("");
   const [emailStatus, setEmailStatus] = useState("");
   const [emailSaving, setEmailSaving] = useState(false);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordStatus, setPasswordStatus] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
 
@@ -50,37 +44,20 @@ export default function Settings({ currentEmail = "" }: { currentEmail?: string 
   async function submitPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPasswordStatus("");
-
-    if (newPassword !== confirmPassword) {
-      const message = "Passwords must match.";
-      setPasswordStatus(message);
-      toast({ title: "Password update failed", description: message, variant: "destructive" });
-      return;
-    }
-
-    if (!passwordMeetsMinimum(newPassword)) {
-      const message = "Use at least 8 characters with uppercase, lowercase, and a number.";
-      setPasswordStatus(message);
-      toast({ title: "Password update failed", description: message, variant: "destructive" });
-      return;
-    }
-
     setPasswordSaving(true);
-    const result = await changeAccountPassword({ password: newPassword, confirmPassword });
+    const result = await sendAccountPasswordRecoveryEmail();
     setPasswordSaving(false);
 
     if (!result.ok) {
-      const message = result.message || "Could not update password.";
+      const message = result.message || "Could not send password change email.";
       setPasswordStatus(message);
-      toast({ title: "Password update failed", description: message, variant: "destructive" });
+      toast({ title: "Password email failed", description: message, variant: "destructive" });
       return;
     }
 
-    setNewPassword("");
-    setConfirmPassword("");
-    const message = result.message || "Password updated successfully.";
+    const message = result.message || "We sent a secure password change link to your email.";
     setPasswordStatus(message);
-    toast({ title: "Password updated", description: message });
+    toast({ title: "Check your email", description: message });
   }
 
   return (
@@ -120,31 +97,11 @@ export default function Settings({ currentEmail = "" }: { currentEmail?: string 
       <form onSubmit={submitPassword} className="space-y-6 p-6 border rounded-xl bg-card">
         <h2 className="text-xl font-medium">Change Password</h2>
         <div className="space-y-4 max-w-md">
-          <div className="space-y-2">
-            <Label htmlFor="new-password">New Password</Label>
-            <Input
-              id="new-password"
-              type="password"
-              value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
-              autoComplete="new-password"
-              required
-            />
-            <p className="text-xs text-muted-foreground">Use at least 8 characters with uppercase, lowercase, and a number.</p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirm New Password</Label>
-            <Input
-              id="confirm-password"
-              type="password"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              autoComplete="new-password"
-              required
-            />
-          </div>
-          <Button type="submit" variant="outline" disabled={passwordSaving || !newPassword || !confirmPassword}>
-            {passwordSaving ? "Changing..." : "Change Password"}
+          <p className="text-sm text-muted-foreground">
+            We will send a secure password change link to your account email. After confirming the link, you can set a new password.
+          </p>
+          <Button type="submit" variant="outline" disabled={passwordSaving || !displayEmail}>
+            {passwordSaving ? "Sending..." : "Send password reset email"}
           </Button>
           {passwordStatus && <p className="text-sm text-muted-foreground">{passwordStatus}</p>}
         </div>

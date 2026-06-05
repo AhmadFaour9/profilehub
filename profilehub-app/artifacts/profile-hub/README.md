@@ -79,6 +79,37 @@ For local development use:
 http://localhost:24359/auth/callback
 ```
 
+## Supabase Auth Email Templates
+
+Custom confirmation templates are stored in:
+
+```text
+supabase/templates/confirmation.html
+supabase/templates/email_change.html
+supabase/templates/recovery.html
+```
+
+Local Supabase uses these through `supabase/config.toml`.
+
+For the hosted production project, copy each HTML file into Supabase Dashboard:
+
+1. Authentication > Email Templates > Confirm signup
+2. Set subject to `Confirm your ProfileHub email`
+3. Paste `supabase/templates/confirmation.html`
+4. Authentication > Email Templates > Change email address
+5. Set subject to `Confirm your new ProfileHub email`
+6. Paste `supabase/templates/email_change.html`
+7. Authentication > Email Templates > Reset password
+8. Set subject to `Reset your ProfileHub password`
+9. Paste `supabase/templates/recovery.html`
+
+Required production URL settings:
+
+```text
+Site URL: https://profilehub-two.vercel.app
+Redirect URL: https://profilehub-two.vercel.app/auth/callback
+```
+
 ## Run Locally
 
 ```bash

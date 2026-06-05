@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="x-apple-disable-message-reformatting">
+    <title>Confirm your new ProfileHub email</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f4f7fb;font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;color:#111827;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f4f7fb;margin:0;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;border-radius:18px;overflow:hidden;box-shadow:0 24px 60px rgba(15,23,42,.10);">
+            <tr>
+              <td style="background:#111827;padding:30px 32px;">
+                <div style="display:inline-block;padding:8px 12px;border:1px solid rgba(255,255,255,.18);border-radius:999px;color:#bbf7d0;font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;">
+                  ProfileHub account security
+                </div>
+                <h1 style="margin:22px 0 0;font-size:30px;line-height:1.18;color:#ffffff;font-weight:800;">
+                  Confirm your new email address.
+                </h1>
+                <p style="margin:14px 0 0;color:#d1d5db;font-size:16px;line-height:1.65;">
+                  We need to verify this change before your ProfileHub account email is updated.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:34px 32px 10px;">
+                <p style="margin:0 0 16px;font-size:16px;line-height:1.65;color:#374151;">
+                  A request was made to change the ProfileHub account email from
+                  <strong style="color:#111827;">{{ .Email }}</strong>
+                  to
+                  <strong style="color:#111827;">{{ .NewEmail }}</strong>.
+                </p>
+                <p style="margin:0 0 26px;font-size:16px;line-height:1.65;color:#374151;">
+                  Confirm the new address only if you requested this change.
+                </p>
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 24px;">
+                  <tr>
+                    <td bgcolor="#16a34a" style="border-radius:12px;">
+                      <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:15px 24px;border-radius:12px;background:#16a34a;color:#ffffff;text-decoration:none;font-size:16px;font-weight:800;">
+                        Confirm new email
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+                <div style="border:1px solid #fde68a;border-radius:14px;background:#fffbeb;padding:16px 18px;margin:0 0 24px;">
+                  <p style="margin:0 0 8px;font-size:13px;line-height:1.5;color:#92400e;font-weight:800;text-transform:uppercase;letter-spacing:.06em;">
+                    Did not request this?
+                  </p>
+                  <p style="margin:0;font-size:14px;line-height:1.65;color:#78350f;">
+                    Do not click the button. Sign in to ProfileHub and change your password, then contact support if needed.
+                  </p>
+                </div>
+                <p style="margin:0;font-size:13px;line-height:1.6;color:#6b7280;">
+                  Button not working? Copy and paste this secure link into your browser:
+                </p>
+                <p style="margin:8px 0 0;font-size:12px;line-height:1.6;color:#475569;word-break:break-all;">
+                  <a href="{{ .ConfirmationURL }}" target="_blank" style="color:#2563eb;text-decoration:underline;">{{ .ConfirmationURL }}</a>
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px 32px 34px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-top:1px solid #e5e7eb;">
+                  <tr>
+                    <td style="padding-top:20px;">
+                      <p style="margin:0;color:#94a3b8;font-size:12px;line-height:1.6;">
+                        Sent by ProfileHub. Visit <a href="{{ .SiteURL }}" target="_blank" style="color:#64748b;text-decoration:underline;">{{ .SiteURL }}</a>.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

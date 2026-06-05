@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { getAuthenticatedUser } from "@/modules/auth";
+import { getRequestOrigin } from "@/lib/request-url";
 
 type AccountActionResult = {
   ok: boolean;
@@ -11,9 +12,6 @@ type AccountActionResult = {
     | "reauthentication_required"
     | "not_logged_in"
     | "rate_limited"
-    | "weak_password"
-    | "same_password"
-    | "password_mismatch"
     | "unknown_error";
   message?: string;
   confirmationRequired?: boolean;
@@ -24,21 +22,6 @@ type AccountActionResult = {
 const updateEmailSchema = z.object({
   email: z.string().trim().email(),
 });
-
-const changePasswordSchema = z
-  .object({
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters.")
-      .regex(/[a-z]/, "Password must include a lowercase letter.")
-      .regex(/[A-Z]/, "Password must include an uppercase letter.")
-      .regex(/[0-9]/, "Password must include a number."),
-    confirmPassword: z.string(),
-  })
-  .refine((value) => value.password === value.confirmPassword, {
-    path: ["confirmPassword"],
-    message: "Passwords must match.",
-  });
 
 function normalizeAuthError(message: string | undefined, status?: number): AccountActionResult["code"] {
   const normalized = (message || "").toLowerCase();
@@ -51,12 +34,6 @@ function normalizeAuthError(message: string | undefined, status?: number): Accou
     return "email_already_exists";
   }
   if (normalized.includes("invalid") && normalized.includes("email")) return "invalid_email";
-  if (normalized.includes("weak") || normalized.includes("strength") || normalized.includes("password should")) {
-    return "weak_password";
-  }
-  if (normalized.includes("same password") || normalized.includes("different from the old password")) {
-    return "same_password";
-  }
 
   return "unknown_error";
 }
@@ -71,12 +48,6 @@ function messageForCode(code: AccountActionResult["code"]) {
       return "Please log out and log in again, then retry.";
     case "rate_limited":
       return "Too many attempts. Please try again later.";
-    case "weak_password":
-      return "Use at least 8 characters with uppercase, lowercase, and a number.";
-    case "same_password":
-      return "Choose a password different from your current password.";
-    case "password_mismatch":
-      return "Passwords must match.";
     case "not_logged_in":
       return "Please sign in again.";
     default:
@@ -96,7 +67,10 @@ export async function updateAccountEmail(input: unknown): Promise<AccountActionR
   }
 
   const newEmail = parsed.data.email;
-  const { data, error } = await supabase.auth.updateUser({ email: newEmail });
+  const { data, error } = await supabase.auth.updateUser(
+    { email: newEmail },
+    { emailRedirectTo: `${await getRequestOrigin()}/auth/callback?type=email_change&next=/dashboard/settings` }
+  );
 
   if (error) {
     const code = normalizeAuthError(error.message, error.status);
@@ -119,25 +93,24 @@ export async function updateAccountEmail(input: unknown): Promise<AccountActionR
   };
 }
 
-export async function changeAccountPassword(input: unknown): Promise<AccountActionResult> {
-  const parsed = changePasswordSchema.safeParse(input);
-  if (!parsed.success) {
-    const confirmIssue = parsed.error.issues.find((issue) => issue.path.includes("confirmPassword"));
-    const code = confirmIssue ? "password_mismatch" : "weak_password";
-    return { ok: false, code, message: messageForCode(code) };
-  }
-
+export async function sendAccountPasswordRecoveryEmail(): Promise<AccountActionResult> {
   const { supabase, user } = await getAuthenticatedUser("server_action");
   if (!user) {
     return { ok: false, code: "not_logged_in", message: messageForCode("not_logged_in") };
   }
 
-  const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
+  if (!user.email) {
+    return { ok: false, code: "unknown_error", message: "No email address is attached to this account." };
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+    redirectTo: `${await getRequestOrigin()}/auth/callback?type=password_recovery`,
+  });
 
   if (error) {
     const code = normalizeAuthError(error.message, error.status);
     return { ok: false, code, message: messageForCode(code) };
   }
 
-  return { ok: true, message: "Password updated successfully." };
+  return { ok: true, email: user.email, message: "We sent a secure password change link to your email." };
 }
