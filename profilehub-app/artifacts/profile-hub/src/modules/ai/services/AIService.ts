@@ -2,8 +2,10 @@ import { log } from "@/modules/logging";
 import type { AIFeature, IAIProvider, IAIRepository, AIProviderResult } from "../domain/interfaces";
 import { GeminiProvider } from "../providers/GeminiProvider";
 import { MockProvider } from "../providers/MockProvider";
+import { OpenRouterProvider } from "../providers/OpenRouterProvider";
 
 const DAILY_LIMIT = 20;
+const FALLBACK_MESSAGE = "Live AI is temporarily unavailable, so ProfileHub used a safe local suggestion.";
 
 export class AIService {
   private primaryProvider: IAIProvider;
@@ -13,12 +15,49 @@ export class AIService {
     private aiRepo: IAIRepository,
     private currentUserId?: string
   ) {
-    this.primaryProvider = new GeminiProvider();
     this.fallbackProvider = new MockProvider();
+    this.primaryProvider = this.selectPrimaryProvider();
+  }
+
+  private selectPrimaryProvider(): IAIProvider {
+    const requested = (process.env.AI_PROVIDER || "").trim().toLowerCase();
+
+    if (requested === "mock") return this.fallbackProvider;
+    if (requested === "openrouter") return new OpenRouterProvider();
+
+    return new GeminiProvider();
   }
 
   private getActiveProvider(): IAIProvider {
     return this.primaryProvider.isConfigured() ? this.primaryProvider : this.fallbackProvider;
+  }
+
+  private withFallbackMessage(result: AIProviderResult): AIProviderResult {
+    return {
+      ...result,
+      fallback: true,
+      fallbackMessage: FALLBACK_MESSAGE,
+    };
+  }
+
+  private async recordUsage(input: {
+    provider: string;
+    feature: AIFeature;
+    status: "success" | "fallback" | "error";
+    tokensUsed?: number;
+    errorMessage?: string;
+  }) {
+    this.aiRepo.recordUsage({
+      userId: this.currentUserId as string,
+      provider: input.provider,
+      feature: input.feature,
+      inputTokens: 0,
+      outputTokens: input.tokensUsed || 0,
+      status: input.status,
+      errorMessage: input.errorMessage,
+    }).catch((err) => {
+      void log("warn", "ai", "Failed to record AI usage", { reason: err instanceof Error ? err.message : "unknown" });
+    });
   }
 
   private async checkRateLimit(userId: string): Promise<void> {
@@ -38,56 +77,82 @@ export class AIService {
     const provider = this.getActiveProvider();
     let result: AIProviderResult;
 
+    if (provider.name === "mock" && this.primaryProvider.name !== "mock" && !this.primaryProvider.isConfigured()) {
+      await log("warn", "ai", "AI provider fallback", {
+        provider: this.primaryProvider.name,
+        model: this.primaryProvider.model || "missing",
+        status: "fallback",
+        reason: "not_configured",
+      });
+
+      result = this.withFallbackMessage(await this.fallbackProvider.generate(feature, input));
+
+      await this.recordUsage({
+        provider: result.provider,
+        feature,
+        status: "fallback",
+        tokensUsed: result.tokensUsed,
+        errorMessage: `${this.primaryProvider.name}_not_configured`,
+      });
+
+      return result;
+    }
+
     try {
       result = await provider.generate(feature, input);
 
-      this.aiRepo.recordUsage({
-        userId: this.currentUserId,
+      await log("info", "ai", "AI provider completed", {
+        provider: result.provider,
+        model: provider.model || result.model || "unknown",
+        status: result.fallback ? "fallback" : "success",
+      });
+
+      await this.recordUsage({
         provider: result.provider,
         feature,
-        inputTokens: 0,
-        outputTokens: result.tokensUsed || 0,
         status: result.fallback ? "fallback" : "success",
-      }).catch((err) => {
-        void log("warn", "ai", "Failed to record AI usage", { reason: err instanceof Error ? err.message : "unknown" });
+        tokensUsed: result.tokensUsed,
       });
 
       return result;
     } catch (error) {
       const message = error instanceof Error ? error.message : "AI provider failed";
-      await log("warn", "ai", "AI provider failed", { provider: provider.name, feature, reason: message });
+      const errorStatus = error && typeof error === "object" && "status" in error ? String(error.status) : undefined;
+      const errorCode = error && typeof error === "object" && "code" in error ? String(error.code) : undefined;
+      const shouldFallback =
+        provider.name !== "mock" &&
+        (!error || typeof error !== "object" || !("shouldFallback" in error) || Boolean(error.shouldFallback));
 
-      if (provider.name !== "mock") {
-        result = await this.fallbackProvider.generate(feature, input);
-        const content = `${result.content}\n\nThe live AI provider is temporarily unavailable, so ProfileHub used a local fallback.`;
+      await log(shouldFallback ? "warn" : "error", "ai", shouldFallback ? "AI provider fallback" : "AI provider failed", {
+        provider: provider.name,
+        model: provider.model || "unknown",
+        status: shouldFallback ? "fallback" : "error",
+        feature,
+        reason: message,
+        code: errorCode,
+        httpStatus: errorStatus,
+      });
 
-        result = {
-          ...result,
-          content,
-          text: content,
-          fallback: true,
-        };
+      if (shouldFallback) {
+        result = this.withFallbackMessage(await this.fallbackProvider.generate(feature, input));
 
-        this.aiRepo.recordUsage({
-          userId: this.currentUserId,
+        await this.recordUsage({
           provider: result.provider,
           feature,
-          inputTokens: 0,
-          outputTokens: result.tokensUsed || 0,
           status: "fallback",
+          tokensUsed: result.tokensUsed,
           errorMessage: message,
-        }).catch(() => {});
+        });
 
         return result;
       }
 
-      await this.aiRepo.recordUsage({
-        userId: this.currentUserId,
+      await this.recordUsage({
         provider: provider.name,
         feature,
         status: "error",
         errorMessage: message,
-      }).catch(() => {});
+      });
 
       throw error;
     }

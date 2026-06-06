@@ -1,6 +1,7 @@
 import type { AIFeature } from "./prompts";
 import { createGeminiProvider } from "./providers/gemini";
 import { createMockProvider, type AIProvider, type AIProviderResponse } from "./providers/mock";
+import { createOpenRouterProvider } from "./providers/openrouter";
 
 export type { AIFeature, AIProvider, AIProviderResponse };
 
@@ -9,6 +10,9 @@ export function selectProvider(): AIProvider {
   const mock = createMockProvider();
 
   if (requested === "mock") return mock;
+
+  const openrouter = createOpenRouterProvider();
+  if (requested === "openrouter") return openrouter.isConfigured() ? openrouter : mock;
 
   const gemini = createGeminiProvider();
   if ((requested === "gemini" || !requested) && gemini.isConfigured()) return gemini;

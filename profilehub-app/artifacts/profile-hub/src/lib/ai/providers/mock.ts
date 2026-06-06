@@ -7,10 +7,13 @@ export type AIProviderResponse = {
   provider: string;
   tokensUsed: number;
   fallback?: boolean;
+  fallbackMessage?: string;
+  model?: string;
 };
 
 export type AIProvider = {
   name: string;
+  model?: string;
   isConfigured(): boolean;
   generate(feature: AIFeature, input: Record<string, unknown>): Promise<AIProviderResponse>;
 };
@@ -39,6 +42,15 @@ export function createMockProvider(): AIProvider {
           return response(
             `${name} is a ${title} focused on clear, useful work and a polished digital presence. ` +
               "This draft is generated locally because the live AI provider is not available."
+          );
+        case "improve_bio":
+          return response(
+            `${name} is a ${title} with a clear, practical approach to meaningful work. ` +
+              "This improved version keeps the message concise, credible, and visitor-friendly."
+          );
+        case "suggest_smart_links":
+          return response(
+            "Suggested Smart Links:\n1. Book a Consultation - primary conversion link\n2. View Portfolio - proof of work\n3. Download Resume - quick hiring context\n4. Latest Project - fresh work highlight\n5. Contact Me - direct next step\n6. GitHub - technical credibility"
           );
         case "order_links":
           return response(

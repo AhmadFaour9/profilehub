@@ -7,10 +7,13 @@ export interface AIProviderResult {
   tokensUsed?: number;
   provider: string;
   fallback?: boolean;
+  fallbackMessage?: string;
+  model?: string;
 }
 
 export interface IAIProvider {
   name: string;
+  model?: string;
   isConfigured(): boolean;
   generate(feature: AIFeature, input: Record<string, unknown>): Promise<AIProviderResult>;
 }

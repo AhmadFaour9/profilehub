@@ -1,7 +1,9 @@
 export type AIFeature =
   | "generate_bio"
+  | "improve_bio"
   | "analyze_brand"
   | "order_links"
+  | "suggest_smart_links"
   | "project_names"
   | "improve_project_description"
   | "suggest_cta"
@@ -102,6 +104,24 @@ export function buildPrompt(feature: AIFeature, input: Record<string, unknown>):
         `Write a polished public profile bio for ${name}, a ${title}.`,
         `Tone: ${safe.tone || "professional, warm, and direct"}.`,
         "Use 2-3 concise sentences. Do not invent private details, metrics, employers, or credentials.",
+        `Safe public context: ${context}`,
+      ].join("\n");
+
+    case "improve_bio":
+      return [
+        "You are a personal branding editor.",
+        `Improve the existing public profile bio for ${name}, a ${title}.`,
+        "Return 2-3 polished sentences under 80 words.",
+        "Keep the voice credible and clear. Do not invent employers, private details, credentials, or metrics.",
+        `Safe public context: ${context}`,
+      ].join("\n");
+
+    case "suggest_smart_links":
+      return [
+        "You are designing Smart Links for a public professional profile.",
+        "Suggest 6 public action links that would help visitors take useful next steps.",
+        "For each link, return: Title, Category, Short description, and why it belongs on the profile.",
+        "Do not invent private URLs. Use generic destination ideas when URLs are not provided.",
         `Safe public context: ${context}`,
       ].join("\n");
 

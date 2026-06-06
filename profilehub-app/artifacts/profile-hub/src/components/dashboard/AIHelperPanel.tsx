@@ -8,11 +8,9 @@ import type { Link, Profile, Project } from "@/modules/shared";
 
 const ACTIONS: { feature: AIFeature; label: string }[] = [
   { feature: "generate_bio", label: "Generate Bio" },
-  { feature: "order_links", label: "Order Links" },
-  { feature: "project_names", label: "Project Names" },
-  { feature: "improve_project_description", label: "Improve Project" },
-  { feature: "suggest_cta", label: "Suggest CTA" },
-  { feature: "brand_score", label: "Brand Score" },
+  { feature: "improve_bio", label: "Improve Bio" },
+  { feature: "suggest_smart_links", label: "Suggest Smart Links" },
+  { feature: "improve_project_description", label: "Improve Project Description" },
 ];
 
 export function AIHelperPanel({
@@ -25,10 +23,12 @@ export function AIHelperPanel({
   projects?: Project[];
 }) {
   const [result, setResult] = useState<string>("Select an AI action.");
+  const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState<AIFeature | null>(null);
 
   async function run(feature: AIFeature) {
     setLoading(feature);
+    setFallbackMessage(null);
     const response = await fetch("/api/ai", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -53,6 +53,7 @@ export function AIHelperPanel({
       return;
     }
 
+    setFallbackMessage(data.fallback ? data.fallbackMessage || "Live AI is temporarily unavailable, so a local fallback was used." : null);
     setResult(data.content || "No suggestion.");
   }
 
@@ -76,6 +77,11 @@ export function AIHelperPanel({
           </Button>
         ))}
       </div>
+      {fallbackMessage ? (
+        <div className="rounded-lg border border-amber-300/50 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-200">
+          {fallbackMessage}
+        </div>
+      ) : null}
       <p className="text-sm text-muted-foreground whitespace-pre-line">{result}</p>
     </div>
   );

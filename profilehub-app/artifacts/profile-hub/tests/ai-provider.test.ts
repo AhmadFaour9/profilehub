@@ -10,8 +10,21 @@ describe("AI provider fallback", () => {
   it("uses mock provider when no AI key is configured", () => {
     vi.stubEnv("AI_PROVIDER", "");
     vi.stubEnv("GEMINI_API_KEY", "");
+    vi.stubEnv("OPENROUTER_API_KEY", "");
+    vi.stubEnv("OPENROUTER_MODEL", "");
 
     expect(selectProvider().name).toBe("mock");
+  });
+
+  it("uses OpenRouter when requested and configured", () => {
+    vi.stubEnv("AI_PROVIDER", "openrouter");
+    vi.stubEnv("OPENROUTER_API_KEY", "test-key");
+    vi.stubEnv("OPENROUTER_MODEL", "example/free-model");
+
+    const provider = selectProvider();
+
+    expect(provider.name).toBe("openrouter");
+    expect(provider.model).toBe("example/free-model");
   });
 
   it("does not forward sensitive fields into prompts", () => {

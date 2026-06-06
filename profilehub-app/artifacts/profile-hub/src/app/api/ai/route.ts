@@ -8,8 +8,10 @@ import { log } from "@/modules/logging";
 
 const FEATURES = [
   "generate_bio",
+  "improve_bio",
   "analyze_brand",
   "order_links",
+  "suggest_smart_links",
   "project_names",
   "improve_project_description",
   "suggest_cta",

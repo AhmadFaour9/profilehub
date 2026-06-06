@@ -21,8 +21,10 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SECRET_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-AI_PROVIDER=mock
+AI_PROVIDER=openrouter
 GEMINI_API_KEY=
+OPENROUTER_API_KEY=
+OPENROUTER_MODEL=meta-llama/llama-3.1-8b-instruct:free
 APP_URL=http://localhost:24359
 NEXT_PUBLIC_APP_URL=http://localhost:24359
 LOG_LEVEL=info
@@ -143,7 +145,9 @@ SUPABASE_SECRET_KEY=sb_secret_...
 SUPABASE_SERVICE_ROLE_KEY=service_role_jwt_or_sb_secret_...
 APP_URL=https://profilehub-two.vercel.app
 NEXT_PUBLIC_APP_URL=https://profilehub-two.vercel.app
-AI_PROVIDER=mock
+AI_PROVIDER=openrouter
+OPENROUTER_API_KEY=
+OPENROUTER_MODEL=meta-llama/llama-3.1-8b-instruct:free
 LOG_LEVEL=info
 ```
 
@@ -154,15 +158,20 @@ AI is accessed only through `/lib/ai/provider.ts`.
 Providers:
 
 - `/lib/ai/providers/gemini.ts`
+- `/lib/ai/providers/openrouter.ts`
 - `/lib/ai/providers/mock.ts`
 
-If `GEMINI_API_KEY` is missing or the provider quota fails, the app falls back to the mock provider with a friendly message. AI prompts are minimized and redact sensitive keys before sending.
+Set `AI_PROVIDER=openrouter` with `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` to use OpenRouter chat completions. The OpenRouter model is read from `OPENROUTER_MODEL`, so deployments can switch free/paid models without code changes.
+
+If the selected live provider is missing, unavailable, quota-limited, rate-limited, or returns a model error, the app falls back to the mock provider with a friendly message. AI prompts are minimized and redact sensitive keys before sending.
 
 Supported features through `POST /api/ai`:
 
 - `generate_bio`
+- `improve_bio`
 - `analyze_brand`
 - `order_links`
+- `suggest_smart_links`
 - `project_names`
 - `improve_project_description`
 - `suggest_cta`
