@@ -22,12 +22,13 @@ export function AIHelperPanel({
   projects?: Project[];
 }) {
   const [result, setResult] = useState<string>("Select an AI action.");
-  const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
+  const [providerMessage, setProviderMessage] = useState<string | null>(null);
+  const [providerMessageType, setProviderMessageType] = useState<"live" | "fallback">("live");
   const [loading, setLoading] = useState<AIFeature | null>(null);
 
   async function run(feature: AIFeature) {
     setLoading(feature);
-    setFallbackMessage(null);
+    setProviderMessage(null);
     const response = await fetch("/api/ai", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -52,7 +53,13 @@ export function AIHelperPanel({
       return;
     }
 
-    setFallbackMessage(data.fallback ? data.fallbackMessage || "Live AI is temporarily unavailable, so a local fallback was used." : null);
+    if (data.fallback) {
+      setProviderMessageType("fallback");
+      setProviderMessage("Live AI unavailable, local fallback used.");
+    } else if (data.model) {
+      setProviderMessageType("live");
+      setProviderMessage(`Live AI used: ${data.model}`);
+    }
     setResult(data.content || "No suggestion.");
   }
 
@@ -76,9 +83,15 @@ export function AIHelperPanel({
           </Button>
         ))}
       </div>
-      {fallbackMessage ? (
-        <div className="rounded-lg border border-amber-300/50 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-200">
-          {fallbackMessage}
+      {providerMessage ? (
+        <div
+          className={
+            providerMessageType === "fallback"
+              ? "rounded-lg border border-amber-300/50 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-200"
+              : "rounded-lg border border-emerald-300/50 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-200"
+          }
+        >
+          {providerMessage}
         </div>
       ) : null}
       <p className="text-sm text-muted-foreground whitespace-pre-line">{result}</p>

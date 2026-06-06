@@ -187,7 +187,7 @@ function providerErrorJson(error: unknown) {
     error: message,
     debugCode,
     provider: process.env.AI_PROVIDER || "default",
-    model: process.env.OPENROUTER_MODEL || null,
+    model: process.env.OPENROUTER_MODELS || process.env.OPENROUTER_MODEL || null,
     attemptedModels,
     httpStatus: Number.isFinite(status) ? status : undefined,
   }, 502);
@@ -261,7 +261,7 @@ export async function POST(request: Request) {
     ai_feature: "project_description",
     project_id: project.id,
     provider: result.provider,
-    model: result.model || process.env.OPENROUTER_MODEL || process.env.AI_PROVIDER || "unknown",
+    model: result.model || process.env.OPENROUTER_MODELS || process.env.OPENROUTER_MODEL || process.env.AI_PROVIDER || "unknown",
     fallback: Boolean(result.fallback),
     debugCode: result.debugCode,
   });
@@ -271,7 +271,7 @@ export async function POST(request: Request) {
     projectId: project.id,
     variants,
     provider: result.provider,
-    model: result.model || process.env.OPENROUTER_MODEL || null,
+    model: result.model || process.env.OPENROUTER_MODELS || process.env.OPENROUTER_MODEL || null,
     fallback: Boolean(result.fallback),
     fallbackMessage: result.fallbackMessage,
     debugCode: result.debugCode,

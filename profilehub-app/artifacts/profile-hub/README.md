@@ -24,8 +24,8 @@ SUPABASE_SERVICE_ROLE_KEY=
 AI_PROVIDER=openrouter
 GEMINI_API_KEY=
 OPENROUTER_API_KEY=
-OPENROUTER_MODEL=meta-llama/llama-3.1-8b-instruct:free
-OPENROUTER_FALLBACK_MODELS=google/gemma-4-26b-a4b-it:free,meta-llama/llama-3.1-8b-instruct:free
+OPENROUTER_MODELS=google/gemma-4-26b-a4b-it:free,meta-llama/llama-3.1-8b-instruct:free,mistralai/mistral-7b-instruct:free
+OPENROUTER_MODEL=
 AI_EXPOSE_PROVIDER_ERRORS=false
 APP_URL=http://localhost:24359
 NEXT_PUBLIC_APP_URL=http://localhost:24359
@@ -149,8 +149,8 @@ APP_URL=https://profilehub-two.vercel.app
 NEXT_PUBLIC_APP_URL=https://profilehub-two.vercel.app
 AI_PROVIDER=openrouter
 OPENROUTER_API_KEY=
-OPENROUTER_MODEL=meta-llama/llama-3.1-8b-instruct:free
-OPENROUTER_FALLBACK_MODELS=google/gemma-4-26b-a4b-it:free,meta-llama/llama-3.1-8b-instruct:free
+OPENROUTER_MODELS=google/gemma-4-26b-a4b-it:free,meta-llama/llama-3.1-8b-instruct:free,mistralai/mistral-7b-instruct:free
+OPENROUTER_MODEL=
 LOG_LEVEL=info
 ```
 
@@ -164,7 +164,7 @@ Providers:
 - `/lib/ai/providers/openrouter.ts`
 - `/lib/ai/providers/mock.ts`
 
-Set `AI_PROVIDER=openrouter` with `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` to use OpenRouter chat completions. The OpenRouter model is read from `OPENROUTER_MODEL`, so deployments can switch free/paid models without code changes. Optional `OPENROUTER_FALLBACK_MODELS` is a comma-separated list tried when the selected OpenRouter model is unavailable or rate-limited.
+Set `AI_PROVIDER=openrouter` with `OPENROUTER_API_KEY` and `OPENROUTER_MODELS` to use OpenRouter chat completions. `OPENROUTER_MODELS` is a comma-separated priority list; ProfileHub tries each model in order and stops at the first successful response. If `OPENROUTER_MODELS` is missing, the legacy `OPENROUTER_MODEL` value is still supported as the first attempted model.
 
 Set `AI_EXPOSE_PROVIDER_ERRORS=true` in preview/staging to return provider debug codes instead of masking all live provider failures behind mock fallback.
 

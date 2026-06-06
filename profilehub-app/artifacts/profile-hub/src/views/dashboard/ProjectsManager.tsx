@@ -159,7 +159,8 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
   const [deleteSaving, setDeleteSaving] = useState(false);
   const [aiProject, setAiProject] = useState<Project | null>(null);
   const [aiVariants, setAiVariants] = useState<DescriptionVariants | null>(null);
-  const [aiFallbackMessage, setAiFallbackMessage] = useState("");
+  const [aiProviderMessage, setAiProviderMessage] = useState("");
+  const [aiProviderMessageType, setAiProviderMessageType] = useState<"live" | "fallback">("live");
   const [aiLoading, setAiLoading] = useState(false);
   const [aiAccepting, setAiAccepting] = useState<DescriptionVariantKey | null>(null);
   const { toast } = useToast();
@@ -277,7 +278,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
   const handleImproveDescription = async (project: Project) => {
     setAiProject(project);
     setAiVariants(null);
-    setAiFallbackMessage("");
+    setAiProviderMessage("");
     setAiLoading(true);
 
     try {
@@ -289,7 +290,13 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
       const data = await parseJsonApiResponse(response, "Could not improve project description.");
 
       setAiVariants(data.variants);
-      setAiFallbackMessage(data.fallback ? data.fallbackMessage || "Live AI is unavailable, so a local fallback was used." : "");
+      if (data.fallback) {
+        setAiProviderMessageType("fallback");
+        setAiProviderMessage("Live AI unavailable, local fallback used.");
+      } else if (data.model) {
+        setAiProviderMessageType("live");
+        setAiProviderMessage(`Live AI used: ${data.model}`);
+      }
     } catch (error: any) {
       setAiProject(null);
       toast({
@@ -663,9 +670,15 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
             </div>
           ) : (
             <div className="space-y-4">
-              {aiFallbackMessage && (
-                <div className="rounded-lg border border-amber-300/50 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-200">
-                  {aiFallbackMessage}
+              {aiProviderMessage && (
+                <div
+                  className={
+                    aiProviderMessageType === "fallback"
+                      ? "rounded-lg border border-amber-300/50 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-200"
+                      : "rounded-lg border border-emerald-300/50 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-200"
+                  }
+                >
+                  {aiProviderMessage}
                 </div>
               )}
 

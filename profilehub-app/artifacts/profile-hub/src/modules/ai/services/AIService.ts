@@ -8,7 +8,7 @@ const DAILY_LIMIT = 20;
 const FALLBACK_MESSAGE = "Live AI is temporarily unavailable, so ProfileHub used a safe local suggestion.";
 
 function shouldExposeProviderErrors(): boolean {
-  return process.env.VERCEL_ENV === "preview" || process.env.AI_EXPOSE_PROVIDER_ERRORS === "true";
+  return process.env.AI_EXPOSE_PROVIDER_ERRORS === "true";
 }
 
 export class AIService {
@@ -110,7 +110,7 @@ export class AIService {
 
       await log("info", "ai", "AI provider completed", {
         provider: result.provider,
-        model: provider.model || result.model || "unknown",
+        model: result.model || provider.model || "unknown",
         status: result.fallback ? "fallback" : "success",
       });
 

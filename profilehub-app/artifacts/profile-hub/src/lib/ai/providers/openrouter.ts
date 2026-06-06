@@ -6,10 +6,12 @@ import type { AIProvider, AIProviderResponse } from "./mock";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_REFERER = PRODUCTION_APP_URL;
 const MAX_LOG_STRING_LENGTH = 800;
-const DEFAULT_FALLBACK_MODELS = [
+const DEFAULT_OPENROUTER_MODELS = [
   "google/gemma-4-26b-a4b-it:free",
   "meta-llama/llama-3.1-8b-instruct:free",
+  "mistralai/mistral-7b-instruct:free",
 ];
+const DEFAULT_OPENROUTER_TIMEOUT_MS = 20_000;
 
 export type OpenRouterDebugCode =
   | "openrouter_missing_key"
@@ -17,6 +19,7 @@ export type OpenRouterDebugCode =
   | "openrouter_rate_limited"
   | "openrouter_quota_exceeded"
   | "openrouter_auth_failed"
+  | "openrouter_timeout"
   | "openrouter_bad_request";
 
 type OpenRouterMessageContent =
@@ -70,13 +73,24 @@ function uniqueValues(values: string[]): string[] {
   return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
 }
 
-function configuredFallbackModels(): string[] {
-  const configured = readEnv("OPENROUTER_FALLBACK_MODELS");
-  const models = configured
-    ? configured.split(",").map((model) => model.trim())
-    : DEFAULT_FALLBACK_MODELS;
+function splitModels(value: string): string[] {
+  return value
+    .split(",")
+    .map((model) => model.trim())
+    .filter(Boolean);
+}
 
-  return uniqueValues(models);
+function configuredModels(): string[] {
+  const configuredList = splitModels(readEnv("OPENROUTER_MODELS"));
+  if (configuredList.length > 0) return uniqueValues(configuredList);
+
+  const legacyModel = readEnv("OPENROUTER_MODEL");
+  return uniqueValues([legacyModel, ...DEFAULT_OPENROUTER_MODELS]);
+}
+
+function configuredTimeoutMs(): number {
+  const configured = Number(readEnv("OPENROUTER_TIMEOUT_MS"));
+  return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_OPENROUTER_TIMEOUT_MS;
 }
 
 function safeLogValue(value: unknown): unknown {
@@ -183,8 +197,13 @@ function getDebugCode(status: number, message: string, code?: string): OpenRoute
   return "openrouter_bad_request";
 }
 
-function shouldTryFallbackModel(debugCode: OpenRouterDebugCode): boolean {
-  return ["openrouter_model_unavailable", "openrouter_rate_limited", "openrouter_bad_request"].includes(debugCode);
+function shouldTryNextModel(error: OpenRouterProviderError): boolean {
+  if (error.debugCode === "openrouter_auth_failed" || error.debugCode === "openrouter_missing_key") return false;
+  if (error.debugCode === "openrouter_timeout") return true;
+  if ([400, 402, 404, 408, 429, 500, 502, 503, 504].includes(error.status || 0)) return true;
+  return ["openrouter_model_unavailable", "openrouter_rate_limited", "openrouter_quota_exceeded", "openrouter_bad_request"].includes(
+    error.debugCode
+  );
 }
 
 async function readJsonOrText(response: Response): Promise<unknown> {
@@ -198,20 +217,20 @@ async function readJsonOrText(response: Response): Promise<unknown> {
 
 export function createOpenRouterProvider(): AIProvider {
   const apiKey = readEnv("OPENROUTER_API_KEY");
-  const model = readEnv("OPENROUTER_MODEL");
+  const models = configuredModels();
+  const model = models[0] || "";
   const requestedProvider = readEnv("AI_PROVIDER") || "default";
-  const fallbackModels = configuredFallbackModels();
-  const modelAttempts = uniqueValues([model, ...fallbackModels]);
+  const timeoutMs = configuredTimeoutMs();
 
   return {
     name: "openrouter",
     model,
-    isConfigured: () => Boolean(apiKey && model),
+    isConfigured: () => Boolean(apiKey && models.length > 0),
     async generate(feature: AIFeature, input: Record<string, unknown>): Promise<AIProviderResponse> {
       logOpenRouter("info", "openrouter_request_started", {
         AI_PROVIDER: requestedProvider,
-        OPENROUTER_MODEL: model || "missing",
-        OPENROUTER_FALLBACK_MODELS: fallbackModels,
+        OPENROUTER_MODELS: models,
+        OPENROUTER_MODEL: readEnv("OPENROUTER_MODEL") || "missing",
         OPENROUTER_API_KEY_exists: Boolean(apiKey),
         referer: OPENROUTER_REFERER,
         feature,
@@ -228,9 +247,9 @@ export function createOpenRouterProvider(): AIProvider {
         );
       }
 
-      if (!model) {
+      if (models.length === 0) {
         throw new OpenRouterProviderError(
-          "OpenRouter model is missing.",
+          "OpenRouter models are missing.",
           undefined,
           "missing_model",
           "openrouter_model_unavailable",
@@ -240,18 +259,33 @@ export function createOpenRouterProvider(): AIProvider {
       }
 
       let lastError: OpenRouterProviderError | null = null;
+      const attemptedModels: string[] = [];
 
-      for (const attemptedModel of modelAttempts) {
+      for (let index = 0; index < models.length; index += 1) {
+        const attemptedModel = models[index];
+        attemptedModels.push(attemptedModel);
         try {
-          return await requestOpenRouter({
+          const response = await requestOpenRouter({
             apiKey,
             requestedProvider,
-            configuredModel: model,
+            configuredModels: models,
             attemptedModel,
-            fallbackModels,
+            timeoutMs,
             feature,
             input,
           });
+
+          logOpenRouter("info", "openrouter_generation_success", {
+            provider: "openrouter",
+            attemptedModel,
+            finalSelectedModel: response.model || attemptedModel,
+            status: "success",
+          });
+
+          return {
+            ...response,
+            attemptedModels,
+          };
         } catch (error) {
           const providerError =
             error instanceof OpenRouterProviderError
@@ -266,25 +300,26 @@ export function createOpenRouterProvider(): AIProvider {
                 );
           lastError = providerError;
 
-          if (!shouldTryFallbackModel(providerError.debugCode)) {
+          if (!shouldTryNextModel(providerError)) {
             throw new OpenRouterProviderError(
               providerError.message,
               providerError.status,
               providerError.code,
               providerError.debugCode,
               true,
-              uniqueValues([...(providerError.attemptedModels || []), attemptedModel])
+              uniqueValues([...attemptedModels, ...(providerError.attemptedModels || [])])
             );
           }
 
-          const nextModel = modelAttempts[modelAttempts.indexOf(attemptedModel) + 1];
+          const nextModel = models[index + 1];
           if (!nextModel) break;
 
           logOpenRouter("warn", "openrouter_model_fallback_attempt", {
-            AI_PROVIDER: requestedProvider,
-            OPENROUTER_MODEL: model,
+            provider: "openrouter",
             failedModel: attemptedModel,
             nextModel,
+            status: "fallback",
+            fallbackReason: providerError.debugCode,
             debugCode: providerError.debugCode,
             httpStatus: providerError.status,
             errorMessage: providerError.message,
@@ -298,7 +333,7 @@ export function createOpenRouterProvider(): AIProvider {
         lastError?.code,
         lastError?.debugCode || "openrouter_bad_request",
         true,
-        modelAttempts
+        attemptedModels
       );
     },
   };
@@ -307,91 +342,117 @@ export function createOpenRouterProvider(): AIProvider {
 async function requestOpenRouter({
   apiKey,
   requestedProvider,
-  configuredModel,
+  configuredModels,
   attemptedModel,
-  fallbackModels,
+  timeoutMs,
   feature,
   input,
 }: {
   apiKey: string;
   requestedProvider: string;
-  configuredModel: string;
+  configuredModels: string[];
   attemptedModel: string;
-  fallbackModels: string[];
+  timeoutMs: number;
   feature: AIFeature;
   input: Record<string, unknown>;
 }): Promise<AIProviderResponse> {
-      const response = await fetch(OPENROUTER_URL, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": OPENROUTER_REFERER,
-          "X-Title": "ProfileHub",
-        },
-        body: JSON.stringify({
-          model: attemptedModel,
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are ProfileHub's concise personal-branding assistant. Use only the supplied public context and avoid inventing private facts.",
-            },
-            {
-              role: "user",
-              content: buildPrompt(feature, input),
-            },
-          ],
-          max_tokens: 500,
-          temperature: 0.7,
-        }),
-      });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-      const payload = await readJsonOrText(response);
+  let response: Response;
+  try {
+    response = await fetch(OPENROUTER_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": OPENROUTER_REFERER,
+        "X-Title": "ProfileHub",
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: attemptedModel,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are ProfileHub's concise personal-branding assistant. Use only the supplied public context and avoid inventing private facts.",
+          },
+          {
+            role: "user",
+            content: buildPrompt(feature, input),
+          },
+        ],
+        max_tokens: 500,
+        temperature: 0.7,
+      }),
+    });
+  } catch (error) {
+    const isTimeout = error instanceof Error && error.name === "AbortError";
+    const debugCode: OpenRouterDebugCode = isTimeout ? "openrouter_timeout" : "openrouter_bad_request";
 
-      logOpenRouter(response.ok ? "info" : "warn", response.ok ? "openrouter_http_success" : "openrouter_http_error", {
-        AI_PROVIDER: requestedProvider,
-        OPENROUTER_MODEL: configuredModel,
-        OPENROUTER_ATTEMPTED_MODEL: attemptedModel,
-        OPENROUTER_FALLBACK_MODELS: fallbackModels,
-        OPENROUTER_API_KEY_exists: Boolean(apiKey),
-        httpStatus: response.status,
-        errorBody: response.ok ? undefined : safeLogString(payload),
-      });
+    logOpenRouter("warn", "openrouter_http_error", {
+      AI_PROVIDER: requestedProvider,
+      OPENROUTER_MODELS: configuredModels,
+      OPENROUTER_ATTEMPTED_MODEL: attemptedModel,
+      OPENROUTER_API_KEY_exists: Boolean(apiKey),
+      status: "error",
+      fallbackReason: debugCode,
+      httpStatus: isTimeout ? "timeout" : undefined,
+      errorMessage: isTimeout ? `OpenRouter request timed out after ${timeoutMs}ms.` : error instanceof Error ? error.message : "OpenRouter request failed.",
+    });
 
-      if (!response.ok) {
-        const parsed = parseErrorPayload(payload);
-        const debugCode = getDebugCode(response.status, parsed.message, parsed.code);
-        throw new OpenRouterProviderError(
-          parsed.message,
-          response.status,
-          parsed.code,
-          debugCode,
-          true,
-          [attemptedModel]
-        );
-      }
+    throw new OpenRouterProviderError(
+      isTimeout ? "OpenRouter request timed out." : error instanceof Error ? error.message : "OpenRouter request failed.",
+      isTimeout ? 408 : undefined,
+      isTimeout ? "timeout" : "request_failed",
+      debugCode,
+      true,
+      [attemptedModel]
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
 
-      const parsed = payload as OpenRouterResponse;
-      const content = extractContent(parsed);
+  const payload = await readJsonOrText(response);
 
-      if (!content) {
-        throw new OpenRouterProviderError(
-          "OpenRouter returned an empty response.",
-          response.status,
-          "empty_response",
-          "openrouter_bad_request",
-          true,
-          [attemptedModel]
-        );
-      }
+  logOpenRouter(response.ok ? "info" : "warn", response.ok ? "openrouter_http_success" : "openrouter_http_error", {
+    AI_PROVIDER: requestedProvider,
+    OPENROUTER_MODELS: configuredModels,
+    OPENROUTER_ATTEMPTED_MODEL: attemptedModel,
+    OPENROUTER_API_KEY_exists: Boolean(apiKey),
+    status: response.ok ? "success" : "error",
+    fallbackReason: response.ok ? undefined : getDebugCode(response.status, parseErrorPayload(payload).message, parseErrorPayload(payload).code),
+    httpStatus: response.status,
+    errorBody: response.ok ? undefined : safeLogString(payload),
+  });
 
-      return {
-        content,
-        text: content,
-        provider: "openrouter",
-        model: parsed.model || attemptedModel,
-        tokensUsed: parsed.usage?.total_tokens || 0,
-        fallback: false,
-      };
+  if (!response.ok) {
+    const parsed = parseErrorPayload(payload);
+    const debugCode = getDebugCode(response.status, parsed.message, parsed.code);
+    throw new OpenRouterProviderError(parsed.message, response.status, parsed.code, debugCode, true, [attemptedModel]);
+  }
+
+  const parsed = payload as OpenRouterResponse;
+  const content = extractContent(parsed);
+
+  if (!content) {
+    throw new OpenRouterProviderError(
+      "OpenRouter returned an empty response.",
+      response.status,
+      "empty_response",
+      "openrouter_bad_request",
+      true,
+      [attemptedModel]
+    );
+  }
+
+  return {
+    content,
+    text: content,
+    provider: "openrouter",
+    model: parsed.model || attemptedModel,
+    tokensUsed: parsed.usage?.total_tokens || 0,
+    fallback: false,
+  };
 }

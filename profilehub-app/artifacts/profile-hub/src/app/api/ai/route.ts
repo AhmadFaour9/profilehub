@@ -46,7 +46,7 @@ function providerErrorPayload(error: unknown) {
       error: message,
       debugCode,
       provider: process.env.AI_PROVIDER || "default",
-      model: process.env.OPENROUTER_MODEL || null,
+      model: process.env.OPENROUTER_MODELS || process.env.OPENROUTER_MODEL || null,
       attemptedModels,
       httpStatus: Number.isFinite(status) ? status : undefined,
     },
