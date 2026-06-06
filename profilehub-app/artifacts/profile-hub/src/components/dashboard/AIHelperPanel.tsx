@@ -10,7 +10,6 @@ const ACTIONS: { feature: AIFeature; label: string }[] = [
   { feature: "generate_bio", label: "Generate Bio" },
   { feature: "improve_bio", label: "Improve Bio" },
   { feature: "suggest_smart_links", label: "Suggest Smart Links" },
-  { feature: "improve_project_description", label: "Improve Project Description" },
 ];
 
 export function AIHelperPanel({

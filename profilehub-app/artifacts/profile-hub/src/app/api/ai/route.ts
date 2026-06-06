@@ -23,10 +23,23 @@ const bodySchema = z.object({
   input: z.record(z.unknown()).default({}),
 });
 
+function hasSelectedProject(input: Record<string, unknown>): boolean {
+  const projectId = typeof input.projectId === "string" ? input.projectId.trim() : "";
+  const project = input.project && typeof input.project === "object" && !Array.isArray(input.project)
+    ? input.project as Record<string, unknown>
+    : {};
+  const nestedProjectId = typeof project.id === "string" ? project.id.trim() : "";
+  return Boolean(projectId || nestedProjectId);
+}
+
 export async function POST(request: NextRequest) {
   const parsed = bodySchema.safeParse(await request.json().catch(() => ({})));
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid AI request." }, { status: 400 });
+  }
+
+  if (parsed.data.feature === "improve_project_description" && !hasSelectedProject(parsed.data.input)) {
+    return NextResponse.json({ error: "No project selected" }, { status: 400 });
   }
 
   let client: SupabaseClient | null = null;

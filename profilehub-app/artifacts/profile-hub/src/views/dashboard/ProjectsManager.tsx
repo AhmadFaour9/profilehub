@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Briefcase, Github, Loader2, Check } from "lucide-react";
+import { Plus, Briefcase, Github, Loader2, Check, Sparkles } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProjectCard } from "@/components/profile/ProjectCard";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +39,17 @@ type ProjectFormState = {
   imageUrl: string;
   tags: string;
 };
+
+type DescriptionVariantKey = "improved" | "shorter" | "marketing" | "technical";
+
+type DescriptionVariants = Record<DescriptionVariantKey, string>;
+
+const DESCRIPTION_VARIANTS: Array<{ key: DescriptionVariantKey; label: string; description: string }> = [
+  { key: "improved", label: "Improved", description: "Balanced portfolio description." },
+  { key: "shorter", label: "Shorter", description: "Concise one-line version." },
+  { key: "marketing", label: "Marketing", description: "Benefit-focused version." },
+  { key: "technical", label: "Technical", description: "Implementation-focused version." },
+];
 
 const API_ERROR_MESSAGES: Record<string, string> = {
   not_authenticated: "Please sign in again before importing GitHub projects.",
@@ -146,6 +157,11 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
   const [editSaving, setEditSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
   const [deleteSaving, setDeleteSaving] = useState(false);
+  const [aiProject, setAiProject] = useState<Project | null>(null);
+  const [aiVariants, setAiVariants] = useState<DescriptionVariants | null>(null);
+  const [aiFallbackMessage, setAiFallbackMessage] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiAccepting, setAiAccepting] = useState<DescriptionVariantKey | null>(null);
   const { toast } = useToast();
 
   const handleGithubFetch = async () => {
@@ -239,6 +255,82 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
   const openEditDialog = (project: Project) => {
     setEditingProject(project);
     setEditForm(formFromProject(project));
+  };
+
+  const selectedProjectContext = (project: Project) => {
+    const usesEditDraft = editingProject?.id === project.id;
+
+    return {
+      projectId: project.id,
+      title: usesEditDraft ? editForm.title : project.title,
+      description: usesEditDraft ? editForm.description : project.description || "",
+      repoUrl: usesEditDraft ? editForm.repoUrl : project.repoUrl || "",
+      projectUrl: usesEditDraft ? editForm.projectUrl : projectUrl(project),
+      tags: usesEditDraft ? normalizeTags(editForm.tags) : project.tags || [],
+    };
+  };
+
+  const handleImproveDescription = async (project: Project) => {
+    setAiProject(project);
+    setAiVariants(null);
+    setAiFallbackMessage("");
+    setAiLoading(true);
+
+    try {
+      const response = await fetch("/api/ai/project-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(selectedProjectContext(project)),
+      });
+      const data = await parseJsonApiResponse(response, "Could not improve project description.");
+
+      setAiVariants(data.variants);
+      setAiFallbackMessage(data.fallback ? data.fallbackMessage || "Live AI is unavailable, so a local fallback was used." : "");
+    } catch (error: any) {
+      setAiProject(null);
+      toast({
+        title: "AI description failed",
+        description: error?.message || "Could not improve project description.",
+        variant: "destructive",
+      });
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleAcceptDescription = async (variant: DescriptionVariantKey) => {
+    if (!aiProject || !aiVariants?.[variant]) return;
+
+    const nextDescription = aiVariants[variant];
+    setAiAccepting(variant);
+
+    try {
+      const result = await updateProject(aiProject.id, { description: nextDescription });
+
+      if (!result.ok) {
+        throw new Error(result.message || "Could not update project.");
+      }
+
+      const updated = normalizeProjectFromRow(result.data, { ...aiProject, description: nextDescription });
+      setAllProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+
+      if (editingProject?.id === updated.id) {
+        setEditingProject(updated);
+        setEditForm((prev) => ({ ...prev, description: updated.description || nextDescription }));
+      }
+
+      setAiProject(null);
+      setAiVariants(null);
+      toast({ title: "Description updated", description: "The selected AI description has been saved." });
+    } catch (error: any) {
+      toast({
+        title: "Update failed",
+        description: error?.message || "Could not update project.",
+        variant: "destructive",
+      });
+    } finally {
+      setAiAccepting(null);
+    }
   };
 
   const handleEditSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -426,7 +518,21 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
           {allProjects.map((project) => (
             <div key={project.id} className="relative group">
               <ProjectCard project={project} theme={{ id: "default", buttonStyle: "rounded" }} />
-              <div className="absolute top-4 right-4 z-10 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute top-4 right-4 z-10 flex flex-wrap justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleImproveDescription(project)}
+                  disabled={aiLoading}
+                >
+                  {aiLoading && aiProject?.id === project.id ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-2 h-4 w-4" />
+                  )}
+                  Improve
+                </Button>
                 <Button type="button" size="sm" variant="secondary" onClick={() => openEditDialog(project)}>
                   Edit
                 </Button>
@@ -465,15 +571,31 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
               </label>
             </div>
 
-            <label className="space-y-2 text-sm font-medium block">
-              <span>Description</span>
+            <div className="space-y-2 text-sm font-medium">
+              <div className="flex items-center justify-between gap-3">
+                <span>Description</span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => editingProject && handleImproveDescription(editingProject)}
+                  disabled={!editingProject || aiLoading}
+                >
+                  {aiLoading && aiProject?.id === editingProject?.id ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-2 h-4 w-4" />
+                  )}
+                  Improve Description
+                </Button>
+              </div>
               <Textarea
                 value={editForm.description}
                 onChange={(event) => setEditForm((prev) => ({ ...prev, description: event.target.value }))}
                 maxLength={800}
                 rows={4}
               />
-            </label>
+            </div>
 
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-2 text-sm font-medium">
@@ -513,6 +635,58 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(aiProject)}
+        onOpenChange={(open) => {
+          if (!open && !aiLoading && !aiAccepting) {
+            setAiProject(null);
+            setAiVariants(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Improve Description{aiProject?.title ? `: ${aiProject.title}` : ""}</DialogTitle>
+          </DialogHeader>
+
+          {aiLoading ? (
+            <div className="flex items-center gap-3 rounded-lg border p-4 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Improving the selected project description...
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {aiFallbackMessage && (
+                <div className="rounded-lg border border-amber-300/50 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-200">
+                  {aiFallbackMessage}
+                </div>
+              )}
+
+              {aiVariants && DESCRIPTION_VARIANTS.map((variant) => (
+                <div key={variant.key} className="rounded-lg border p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="font-medium">{variant.label}</h3>
+                      <p className="text-xs text-muted-foreground">{variant.description}</p>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => handleAcceptDescription(variant.key)}
+                      disabled={Boolean(aiAccepting)}
+                    >
+                      {aiAccepting === variant.key && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Accept
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground whitespace-pre-line">{aiVariants[variant.key]}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

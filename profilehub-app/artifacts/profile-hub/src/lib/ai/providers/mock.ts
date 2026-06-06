@@ -63,7 +63,15 @@ export function createMockProvider(): AIProvider {
           );
         case "improve_project_description":
           return response(
-            "Improved description: A focused project that clarifies the problem, highlights the approach, and shows the value delivered without overclaiming. Add the audience, your role, and one concrete outcome if it is public."
+            JSON.stringify({
+              improved:
+                "A focused portfolio project that clearly explains the problem, the implementation approach, and the value delivered without overstating results.",
+              shorter: "A concise project overview highlighting the problem, approach, and practical value.",
+              marketing:
+                "A polished project story that helps visitors quickly understand why the work matters and what outcome it supports.",
+              technical:
+                "A technical project summary covering the core implementation, relevant technologies, and the main engineering decisions.",
+            })
           );
         case "suggest_cta":
           return response(

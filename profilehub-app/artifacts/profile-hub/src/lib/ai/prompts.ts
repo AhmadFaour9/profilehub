@@ -16,6 +16,16 @@ type SafeInput = {
   bio?: string;
   tone?: string;
   location?: string;
+  project?: {
+    id?: string;
+    title?: string;
+    description?: string;
+    repoUrl?: string;
+    projectUrl?: string;
+    readme?: string;
+    technologies?: string[];
+    tags?: string[];
+  };
   links?: Array<{ title?: string; description?: string; type?: string }>;
   projects?: Array<{ title?: string; description?: string; tags?: string[] }>;
   services?: Array<{ title?: string; description?: string; priceLabel?: string; ctaLabel?: string }>;
@@ -58,10 +68,23 @@ function safeArray<T>(value: unknown, mapper: (item: Record<string, unknown>) =>
     .map(mapper);
 }
 
+function safeObject(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function safeStringArray(value: unknown, maxItems = 12, maxLength = 40): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => cleanText(item, maxLength))
+    .filter(Boolean)
+    .slice(0, maxItems) as string[];
+}
+
 export function minimizeInput(input: Record<string, unknown>): SafeInput {
   const filtered = Object.fromEntries(
     Object.entries(input).filter(([key]) => !hasSensitiveKey(key))
   );
+  const project = safeObject(filtered.project);
 
   return {
     displayName: cleanText(filtered.displayName ?? filtered.name, 80),
@@ -70,6 +93,18 @@ export function minimizeInput(input: Record<string, unknown>): SafeInput {
     bio: cleanText(filtered.bio, 700),
     tone: cleanText(filtered.tone, 40),
     location: cleanText(filtered.location, 100),
+    project: Object.keys(project).length
+      ? {
+          id: cleanText(project.id ?? filtered.projectId, 80),
+          title: cleanText(project.title, 140),
+          description: cleanText(project.description, 1200),
+          repoUrl: cleanText(project.repoUrl, 2048),
+          projectUrl: cleanText(project.projectUrl, 2048),
+          readme: cleanText(project.readme, 5000),
+          technologies: safeStringArray(project.technologies),
+          tags: safeStringArray(project.tags),
+        }
+      : undefined,
     links: safeArray(filtered.links, (link) => ({
       title: cleanText(link.title, 80),
       description: cleanText(link.description, 180),
@@ -142,10 +177,19 @@ export function buildPrompt(feature: AIFeature, input: Record<string, unknown>):
       ].join("\n");
 
     case "improve_project_description":
+      if (!safe.project?.id) {
+        return "No project selected";
+      }
+
       return [
-        "Improve the project description for a portfolio page.",
-        "Return one refined paragraph under 90 words plus 3 optional bullet improvements.",
-        "Keep claims grounded in the provided public context.",
+        "Improve the description for exactly one selected portfolio project.",
+        "Use only the selected project context below. Never ask which project to use and never infer another project.",
+        "Return only valid JSON with these string keys: improved, shorter, marketing, technical.",
+        "improved: polished portfolio description under 90 words.",
+        "shorter: one concise sentence under 28 words.",
+        "marketing: benefit-focused version under 70 words.",
+        "technical: implementation-focused version under 80 words.",
+        "Keep claims grounded in the title, current description, repository URL, README, tags, and detected technologies.",
         `Safe public context: ${context}`,
       ].join("\n");
 
