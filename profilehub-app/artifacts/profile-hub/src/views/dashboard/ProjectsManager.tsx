@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import type { Project } from "@/modules/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -163,6 +163,10 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
   const [aiLoading, setAiLoading] = useState(false);
   const [aiAccepting, setAiAccepting] = useState<DescriptionVariantKey | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setAllProjects(projects);
+  }, [projects]);
 
   const handleGithubFetch = async () => {
     if (!githubTarget.trim()) return;

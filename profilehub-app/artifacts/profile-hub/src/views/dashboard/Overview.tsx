@@ -57,15 +57,39 @@ export default function Overview({
           </div>
         </div>
 
-        <div className="p-6 border rounded-xl bg-card flex flex-col items-start justify-center">
-          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-            <Briefcase className="w-6 h-6 text-primary" />
+        <div className="p-6 border rounded-xl bg-card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-medium flex items-center gap-2">
+              <Briefcase className="w-5 h-5 text-primary" />
+              Projects
+            </h2>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/dashboard/projects">Manage <ArrowRight className="w-4 h-4 ml-1" /></Link>
+            </Button>
           </div>
-          <h2 className="text-lg font-medium mb-1">Add a new project</h2>
-          <p className="text-sm text-muted-foreground mb-4">Keep your portfolio fresh by adding your latest work.</p>
-          <Button asChild>
-            <Link href="/dashboard/projects">Add Project</Link>
-          </Button>
+          {projects.length > 0 ? (
+            <div className="space-y-3">
+              {projects.slice(0, 3).map((project) => (
+                <div key={project.id} className="rounded-lg border p-3">
+                  <p className="text-sm font-medium truncate">{project.title}</p>
+                  {project.description ? (
+                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{project.description}</p>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-start">
+              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <Briefcase className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-base font-medium mb-1">Add a new project</h3>
+              <p className="text-sm text-muted-foreground mb-4">Keep your portfolio fresh by adding your latest work.</p>
+              <Button asChild>
+                <Link href="/dashboard/projects">Add Project</Link>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 

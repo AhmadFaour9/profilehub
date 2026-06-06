@@ -42,6 +42,11 @@ type ProfileContent = {
   media: GalleryItem[];
 };
 
+type RelationQueryResult<T = any> = {
+  data: T[] | null;
+  error: SupabaseDbError | null;
+};
+
 function mapProfileRow(row: any): Profile {
   return {
     id: row.id,
@@ -143,8 +148,8 @@ function mapProjectRow(row: any): Project {
     repoUrl: row.repo_url,
     url: row.project_url || row.repo_url,
     tags: row.tags || [],
-    position: row.position,
-    order: row.position,
+    position: row.position ?? row.sort_order ?? 0,
+    order: row.position ?? row.sort_order ?? 0,
     isFeatured: row.is_featured,
     isActive: row.is_active,
     createdAt: row.created_at,
@@ -315,6 +320,111 @@ function emptyProfileContent(profile: Profile): ProfileContent {
   return { profile, links: [], projects: [], services: [], media: [] };
 }
 
+function isMissingColumnError(error: SupabaseDbError | null | undefined, column: string): boolean {
+  const message = error?.message?.toLowerCase() || "";
+  return Boolean(error && (error.code === "42703" || message.includes(`'${column}'`) || message.includes(`"${column}"`)));
+}
+
+async function queryProjectsForProfile(client: SupabaseClient, profileId: string): Promise<RelationQueryResult> {
+  const orderedByPosition = await client
+    .from("projects")
+    .select("*")
+    .eq("profile_id", profileId)
+    .order("position");
+
+  if (!isMissingColumnError(orderedByPosition.error, "position")) {
+    return orderedByPosition as RelationQueryResult;
+  }
+
+  console.warn("[DASHBOARD] dashboard_projects_position_order_failed_retrying_created_at", {
+    profile_id: profileId,
+    code: orderedByPosition.error?.code,
+    message: orderedByPosition.error?.message,
+  });
+
+  return client
+    .from("projects")
+    .select("*")
+    .eq("profile_id", profileId)
+    .order("created_at") as PromiseLike<RelationQueryResult>;
+}
+
+async function queryProjectsForProfileWithAdmin(profileId: string): Promise<RelationQueryResult | null> {
+  const result = await runSupabaseAdminOperation(async (admin) => {
+    const projects = await queryProjectsForProfile(admin, profileId);
+    return { data: projects.data, error: projects.error };
+  });
+
+  if (!result.ok) {
+    console.error("[DASHBOARD] dashboard_projects_admin_verify_failed", {
+      profile_id: profileId,
+      error: result.error,
+      code: result.dbError?.code,
+      message: result.dbError?.message,
+    });
+    return null;
+  }
+
+  return result.result;
+}
+
+async function resolveDashboardProjects(
+  authProjects: RelationQueryResult,
+  profileId: string
+): Promise<any[]> {
+  if (authProjects.error) {
+    console.error("[DASHBOARD] dashboard_projects_query_failed", {
+      profile_id: profileId,
+      code: authProjects.error.code,
+      message: authProjects.error.message,
+    });
+
+    const adminProjects = await queryProjectsForProfileWithAdmin(profileId);
+    if (adminProjects?.error) {
+      console.error("[DASHBOARD] dashboard_projects_admin_query_failed", {
+        profile_id: profileId,
+        code: adminProjects.error.code,
+        message: adminProjects.error.message,
+      });
+      return [];
+    }
+
+    const rows = adminProjects?.data || [];
+    console.warn("[DASHBOARD] dashboard_projects_loaded_with_admin_fallback", {
+      profile_id: profileId,
+      count: rows.length,
+    });
+    return rows;
+  }
+
+  const rows = authProjects.data || [];
+  console.info("[DASHBOARD] dashboard_projects_query_success", {
+    profile_id: profileId,
+    count: rows.length,
+  });
+
+  if (rows.length > 0) return rows;
+
+  const adminProjects = await queryProjectsForProfileWithAdmin(profileId);
+  if (adminProjects?.error) return rows;
+
+  const adminRows = adminProjects?.data || [];
+  console.info("[DASHBOARD] dashboard_projects_admin_verify_count", {
+    profile_id: profileId,
+    count: adminRows.length,
+  });
+
+  if (adminRows.length > 0) {
+    console.warn("[DASHBOARD] dashboard_projects_auth_returned_empty_admin_found_rows", {
+      profile_id: profileId,
+      count: adminRows.length,
+    });
+    return adminRows;
+  }
+
+  return rows;
+}
+
 async function ensureProfilePublished(client: SupabaseClient, profile: Profile): Promise<Profile> {
   if (profile.isPublished) return profile;
 
@@ -352,9 +462,7 @@ async function loadProfileContentFromClient(
         measureServer("dashboard_social_links_query", () =>
           client.from("social_links").select("*").eq("profile_id", profile.id).order("sort_order")
         ),
-        measureServer("dashboard_projects_query", () =>
-          client.from("projects").select("*").eq("profile_id", profile.id).order("position")
-        ),
+        measureServer("dashboard_projects_query", () => queryProjectsForProfile(client, profile.id)),
         measureServer("dashboard_services_query", () =>
           client.from("services").select("*").eq("profile_id", profile.id).order("sort_order")
         ),
@@ -380,12 +488,13 @@ async function loadProfileContentFromClient(
     }
   }
 
+  const projectRows = await resolveDashboardProjects(projects as RelationQueryResult, profile.id);
   const mappedLinks = (links.data || []).map(mapLinkRow);
 
   return {
     profile: { ...profile, socialLinks: (socialLinks.data || []).map(mapSocialLinkRow).filter((link) => link.isActive !== false) },
     links: mappedLinks,
-    projects: (projects.data || []).map(mapProjectRow),
+    projects: projectRows.map(mapProjectRow),
     services: (services.data || []).map(mapServiceRow),
     media: (media.data || []).map(mapMediaRow),
   };
@@ -738,38 +847,7 @@ export async function getMyProfileContent() {
       dashboard_using_demo_data: false
     });
 
-    try {
-      return await loadProfileContentFromClient(client, profile, { throwOnErrors: true });
-    } catch (error: any) {
-      console.warn("[DASHBOARD] dashboard_auth_client_content_load_failed_using_admin_fallback", {
-        profile_id: profile.id,
-        error: error?.message || error,
-      });
-    }
-
-    let contentLookup;
-    try {
-      contentLookup = await runSupabaseAdminOperation(async (admin) => ({
-        data: await loadProfileContentFromClient(admin, profile),
-        error: null,
-      }));
-    } catch (error: any) {
-      console.error("[DASHBOARD] dashboard_content_load_failed", {
-        error: error?.message || error,
-      });
-      return emptyProfileContent(profile);
-    }
-
-    if (!contentLookup.ok) {
-      console.error("[DASHBOARD] dashboard_content_admin_load_failed", {
-        error: contentLookup.error,
-        code: contentLookup.dbError?.code,
-        message: contentLookup.dbError?.message,
-      });
-      return emptyProfileContent(profile);
-    }
-
-    return contentLookup.result.data || emptyProfileContent(profile);
+    return await loadProfileContentFromClient(client, profile);
   } catch (error: any) {
     console.error("[DASHBOARD] dashboard_load_failed", { error: error?.message || error });
     return emptyProfileContent(buildFallbackProfileFromUser(user, { source: "dashboard" }));
