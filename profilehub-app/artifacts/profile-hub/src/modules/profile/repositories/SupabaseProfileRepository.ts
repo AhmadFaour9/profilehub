@@ -17,6 +17,7 @@ const mapProfile = (row: any): Profile => ({
   website: row.website,
   themeId: row.theme_id,
   isPublished: row.is_published,
+  onboardingCompleted: typeof row.onboarding_completed === "boolean" ? row.onboarding_completed : null,
   socialLinks: [],
   seoTitle: row.seo_title,
   seoDescription: row.seo_description,
@@ -129,14 +130,33 @@ export class SupabaseProfileRepository implements IProfileRepository {
     if (data.coverUrl !== undefined) payload.cover_url = data.coverUrl;
     if (data.seoTitle !== undefined) payload.seo_title = data.seoTitle;
     if (data.seoDescription !== undefined) payload.seo_description = data.seoDescription;
+    if (data.onboardingCompleted !== undefined) payload.onboarding_completed = data.onboardingCompleted;
 
-    const { data: result, error } = await this.client
+    let response = await this.client
       .from("profiles")
       .update(payload)
       .eq("id", id)
       .select("*")
       .single();
 
+    if (
+      response.error &&
+      payload.onboarding_completed !== undefined &&
+      (response.error.code === "42703" ||
+        response.error.code === "PGRST204" ||
+        response.error.message.toLowerCase().includes("onboarding_completed") ||
+        response.error.message.toLowerCase().includes("schema cache"))
+    ) {
+      delete payload.onboarding_completed;
+      response = await this.client
+        .from("profiles")
+        .update(payload)
+        .eq("id", id)
+        .select("*")
+        .single();
+    }
+
+    const { data: result, error } = response;
     if (error) throw new Error(error.message);
     return mapProfile(result);
   }

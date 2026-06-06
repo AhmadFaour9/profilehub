@@ -1,7 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerActionClient } from "@/modules/auth";
-import { isSupabaseConfigured } from "@/lib/env";
+import { getAppUrl, isSupabaseConfigured } from "@/lib/env";
 import { isSafeRedirectPath } from "@/modules/shared/validation";
+
+function oauthErrorUrl(request: NextRequest) {
+  const url = new URL("/auth/status", request.url);
+  url.searchParams.set("status", "error");
+  url.searchParams.set("type", "oauth_failed");
+  return url;
+}
 
 export async function GET(request: NextRequest) {
   if (!isSupabaseConfigured()) {
@@ -14,12 +21,12 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${request.nextUrl.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`,
+      redirectTo: `${getAppUrl()}/auth/callback?type=oauth&next=${encodeURIComponent(safeNext)}`,
     },
   });
 
   if (error || !data.url) {
-    return NextResponse.redirect(new URL("/login?error=oauth_start_failed", request.url));
+    return NextResponse.redirect(oauthErrorUrl(request));
   }
 
   return NextResponse.redirect(data.url);

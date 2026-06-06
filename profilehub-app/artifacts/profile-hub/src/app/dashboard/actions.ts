@@ -36,6 +36,20 @@ const SOCIAL_PLATFORM_LABELS: Record<string, string> = {
 
 const SOCIAL_PLATFORM_IDS = Object.keys(SOCIAL_PLATFORM_LABELS);
 
+function hasRequiredProfileFields(profile: {
+  username?: string;
+  displayName?: string;
+  title?: string;
+  bio?: string;
+}) {
+  return Boolean(
+    profile.username?.trim() &&
+      profile.displayName?.trim() &&
+      profile.title?.trim() &&
+      profile.bio?.trim()
+  );
+}
+
 function normalizeSocialPlatform(value: string | null | undefined): string {
   return (value || "")
     .toLowerCase()
@@ -147,6 +161,12 @@ export async function updateProfile(input: unknown): Promise<ActionResult> {
 
   try {
     const parsed = profileFormSchema.parse(input);
+    const onboardingCompleted = hasRequiredProfileFields({
+      username: parsed.username,
+      displayName: parsed.displayName,
+      title: parsed.title || "",
+      bio: parsed.bio || "",
+    });
     const data = await ctx.profileService.updateProfile(ctx.profile.id, {
       username: parsed.username,
       displayName: parsed.displayName,
@@ -159,6 +179,7 @@ export async function updateProfile(input: unknown): Promise<ActionResult> {
       isPublished: parsed.isPublished ?? ctx.profile.isPublished,
       avatarUrl: parsed.avatarUrl || "",
       coverUrl: parsed.coverUrl || "",
+      onboardingCompleted,
     });
 
     revalidateProfile(ctx.profile.username, "/dashboard/profile");

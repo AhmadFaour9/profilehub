@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { usePathname, useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import type { Profile, Link, Project, Service, GalleryItem } from "@/modules/shared";
@@ -31,6 +32,8 @@ const profileSchema = z.object({
 export default function ProfileEditor({ content }: { content: { profile: Profile, links: Link[], projects: Project[], services: Service[], media: GalleryItem[] } }) {
   const profile = content.profile;
   const { toast } = useToast();
+  const pathname = usePathname();
+  const router = useRouter();
   const [copied, setCopied] = useState(false);
   const [appBaseUrl, setAppBaseUrl] = useState("");
 
@@ -67,6 +70,12 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
   });
 
   async function onSubmit(values: z.infer<typeof profileSchema>) {
+    const profileIsComplete = Boolean(
+      values.displayName.trim() &&
+        values.username.trim() &&
+        values.profession?.trim() &&
+        values.bio?.trim()
+    );
     const result = await updateProfile({
       displayName: values.displayName,
       username: values.username,
@@ -84,6 +93,10 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
       description: result.message || "Your profile information has been saved successfully.",
       variant: result.ok ? "default" : "destructive",
     });
+
+    if (result.ok && pathname === "/onboarding" && profileIsComplete) {
+      router.push("/dashboard");
+    }
   }
 
   return (

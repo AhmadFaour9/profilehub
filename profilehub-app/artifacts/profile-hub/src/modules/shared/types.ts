@@ -33,6 +33,7 @@ export type Profile = {
   theme?: ProfileTheme;
   socialLinks?: SocialLink[];
   isPublished: boolean;
+  onboardingCompleted?: boolean | null;
   seoTitle?: string | null;
   seoDescription?: string | null;
   createdAt: string;

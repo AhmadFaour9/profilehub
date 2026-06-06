@@ -71,6 +71,18 @@ function statusCopy(status: string, type: string) {
     };
   }
 
+  if (type === "oauth_failed") {
+    return {
+      tone: "error" as const,
+      title: "Google sign-in failed",
+      message: "We could not complete Google sign-in. Try again, or use email and password if your account already exists.",
+      primaryLabel: "Try Google again",
+      primaryHref: "/auth/google",
+      secondaryLabel: "Go to login",
+      secondaryHref: "/login",
+    };
+  }
+
   return {
     tone: "error" as const,
     title: "Something went wrong",

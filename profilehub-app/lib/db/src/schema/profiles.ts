@@ -14,6 +14,7 @@ export const profilesTable = pgTable("profiles", {
   location: text("location"),
   website: text("website"),
   isPublished: boolean("is_published").notNull().default(false),
+  onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
   socialLinks: jsonb("social_links").notNull().default([]),
   theme: jsonb("theme").notNull().default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

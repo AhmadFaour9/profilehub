@@ -24,7 +24,7 @@ import {
   type SocialLink,
 } from "@/modules/shared";
 
-type ProfileEnsureSource = "signup" | "login" | "auth_callback" | "dashboard" | "onboarding" | "profile_update";
+type ProfileEnsureSource = "signup" | "login" | "oauth" | "auth_callback" | "dashboard" | "onboarding" | "profile_update";
 
 type ProfileEnsureOptions = {
   username?: string;
@@ -57,6 +57,7 @@ function mapProfileRow(row: any): Profile {
     website: row.website,
     themeId: row.theme_id,
     isPublished: row.is_published,
+    onboardingCompleted: typeof row.onboarding_completed === "boolean" ? row.onboarding_completed : null,
     socialLinks: [],
     seoTitle: row.seo_title,
     seoDescription: row.seo_description,
@@ -64,6 +65,36 @@ function mapProfileRow(row: any): Profile {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+function hasText(value: unknown): boolean {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function getMissingProfileFields(row: any): string[] {
+  return [
+    ["username", row.username],
+    ["display_name", row.display_name],
+    ["title", row.title],
+    ["bio", row.bio],
+  ]
+    .filter(([, value]) => !hasText(value))
+    .map(([field]) => String(field));
+}
+
+function isProfileRowComplete(row: any): boolean {
+  return getMissingProfileFields(row).length === 0;
+}
+
+function isMissingOnboardingColumnError(error: SupabaseDbError | null | undefined): boolean {
+  const message = error?.message?.toLowerCase() || "";
+  return Boolean(
+    error &&
+      (error.code === "42703" ||
+        error.code === "PGRST204" ||
+        message.includes("onboarding_completed") ||
+        message.includes("schema cache"))
+  );
 }
 
 function mapLinkRow(row: any): Link {
@@ -198,33 +229,46 @@ function profileInsertErrorMessage(error: SupabaseDbError | null | undefined): s
   return `profile_insert_error:${error.code || "unknown"}`;
 }
 
-function buildProfileDefaults(user: User, options: ProfileEnsureOptions) {
+function metadataString(user: User, keys: string[]): string {
   const metadata = user.user_metadata || {};
-  const metadataUsername =
-    typeof metadata.username === "string"
-      ? metadata.username
-      : typeof metadata.user_name === "string"
-        ? metadata.user_name
-        : typeof metadata.full_name === "string"
-          ? metadata.full_name
-          : "";
-  const emailName = user.email?.split("@")[0] || "";
-  const rawUsername = options.username || metadataUsername || emailName || "user";
-  const slug = rawUsername
+  for (const key of keys) {
+    const value = metadata[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+
+  return "";
+}
+
+function createUsernameCandidate(rawValue: string): string {
+  const slug = rawValue
     .toLowerCase()
-    .replace(/[^a-z0-9_-]/g, "")
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/_+/g, "_")
     .replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, "")
-    .slice(0, 25);
+    .slice(0, 28);
   const baseUsername = slug.length >= 3 ? slug : `user${slug}`;
   const parsedUsername = usernameSchema.safeParse(baseUsername);
-  const username = parsedUsername.success ? parsedUsername.data : `user${Math.floor(100000 + Math.random() * 900000)}`;
+
+  return parsedUsername.success ? parsedUsername.data : `user${Math.floor(100000 + Math.random() * 900000)}`;
+}
+
+function buildProfileDefaults(user: User, options: ProfileEnsureOptions) {
+  const metadataUsername =
+    metadataString(user, ["username", "user_name", "preferred_username", "nickname"]) ||
+    metadataString(user, ["full_name", "name", "display_name"]);
+  const fullName = metadataString(user, ["full_name", "name", "display_name"]);
+  const emailName = user.email?.split("@")[0] || "";
+  const rawUsername = options.username || metadataUsername || emailName || "user";
+  const username = createUsernameCandidate(rawUsername);
   const displayName =
     options.displayName ||
-    (typeof metadata.full_name === "string" ? metadata.full_name : "") ||
+    fullName ||
     user.email?.split("@")[0] ||
     username;
+  const avatarUrl = metadataString(user, ["avatar_url", "picture"]) || null;
 
-  return { username, displayName };
+  return { username, displayName, avatarUrl };
 }
 
 function createSupabasePublicReadClient(): SupabaseClient | null {
@@ -261,6 +305,7 @@ function buildFallbackProfileFromUser(user: User, options: ProfileEnsureOptions 
     isPublished: false,
     seoTitle: null,
     seoDescription: null,
+    onboardingCompleted: false,
     createdAt: user.created_at || now,
     updatedAt: now,
   };
@@ -374,43 +419,68 @@ async function loadPublicProfileRelations(
   };
 }
 
-async function upsertProfileForUser(user: User, username: string, displayName: string) {
-  return runSupabaseAdminOperation((admin) =>
-    admin
+async function upsertProfileForUser(user: User, username: string, displayName: string, avatarUrl?: string | null) {
+  return runSupabaseAdminOperation(async (admin) => {
+    const payload = {
+      user_id: user.id,
+      username,
+      display_name: displayName,
+      avatar_url: avatarUrl || null,
+      is_published: true,
+      onboarding_completed: false,
+    };
+
+    let result = await admin
       .from("profiles")
-      .upsert(
-        {
-          user_id: user.id,
-          username,
-          display_name: displayName,
-          is_published: true,
-        },
-        { onConflict: "user_id" }
-      )
+      .upsert(payload, { onConflict: "user_id" })
       .select("*")
-      .single()
-  );
+      .single();
+
+    if (isMissingOnboardingColumnError(result.error)) {
+      const { onboarding_completed: _ignored, ...fallbackPayload } = payload;
+      result = await admin
+        .from("profiles")
+        .upsert(fallbackPayload, { onConflict: "user_id" })
+        .select("*")
+        .single();
+    }
+
+    return result;
+  });
 }
 
 async function upsertProfileForUserWithAuthClient(
   client: SupabaseClient,
   user: User,
   username: string,
-  displayName: string
+  displayName: string,
+  avatarUrl?: string | null
 ) {
-  return client
+  const payload = {
+    user_id: user.id,
+    username,
+    display_name: displayName,
+    avatar_url: avatarUrl || null,
+    is_published: true,
+    onboarding_completed: false,
+  };
+
+  let result = await client
     .from("profiles")
-    .upsert(
-      {
-        user_id: user.id,
-        username,
-        display_name: displayName,
-        is_published: true,
-      },
-      { onConflict: "user_id" }
-    )
+    .upsert(payload, { onConflict: "user_id" })
     .select("*")
     .single();
+
+  if (isMissingOnboardingColumnError(result.error)) {
+    const { onboarding_completed: _ignored, ...fallbackPayload } = payload;
+    result = await client
+      .from("profiles")
+      .upsert(fallbackPayload, { onConflict: "user_id" })
+      .select("*")
+      .single();
+  }
+
+  return result;
 }
 
 async function getOrCreateProfileWithAuthClient(
@@ -432,14 +502,21 @@ async function getOrCreateProfileWithAuthClient(
   }
 
   const defaults = buildProfileDefaults(user, options);
-  let createdProfile = await upsertProfileForUserWithAuthClient(client, user, defaults.username, defaults.displayName);
+  let createdProfile = await upsertProfileForUserWithAuthClient(
+    client,
+    user,
+    defaults.username,
+    defaults.displayName,
+    defaults.avatarUrl
+  );
 
   if (createdProfile.error?.code === "23505" && !options.username) {
     createdProfile = await upsertProfileForUserWithAuthClient(
       client,
       user,
-      `user${Math.floor(100000 + Math.random() * 900000)}`,
-      defaults.displayName
+      createUsernameCandidate(`${defaults.username}-${Math.floor(100000 + Math.random() * 900000)}`),
+      defaults.displayName,
+      defaults.avatarUrl
     );
   }
 
@@ -508,13 +585,14 @@ export async function getOrCreateProfile(user: User, options: ProfileEnsureOptio
   }
 
   const defaults = buildProfileDefaults(user, options);
-  let createdProfile = await upsertProfileForUser(user, defaults.username, defaults.displayName);
+  let createdProfile = await upsertProfileForUser(user, defaults.username, defaults.displayName, defaults.avatarUrl);
 
   if (!createdProfile.ok && createdProfile.error === "admin_db_error" && createdProfile.dbError?.code === "23505" && !options.username) {
     createdProfile = await upsertProfileForUser(
       user,
-      `user${Math.floor(100000 + Math.random() * 900000)}`,
-      defaults.displayName
+      createUsernameCandidate(`${defaults.username}-${Math.floor(100000 + Math.random() * 900000)}`),
+      defaults.displayName,
+      defaults.avatarUrl
     );
   }
 
@@ -537,6 +615,69 @@ export async function getOrCreateProfile(user: User, options: ProfileEnsureOptio
   const profile = mapProfileRow(createdProfile.result.data);
   logProfileCreated(user.id, profile.id, source);
   return profile;
+}
+
+export async function profileExistsForUser(userId: string, authClient?: SupabaseClient): Promise<boolean | null> {
+  if (authClient) {
+    const existingProfile = await authClient.from("profiles").select("id").eq("user_id", userId).maybeSingle();
+
+    if (!existingProfile.error) {
+      return Boolean(existingProfile.data);
+    }
+
+    logProfileLookupFailed(userId, "oauth", existingProfile.error);
+  }
+
+  const existingProfile = await runSupabaseAdminOperation((admin) =>
+    admin.from("profiles").select("id").eq("user_id", userId).maybeSingle()
+  );
+
+  if (!existingProfile.ok) {
+    if (existingProfile.error === "admin_db_error") {
+      logProfileLookupFailed(userId, "oauth", existingProfile.dbError);
+    }
+    return null;
+  }
+
+  return Boolean(existingProfile.result.data);
+}
+
+export async function ensureOAuthProfileState(
+  user: User,
+  authClient: SupabaseClient
+): Promise<{
+  profile: Profile | null;
+  exists: boolean;
+  complete: boolean;
+  missingFields: string[];
+}> {
+  const existingProfile = await authClient.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
+
+  if (existingProfile.error) {
+    logProfileLookupFailed(user.id, "oauth", existingProfile.error);
+    throw new Error(formatAdminDbError(existingProfile.error));
+  }
+
+  if (existingProfile.data) {
+    return {
+      profile: mapProfileRow(existingProfile.data),
+      exists: true,
+      complete: isProfileRowComplete(existingProfile.data),
+      missingFields: getMissingProfileFields(existingProfile.data),
+    };
+  }
+
+  const profile = await getOrCreateProfile(user, {
+    source: "oauth",
+    authClient,
+  });
+
+  return {
+    profile,
+    exists: false,
+    complete: false,
+    missingFields: ["title", "bio"],
+  };
 }
 
 export const getDashboardProfile = cache(async (): Promise<{

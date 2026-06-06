@@ -1,15 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerActionClient, getAuthenticatedUser } from "@/modules/auth";
-import { getOrCreateProfile } from "@/lib/profile-data";
+import { ensureOAuthProfileState, getOrCreateProfile } from "@/lib/profile-data";
 import { debugLog, measureServer } from "@/lib/perf";
 import { isSafeRedirectPath } from "@/modules/shared/validation";
 import { log } from "@/modules/logging";
 
 type AuthCallbackType = "oauth" | "email_confirm" | "email_change" | "password_recovery";
-type AuthStatusType = "email_confirm" | "email_updated" | "password_recovery" | "expired" | "unknown";
+type AuthStatusType = "email_confirm" | "email_updated" | "password_recovery" | "expired" | "oauth_failed" | "unknown";
 type VerifyOtpType = "signup" | "email_change" | "recovery" | "email";
 
 function normalizeCallbackType(rawType: string | null, next: string | null): AuthCallbackType {
+  if (rawType === "oauth") return "oauth";
   if (rawType === "password_recovery" || rawType === "recovery") return "password_recovery";
   if (rawType === "email_change") return "email_change";
   if (rawType === "email_confirm" || rawType === "signup" || rawType === "email") return "email_confirm";
@@ -38,10 +39,13 @@ function authStatusUrl(
 }
 
 export async function GET(request: NextRequest) {
+  const providerError = request.nextUrl.searchParams.get("error") || request.nextUrl.searchParams.get("error_code");
+
   debugLog("AUTH", "auth_callback_started", {
     has_code: Boolean(request.nextUrl.searchParams.get("code")),
     has_token_hash: Boolean(request.nextUrl.searchParams.get("token_hash")),
     type: request.nextUrl.searchParams.get("type"),
+    has_provider_error: Boolean(providerError),
   });
 
   const code = request.nextUrl.searchParams.get("code");
@@ -50,6 +54,14 @@ export async function GET(request: NextRequest) {
   const next = request.nextUrl.searchParams.get("next");
   const safeNext = isSafeRedirectPath(next) ? next : "/dashboard";
   const callbackType = normalizeCallbackType(rawType, next);
+
+  if (providerError) {
+    await log("warn", "auth", "OAuth provider callback failed", {
+      reason: providerError,
+      type: callbackType,
+    });
+    return NextResponse.redirect(authStatusUrl(request, "error", "oauth_failed"));
+  }
 
   if (!code && !tokenHash) {
     return NextResponse.redirect(authStatusUrl(request, "error", "expired"));
@@ -78,20 +90,50 @@ export async function GET(request: NextRequest) {
     set_cookie_failed_count: cookieDiagnostics.setFailed.length,
   });
 
-  const callbackUser = data.user;
+  const currentUserResult = await measureServer("auth_callback_getUser", () => supabase.auth.getUser());
+  const callbackUser = currentUserResult.data.user || data.user;
+  let oauthRedirectTarget = safeNext;
+
+  if (callbackType === "oauth" && !callbackUser) {
+    console.warn("[AUTH] oauth_callback_user_missing_after_exchange");
+    return NextResponse.redirect(authStatusUrl(request, "error", "oauth_failed"));
+  }
 
   if (callbackUser && callbackType !== "password_recovery") {
     debugLog("AUTH", "auth_callback_session_created", { user_id: callbackUser.id });
     await getAuthenticatedUser("auth_callback");
     try {
-      await measureServer("auth_callback_profile_query", () =>
-        getOrCreateProfile(callbackUser, { source: "auth_callback", authClient: supabase })
-      );
+      if (callbackType === "oauth") {
+        debugLog("AUTH", "oauth_user_id", { user_id: callbackUser.id });
+        const oauthProfileState = await measureServer("auth_callback_oauth_profile_state", () =>
+          ensureOAuthProfileState(callbackUser, supabase)
+        );
+        const safeCompletedNext = safeNext === "/onboarding" ? "/dashboard" : safeNext;
+        oauthRedirectTarget = oauthProfileState.complete ? safeCompletedNext : "/onboarding";
+
+        debugLog("AUTH", "oauth_profile_exists", { exists: oauthProfileState.exists });
+        debugLog("AUTH", "oauth_profile_complete", {
+          complete: oauthProfileState.complete,
+          missing_fields: oauthProfileState.missingFields,
+        });
+        debugLog("AUTH", "oauth_redirect_target", { target: oauthRedirectTarget });
+      } else {
+        await measureServer("auth_callback_profile_query", () =>
+          getOrCreateProfile(callbackUser, {
+            source: "auth_callback",
+            authClient: supabase,
+          })
+        );
+      }
     } catch (error: any) {
       console.warn("[AUTH] callback_profile_ensure_failed_continuing", {
         auth_user_id: callbackUser.id,
         error: error?.message || error,
       });
+
+      if (callbackType === "oauth") {
+        return NextResponse.redirect(authStatusUrl(request, "error", "oauth_failed"));
+      }
     }
   }
 
@@ -105,6 +147,10 @@ export async function GET(request: NextRequest) {
 
   if (callbackType === "email_confirm") {
     return NextResponse.redirect(authStatusUrl(request, "success", "email_confirm", safeNext));
+  }
+
+  if (callbackType === "oauth") {
+    return NextResponse.redirect(new URL(oauthRedirectTarget, request.url));
   }
 
   return NextResponse.redirect(new URL(safeNext, request.url));
