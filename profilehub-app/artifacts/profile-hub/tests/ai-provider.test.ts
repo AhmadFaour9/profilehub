@@ -62,6 +62,62 @@ describe("AI provider fallback", () => {
     );
   });
 
+  it("tries an OpenRouter fallback model when the configured model is unavailable", async () => {
+    vi.stubEnv("AI_PROVIDER", "openrouter");
+    vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
+    vi.stubEnv("OPENROUTER_MODEL", "unavailable/model:free");
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: { message: "No endpoints found for model" } }), {
+          status: 404,
+          headers: { "content-type": "application/json" },
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ choices: [{ message: { content: "Fallback model response" } }], usage: { total_tokens: 12 } }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        })
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = createOpenRouterProvider();
+    const response = await provider.generate("generate_bio", { displayName: "Sara" });
+
+    const firstBody = JSON.parse(fetchMock.mock.calls[0][1].body);
+    const secondBody = JSON.parse(fetchMock.mock.calls[1][1].body);
+
+    expect(firstBody.model).toBe("unavailable/model:free");
+    expect(secondBody.model).toBe("google/gemma-4-26b-a4b-it:free");
+    expect(response.content).toBe("Fallback model response");
+    expect(response.model).toBe("google/gemma-4-26b-a4b-it:free");
+  });
+
+  it("returns quota exceeded without trying fallback models", async () => {
+    vi.stubEnv("AI_PROVIDER", "openrouter");
+    vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
+    vi.stubEnv("OPENROUTER_MODEL", "example/free-model");
+
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ error: { message: "Quota exceeded" } }), {
+        status: 402,
+        headers: { "content-type": "application/json" },
+      })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = createOpenRouterProvider();
+
+    await expect(provider.generate("generate_bio", { displayName: "Sara" })).rejects.toMatchObject({
+      debugCode: "openrouter_quota_exceeded",
+      status: 402,
+      attemptedModels: ["example/free-model"],
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("does not forward sensitive fields into prompts", () => {
     const minimized = minimizeInput({
       displayName: "Sara",

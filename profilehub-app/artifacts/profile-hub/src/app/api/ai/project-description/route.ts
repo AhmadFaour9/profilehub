@@ -174,6 +174,25 @@ function hasAnyVariant(variants: ProjectDescriptionVariants): boolean {
   return Boolean(variants.improved || variants.shorter || variants.marketing || variants.technical);
 }
 
+function providerErrorJson(error: unknown) {
+  const message = error instanceof Error ? error.message : "AI request failed.";
+  const debugCode = error && typeof error === "object" && "debugCode" in error ? String(error.debugCode) : undefined;
+  const status = error && typeof error === "object" && "status" in error ? Number(error.status) : undefined;
+  const attemptedModels = error && typeof error === "object" && "attemptedModels" in error && Array.isArray(error.attemptedModels)
+    ? error.attemptedModels.map(String)
+    : undefined;
+
+  return json({
+    ok: false,
+    error: message,
+    debugCode,
+    provider: process.env.AI_PROVIDER || "default",
+    model: process.env.OPENROUTER_MODEL || null,
+    attemptedModels,
+    httpStatus: Number.isFinite(status) ? status : undefined,
+  }, 502);
+}
+
 export async function POST(request: Request) {
   const parsed = requestSchema.safeParse(await request.json().catch(() => ({})));
   if (!parsed.success) {
@@ -214,19 +233,24 @@ export async function POST(request: Request) {
   const readme = await fetchGithubReadme(repoUrl);
   const technologies = extractTechnologies(readme, tags);
   const aiService = createAIService(supabase, user.id);
-  const result = await aiService.runAI("improve_project_description", {
-    projectId: project.id,
-    project: {
-      id: project.id,
-      title,
-      description,
-      repoUrl,
-      projectUrl,
-      tags,
-      readme,
-      technologies,
-    },
-  });
+  let result;
+  try {
+    result = await aiService.runAI("improve_project_description", {
+      projectId: project.id,
+      project: {
+        id: project.id,
+        title,
+        description,
+        repoUrl,
+        projectUrl,
+        tags,
+        readme,
+        technologies,
+      },
+    });
+  } catch (error) {
+    return providerErrorJson(error);
+  }
   const variants = parseVariants(result.content);
 
   if (!hasAnyVariant(variants)) {

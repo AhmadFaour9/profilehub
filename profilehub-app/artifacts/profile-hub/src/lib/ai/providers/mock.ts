@@ -9,6 +9,7 @@ export type AIProviderResponse = {
   fallback?: boolean;
   fallbackMessage?: string;
   debugCode?: string;
+  attemptedModels?: string[];
   model?: string;
 };
 

@@ -7,6 +7,10 @@ import { OpenRouterProvider } from "../providers/OpenRouterProvider";
 const DAILY_LIMIT = 20;
 const FALLBACK_MESSAGE = "Live AI is temporarily unavailable, so ProfileHub used a safe local suggestion.";
 
+function shouldExposeProviderErrors(): boolean {
+  return process.env.VERCEL_ENV === "preview" || process.env.AI_EXPOSE_PROVIDER_ERRORS === "true";
+}
+
 export class AIService {
   private primaryProvider: IAIProvider;
   private fallbackProvider: IAIProvider;
@@ -123,8 +127,12 @@ export class AIService {
       const errorStatus = error && typeof error === "object" && "status" in error ? String(error.status) : undefined;
       const errorCode = error && typeof error === "object" && "code" in error ? String(error.code) : undefined;
       const debugCode = error && typeof error === "object" && "debugCode" in error ? String(error.debugCode) : undefined;
+      const attemptedModels = error && typeof error === "object" && "attemptedModels" in error && Array.isArray(error.attemptedModels)
+        ? error.attemptedModels.map(String)
+        : undefined;
       const shouldFallback =
         provider.name !== "mock" &&
+        !shouldExposeProviderErrors() &&
         (!error || typeof error !== "object" || !("shouldFallback" in error) || Boolean(error.shouldFallback));
 
       await log(shouldFallback ? "warn" : "error", "ai", shouldFallback ? "AI provider fallback" : "AI provider failed", {
@@ -136,10 +144,12 @@ export class AIService {
         code: errorCode,
         debugCode,
         httpStatus: errorStatus,
+        attemptedModels,
       });
 
       if (shouldFallback) {
         result = this.withFallbackMessage(await this.fallbackProvider.generate(feature, input), debugCode);
+        result.attemptedModels = attemptedModels;
 
         await this.recordUsage({
           provider: result.provider,

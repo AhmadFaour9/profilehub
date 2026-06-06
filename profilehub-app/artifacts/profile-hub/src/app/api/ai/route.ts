@@ -32,6 +32,27 @@ function hasSelectedProject(input: Record<string, unknown>): boolean {
   return Boolean(projectId || nestedProjectId);
 }
 
+function providerErrorPayload(error: unknown) {
+  const message = error instanceof Error ? error.message : "AI request failed.";
+  const debugCode = error && typeof error === "object" && "debugCode" in error ? String(error.debugCode) : undefined;
+  const status = error && typeof error === "object" && "status" in error ? Number(error.status) : undefined;
+  const attemptedModels = error && typeof error === "object" && "attemptedModels" in error && Array.isArray(error.attemptedModels)
+    ? error.attemptedModels.map(String)
+    : undefined;
+
+  return {
+    message,
+    payload: {
+      error: message,
+      debugCode,
+      provider: process.env.AI_PROVIDER || "default",
+      model: process.env.OPENROUTER_MODEL || null,
+      attemptedModels,
+      httpStatus: Number.isFinite(status) ? status : undefined,
+    },
+  };
+}
+
 export async function POST(request: NextRequest) {
   const parsed = bodySchema.safeParse(await request.json().catch(() => ({})));
   if (!parsed.success) {
@@ -64,8 +85,8 @@ export async function POST(request: NextRequest) {
     const response = await aiService.runAI(parsed.data.feature, parsed.data.input);
     return NextResponse.json(response);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "AI request failed.";
+    const { message, payload } = providerErrorPayload(error);
     await log("warn", "ai", "AI request failed", { feature: parsed.data.feature, reason: message });
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(payload, { status: 500 });
   }
 }

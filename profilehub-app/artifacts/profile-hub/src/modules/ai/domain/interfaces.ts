@@ -9,6 +9,7 @@ export interface AIProviderResult {
   fallback?: boolean;
   fallbackMessage?: string;
   debugCode?: string;
+  attemptedModels?: string[];
   model?: string;
 }
 
