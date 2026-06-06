@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { minimizeInput } from "../src/lib/ai/prompts";
 import { runAIForUser, selectProvider } from "../src/lib/ai/provider";
+import { createOpenRouterProvider } from "../src/lib/ai/providers/openrouter";
 
 describe("AI provider fallback", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
   });
 
   it("uses mock provider when no AI key is configured", () => {
@@ -25,6 +27,39 @@ describe("AI provider fallback", () => {
 
     expect(provider.name).toBe("openrouter");
     expect(provider.model).toBe("example/free-model");
+  });
+
+  it("uses required OpenRouter headers and exposes a safe rate-limit debug code", async () => {
+    vi.stubEnv("AI_PROVIDER", "openrouter");
+    vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
+    vi.stubEnv("OPENROUTER_MODEL", "example/free-model");
+
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ error: { message: "Rate limit exceeded" } }), {
+        status: 429,
+        headers: { "content-type": "application/json" },
+      })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = createOpenRouterProvider();
+
+    await expect(provider.generate("generate_bio", { displayName: "Sara" })).rejects.toMatchObject({
+      debugCode: "openrouter_rate_limited",
+      status: 429,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://openrouter.ai/api/v1/chat/completions",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer test-openrouter-key",
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://profilehub-two.vercel.app",
+          "X-Title": "ProfileHub",
+        }),
+      })
+    );
   });
 
   it("does not forward sensitive fields into prompts", () => {

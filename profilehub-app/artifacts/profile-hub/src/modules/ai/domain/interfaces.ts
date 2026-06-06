@@ -8,6 +8,7 @@ export interface AIProviderResult {
   provider: string;
   fallback?: boolean;
   fallbackMessage?: string;
+  debugCode?: string;
   model?: string;
 }
 

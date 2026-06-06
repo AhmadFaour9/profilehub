@@ -43,6 +43,11 @@ export async function POST(request: NextRequest) {
   const aiService = createAIService(client, userId);
 
   try {
+    console.info("[ai] api_ai_provider_config", {
+      AI_PROVIDER: process.env.AI_PROVIDER?.trim() || "default",
+      feature: parsed.data.feature,
+    });
+
     const response = await aiService.runAI(parsed.data.feature, parsed.data.input);
     return NextResponse.json(response);
   } catch (error) {

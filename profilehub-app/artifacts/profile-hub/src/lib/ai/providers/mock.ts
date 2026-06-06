@@ -8,6 +8,7 @@ export type AIProviderResponse = {
   tokensUsed: number;
   fallback?: boolean;
   fallbackMessage?: string;
+  debugCode?: string;
   model?: string;
 };
 

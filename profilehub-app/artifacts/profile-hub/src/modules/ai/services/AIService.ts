@@ -32,11 +32,12 @@ export class AIService {
     return this.primaryProvider.isConfigured() ? this.primaryProvider : this.fallbackProvider;
   }
 
-  private withFallbackMessage(result: AIProviderResult): AIProviderResult {
+  private withFallbackMessage(result: AIProviderResult, debugCode?: string): AIProviderResult {
     return {
       ...result,
       fallback: true,
       fallbackMessage: FALLBACK_MESSAGE,
+      debugCode,
     };
   }
 
@@ -74,7 +75,9 @@ export class AIService {
 
     await this.checkRateLimit(this.currentUserId);
 
-    const provider = this.getActiveProvider();
+    const requestedProvider = (process.env.AI_PROVIDER || "").trim().toLowerCase();
+    const shouldAttemptPrimary = requestedProvider === "openrouter" && this.primaryProvider.name === "openrouter";
+    const provider = shouldAttemptPrimary ? this.primaryProvider : this.getActiveProvider();
     let result: AIProviderResult;
 
     if (provider.name === "mock" && this.primaryProvider.name !== "mock" && !this.primaryProvider.isConfigured()) {
@@ -119,6 +122,7 @@ export class AIService {
       const message = error instanceof Error ? error.message : "AI provider failed";
       const errorStatus = error && typeof error === "object" && "status" in error ? String(error.status) : undefined;
       const errorCode = error && typeof error === "object" && "code" in error ? String(error.code) : undefined;
+      const debugCode = error && typeof error === "object" && "debugCode" in error ? String(error.debugCode) : undefined;
       const shouldFallback =
         provider.name !== "mock" &&
         (!error || typeof error !== "object" || !("shouldFallback" in error) || Boolean(error.shouldFallback));
@@ -130,18 +134,19 @@ export class AIService {
         feature,
         reason: message,
         code: errorCode,
+        debugCode,
         httpStatus: errorStatus,
       });
 
       if (shouldFallback) {
-        result = this.withFallbackMessage(await this.fallbackProvider.generate(feature, input));
+        result = this.withFallbackMessage(await this.fallbackProvider.generate(feature, input), debugCode);
 
         await this.recordUsage({
           provider: result.provider,
           feature,
           status: "fallback",
           tokensUsed: result.tokensUsed,
-          errorMessage: message,
+          errorMessage: debugCode ? `${debugCode}: ${message}` : message,
         });
 
         return result;
@@ -151,7 +156,7 @@ export class AIService {
         provider: provider.name,
         feature,
         status: "error",
-        errorMessage: message,
+        errorMessage: debugCode ? `${debugCode}: ${message}` : message,
       });
 
       throw error;
