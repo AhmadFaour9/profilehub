@@ -22,10 +22,28 @@ export interface LinkAnalytics {
   percentage: number;
 }
 
+export interface AnalyticsBreakdownItem {
+  label: string;
+  value: number;
+  percentage: number;
+}
+
+export interface AnalyticsRangeSummary {
+  dailyViews: number;
+  weeklyViews: number;
+  monthlyViews: number;
+}
+
 export interface DashboardAnalytics {
   overview: AnalyticsOverview;
   pageViews: TimeSeriesPoint[];
   linkAnalytics: LinkAnalytics[];
+  weeklyViews: TimeSeriesPoint[];
+  monthlyViews: TimeSeriesPoint[];
+  referrers: AnalyticsBreakdownItem[];
+  countries: AnalyticsBreakdownItem[];
+  devices: AnalyticsBreakdownItem[];
+  rangeSummary: AnalyticsRangeSummary;
 }
 
 export interface IAnalyticsRepository {

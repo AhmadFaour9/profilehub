@@ -915,6 +915,7 @@ export async function getPublicProfile(username: string, options: PublicProfileO
   const canViewUnpublished =
     Boolean(options.includeUnpublishedForUserId) && profile?.userId === options.includeUnpublishedForUserId;
   if (!profile) return null;
+  if (!profile.isPublished && !canViewUnpublished) return null;
   if (!profile.isPublished && canViewUnpublished && options.authClient) {
     profile = await ensureProfilePublished(options.authClient, profile);
   }

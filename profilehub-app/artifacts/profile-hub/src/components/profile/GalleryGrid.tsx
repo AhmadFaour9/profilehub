@@ -12,6 +12,8 @@ export function GalleryGrid({ items }: { items: GalleryItem[] }) {
             src={item.imageUrl} 
             alt={item.caption || ""} 
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            loading="lazy"
+            decoding="async"
           />
           {item.caption && (
             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">

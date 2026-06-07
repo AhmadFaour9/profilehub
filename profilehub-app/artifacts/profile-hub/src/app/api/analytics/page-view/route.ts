@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
     visitor_id_hash: hashValue(visitorSource),
     referrer: request.headers.get("referer"),
     user_agent_hash: hashValue(userAgent),
+    country: getRequestCountry(request),
     device: detectDevice(userAgent),
   });
 
@@ -35,4 +36,10 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ ok: true });
+}
+
+function getRequestCountry(request: NextRequest): string | null {
+  const country = request.headers.get("x-vercel-ip-country") || request.headers.get("cf-ipcountry");
+  if (!country || country.length > 3) return null;
+  return country.toUpperCase();
 }

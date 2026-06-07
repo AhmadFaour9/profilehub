@@ -11,6 +11,12 @@ export default async function DashboardAnalyticsPage() {
       overview={analytics?.overview}
       pageViews={analytics?.pageViews}
       linkAnalytics={analytics?.linkAnalytics}
+      weeklyViews={analytics?.weeklyViews}
+      monthlyViews={analytics?.monthlyViews}
+      referrers={analytics?.referrers}
+      countries={analytics?.countries}
+      devices={analytics?.devices}
+      rangeSummary={analytics?.rangeSummary}
     />
   );
 }

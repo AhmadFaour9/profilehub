@@ -6,6 +6,8 @@ import { SiBehance, SiTiktok, SiWhatsapp, SiX, SiInstagram, SiDribbble, SiGithub
 import { Linkedin, Facebook, Link2 } from "lucide-react";
 
 export function ProfileHeader({ profile, profileUrl }: { profile: Profile; profileUrl?: string }) {
+  const activeSocialLinks = (profile.socialLinks || []).filter((social) => social.isActive !== false && social.url);
+  const websiteHost = getSafeHostname(profile.website);
   const getSocialIcon = (platform: string) => {
     switch (platform) {
       case 'twitter': return <SiX className="w-5 h-5" />;
@@ -29,8 +31,10 @@ export function ProfileHeader({ profile, profileUrl }: { profile: Profile; profi
         <div className="h-48 md:h-64 w-full relative">
           <img 
             src={profile.coverUrl} 
-            alt="Cover" 
+            alt={`${profile.displayName} cover`}
             className="w-full h-full object-cover"
+            loading="eager"
+            decoding="async"
           />
         </div>
       ) : (
@@ -72,17 +76,17 @@ export function ProfileHeader({ profile, profileUrl }: { profile: Profile; profi
               <div className="flex items-center gap-1.5">
                 <Globe className="w-4 h-4" />
                 <a href={profile.website} target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
-                  {new URL(profile.website).hostname}
+                  {websiteHost || profile.website}
                 </a>
               </div>
             )}
           </div>
 
-          {profile.socialLinks && profile.socialLinks.length > 0 && (
+          {activeSocialLinks.length > 0 && (
             <div className="flex items-center gap-4 pt-2">
-              {profile.socialLinks.map((social) => (
+              {activeSocialLinks.map((social) => (
                 <a 
-                  key={social.platform} 
+                  key={`${social.platform}-${social.url}`}
                   href={social.url} 
                   target="_blank" 
                   rel="noopener noreferrer"
@@ -98,4 +102,14 @@ export function ProfileHeader({ profile, profileUrl }: { profile: Profile; profi
       </div>
     </div>
   );
+}
+
+function getSafeHostname(value: string | null | undefined): string {
+  if (!value) return "";
+
+  try {
+    return new URL(value).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
 }

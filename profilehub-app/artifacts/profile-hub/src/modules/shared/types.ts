@@ -145,3 +145,15 @@ export type LinkAnalytics = {
   clicks: number;
   percentage: number;
 };
+
+export type AnalyticsBreakdownItem = {
+  label: string;
+  value: number;
+  percentage: number;
+};
+
+export type AnalyticsRangeSummary = {
+  dailyViews: number;
+  weeklyViews: number;
+  monthlyViews: number;
+};

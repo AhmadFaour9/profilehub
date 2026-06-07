@@ -69,6 +69,8 @@ export function ProjectCard({ project, theme }: { project: Project; theme?: Prof
               src={imageSrc} 
               alt={project.title} 
               className={`h-full w-full object-cover transition-all duration-500 group-hover:scale-105 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
+              loading="lazy"
+              decoding="async"
               onLoad={() => setImageLoaded(true)}
               onError={handleImageError}
             />

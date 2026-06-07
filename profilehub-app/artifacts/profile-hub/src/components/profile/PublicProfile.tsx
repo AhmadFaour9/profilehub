@@ -7,6 +7,7 @@ import { ProjectCard } from "./ProjectCard";
 import { ServiceCard } from "./ServiceCard";
 import { GalleryGrid } from "./GalleryGrid";
 import { PageViewBeacon } from "./PageViewBeacon";
+import { buildProfileJsonLd, getPrimaryProfileCta } from "@/lib/profile-seo";
 
 export async function PublicProfile({
   username,
@@ -33,33 +34,73 @@ export async function PublicProfile({
   const visibleServices = profile.services
     .filter((service) => service.isActive)
     .sort((a, b) => (a.sortOrder ?? a.order ?? a.position ?? 0) - (b.sortOrder ?? b.order ?? b.position ?? 0));
+  const visibleProjects = profile.projects
+    .filter((project) => project.isActive !== false)
+    .sort((a, b) => (a.order ?? a.position ?? 0) - (b.order ?? b.position ?? 0));
+  const visibleGallery = profile.gallery
+    .filter((item) => item.imageUrl || item.url)
+    .sort((a, b) => (a.order ?? a.position ?? 0) - (b.order ?? b.position ?? 0));
+  const canonicalUrl = profileUrl || `/${profile.username}`;
+  const jsonLd = buildProfileJsonLd(
+    {
+      ...profile,
+      links: visibleLinks,
+      projects: visibleProjects,
+      services: visibleServices,
+      gallery: visibleGallery,
+    },
+    canonicalUrl
+  );
+  const primaryCta = getPrimaryProfileCta({ ...profile, links: visibleLinks, projects: visibleProjects, services: visibleServices, gallery: visibleGallery });
+  const primaryCtaId = primaryCta && "id" in primaryCta ? primaryCta.id : null;
+  const linkCards = primaryCtaId ? visibleLinks.filter((link) => link.id !== primaryCtaId) : visibleLinks;
+  const featuredLinks = linkCards.filter((link) => link.isFeatured);
+  const regularLinks = linkCards.filter((link) => !link.isFeatured);
+  const hasPublicContent = Boolean(primaryCta || linkCards.length || visibleProjects.length || visibleServices.length || visibleGallery.length);
 
   return (
     <div
       className={`min-h-screen pb-20 ${hasBg ? '' : 'bg-background text-foreground'}`}
       style={hasBg ? { backgroundColor: profile.theme?.backgroundColor } : undefined}
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+      />
       <PageViewBeacon profileId={profile.id} />
       <div className="max-w-2xl mx-auto">
         <ProfileHeader profile={profile} profileUrl={profileUrl} />
         
         <div className="px-4 mt-8 space-y-12">
-          {visibleLinks.length > 0 && (
+          {primaryCta && <PrimaryCta cta={primaryCta} />}
+
+          {featuredLinks.length > 0 && (
             <section className="space-y-4">
-              <h2 className="text-lg font-medium sr-only">Links</h2>
+              <h2 className="text-2xl font-serif">Featured</h2>
               <div className="space-y-3">
-                {visibleLinks.map((link) => (
+                {featuredLinks.map((link) => (
                   <SmartLinkCard key={link.id} link={link} theme={profile.theme} />
                 ))}
               </div>
             </section>
           )}
 
-          {profile.projects.length > 0 && (
+          {regularLinks.length > 0 && (
+            <section className="space-y-4">
+              <h2 className="text-lg font-medium sr-only">Smart Links</h2>
+              <div className="space-y-3">
+                {regularLinks.map((link) => (
+                  <SmartLinkCard key={link.id} link={link} theme={profile.theme} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {visibleProjects.length > 0 && (
             <section className="space-y-4">
               <h2 className="text-2xl font-serif">Selected Works</h2>
               <div className="grid gap-6">
-                {profile.projects.map((project) => (
+                {visibleProjects.map((project) => (
                   <ProjectCard key={project.id} project={project} theme={profile.theme} />
                 ))}
               </div>
@@ -77,14 +118,65 @@ export async function PublicProfile({
             </section>
           )}
 
-          {profile.gallery.length > 0 && (
+          {visibleGallery.length > 0 && (
             <section className="space-y-4">
               <h2 className="text-2xl font-serif">Gallery</h2>
-              <GalleryGrid items={profile.gallery} />
+              <GalleryGrid items={visibleGallery} />
+            </section>
+          )}
+
+          {!hasPublicContent && (
+            <section className="rounded-xl border bg-card p-6 text-center">
+              <h2 className="text-lg font-medium text-foreground">This profile is getting set up.</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Check back soon for smart links, projects, services, and gallery updates.
+              </p>
             </section>
           )}
         </div>
       </div>
+      {primaryCta && <StickyMobileCta cta={primaryCta} />}
+    </div>
+  );
+}
+
+function ctaHref(cta: { id?: string; url: string }) {
+  return cta.id ? `/go/${cta.id}` : cta.url;
+}
+
+function PrimaryCta({ cta }: { cta: { id?: string; title: string; url: string; description?: string | null } }) {
+  return (
+    <section className="rounded-2xl border bg-card p-5 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Start Here</p>
+      <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-xl font-serif text-foreground">{cta.title}</h2>
+          {cta.description && <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{cta.description}</p>}
+        </div>
+        <a
+          href={ctaHref(cta)}
+          target={cta.url.startsWith("mailto:") ? undefined : "_blank"}
+          rel="noopener noreferrer"
+          className="inline-flex shrink-0 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+        >
+          Open
+        </a>
+      </div>
+    </section>
+  );
+}
+
+function StickyMobileCta({ cta }: { cta: { id?: string; title: string; url: string } }) {
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 px-4 py-3 backdrop-blur md:hidden">
+      <a
+        href={ctaHref(cta)}
+        target={cta.url.startsWith("mailto:") ? undefined : "_blank"}
+        rel="noopener noreferrer"
+        className="flex min-h-11 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+      >
+        {cta.title}
+      </a>
     </div>
   );
 }
