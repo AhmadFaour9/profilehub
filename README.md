@@ -1,6 +1,7 @@
 # ProfileHub — Full-Stack Microservices Architecture
 
 Enterprise-grade personal branding platform built with **Microservices Architecture** and **Clean Architecture** principles.
+<img width="2752" height="1536" alt="profile hub architecture" src="https://github.com/user-attachments/assets/517cba26-66cc-46cb-90a9-fa669c0970a8" />
 
 ## Architecture Overview
 
@@ -8,22 +9,22 @@ Enterprise-grade personal branding platform built with **Microservices Architect
 ┌─────────────────────────────────────────────────────────────────┐
 │                        ProfileHub                               │
 ├──────────────────────────┬──────────────────────────────────────┤
-│    Frontend Service      │         Backend Services              │
-│                          │                                       │
-│  ┌──────────────────┐   │   ┌─────────────────────────────┐   │
-│  │  Next.js Web App  │───┼──▶│     API Gateway (:4000)      │   │
-│  │     (:3000)       │   │   └─────┬─────┬──────┬──────────┘   │
-│  └──────────────────┘   │         │     │      │              │
-│                          │   ┌─────▼─┐ ┌─▼────┐ ┌▼──────┐    │
-│                          │   │Profile │ │Analyt│ │  AI   │    │
-│                          │   │Service │ │ics   │ │Service│    │
-│                          │   │(:4001) │ │(:4002│ │(:4003)│    │
-│                          │   └────┬───┘ └──┬───┘ └───┬───┘    │
-│                          │        │        │         │         │
-│                          │   ┌────▼────────▼─────────▼───┐    │
-│                          │   │   Supabase PostgreSQL +    │    │
-│                          │   │   Row Level Security       │    │
-│                          │   └───────────────────────────┘    │
+│    Frontend Service      │         Backend Services             │
+│                          │                                      │
+│  ┌──────────────────┐    │    ┌─────────────────────────────┐   │
+│  │  Next.js Web App │───┼──▶ │    API Gateway (:4000)      │   │
+│  │     (:3000)      │   │     └────┬─────┬──────┬───────────┘   │
+│  └──────────────────┘    │         │     │      │               │
+│                          │   ┌─────▼─┐ ┌─▼────┐ ┌▼──────┐       │
+│                          │   │Profile │ │Analyt│ │  AI   │      │
+│                          │   │Service │ │ics   │ │Service│      │
+│                          │   │(:4001) │ │(:4002│ │(:4003)│      │
+│                          │   └────┬───┘ └──┬───┘ └───┬───┘      │
+│                          │        │        │         │          │
+│                          │   ┌────▼────────▼─────────▼───┐      │
+│                          │   │   Supabase PostgreSQL +   │      │
+│                          │   │   Row Level Security      │      │
+│                          │   └───────────────────────────┘      │
 └──────────────────────────┴──────────────────────────────────────┘
 ```
 
