@@ -120,6 +120,8 @@ function safeLogValue(value: unknown): unknown {
 }
 
 function logOpenRouter(level: "info" | "warn", event: string, metadata: Record<string, unknown>) {
+  if (level === "info" && process.env.LOG_LEVEL?.toLowerCase() !== "debug") return;
+
   const safe = safeLogValue(metadata);
   const writer = level === "warn" ? console.warn : console.info;
   writer(`[ai] ${event}`, safe);

@@ -44,6 +44,7 @@ type JwtMetadata = {
 };
 
 export function isDebugAuthEnabled(): boolean {
+  if (process.env.NODE_ENV === "production") return false;
   if (process.env.VERCEL_ENV === "production") return false;
   return process.env.ENABLE_DEBUG_AUTH_TESTS?.trim().toLowerCase() === "true" && Boolean(process.env.DEBUG_AUTH_TEST_SECRET);
 }

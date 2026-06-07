@@ -18,6 +18,21 @@ export async function POST(request: NextRequest) {
   const supabase = createSupabaseAdminClient();
   if (!supabase) return NextResponse.json({ ok: true });
 
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id, is_published")
+    .eq("id", body.data.profileId)
+    .maybeSingle();
+
+  if (profileError) {
+    await log("warn", "analytics", "Page view profile lookup failed", { reason: profileError.message });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (!profile?.is_published) {
+    return NextResponse.json({ ok: true });
+  }
+
   const userAgent = getUserAgent(request);
   const ip = getRequestIp(request);
   const visitorSource = `${ip || ""}:${userAgent || ""}`;

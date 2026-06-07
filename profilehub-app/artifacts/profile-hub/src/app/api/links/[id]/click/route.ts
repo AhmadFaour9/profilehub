@@ -22,16 +22,19 @@ export async function GET(
 
   const { data: link, error } = await supabase
     .from("smart_links")
-    .select("id, profile_id, url, is_active")
+    .select("id, profile_id, url, is_active, profiles!inner(is_published)")
     .eq("id", id)
     .maybeSingle();
 
-  if (error || !link || !link.is_active) {
+  const profile = Array.isArray((link as any)?.profiles) ? (link as any)?.profiles[0] : (link as any)?.profiles;
+  const parsedTarget = httpUrlSchema.safeParse((link as any)?.url);
+
+  if (error || !link || !link.is_active || !profile?.is_published || !parsedTarget.success) {
     if (error) await log("warn", "analytics", "Link click lookup failed", { reason: error.message });
     return NextResponse.redirect(target);
   }
 
-  target = link.url;
+  target = parsedTarget.data;
   const userAgent = getUserAgent(request);
   const ip = getRequestIp(request);
   const visitorSource = `${ip || ""}:${userAgent || ""}`;
