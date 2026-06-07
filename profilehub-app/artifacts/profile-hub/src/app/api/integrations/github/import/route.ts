@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/modules/auth";
 import { GithubRateLimitError, fetchGithubUserRepos, fetchGithubRepo } from "@/lib/github-extractor";
+import { debugLog } from "@/lib/perf";
 
 type GithubImportResponse =
   | { ok: true; projects: Awaited<ReturnType<typeof fetchGithubUserRepos>> }
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
       return json({ ok: false, error: "not_authenticated" }, 401);
     }
 
-    console.info("[GITHUB] github_import_started", { user_id: user.id });
+    debugLog("GITHUB", "github_import_started", { user_id: user.id });
 
     const body = await readJsonBody(req);
     const { target } = body;
@@ -50,9 +51,9 @@ export async function POST(req: Request) {
     if (repoMatch) {
       const owner = repoMatch[1];
       const repoName = repoMatch[2].replace(".git", "");
-      console.info("[GITHUB] github_import_repo_url", { user_id: user.id, repo_url: `https://github.com/${owner}/${repoName}` });
+      debugLog("GITHUB", "github_import_repo_url", { user_id: user.id, repo_url: `https://github.com/${owner}/${repoName}` });
       const project = await fetchGithubRepo(owner, repoName, token);
-      console.info("[GITHUB] github_import_success", { user_id: user.id, project_count: 1 });
+      debugLog("GITHUB", "github_import_success", { user_id: user.id, project_count: 1 });
       return json({ ok: true, projects: [project] });
     } else {
       // Treat as username
@@ -61,7 +62,7 @@ export async function POST(req: Request) {
       const username = userMatch ? userMatch[1] : normalizedTarget;
       
       const projects = await fetchGithubUserRepos(username, token);
-      console.info("[GITHUB] github_import_success", { user_id: user.id, username, project_count: projects.length });
+      debugLog("GITHUB", "github_import_success", { user_id: user.id, username, project_count: projects.length });
       return json({ ok: true, projects });
     }
   } catch (error: unknown) {

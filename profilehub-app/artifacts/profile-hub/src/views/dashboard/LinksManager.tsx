@@ -355,7 +355,9 @@ export default function LinksManager({
                         alt=""
                         className="w-full h-full object-cover"
                         onError={() => {
-                          console.warn("image_load_failed", { link_id: link.id });
+                          if (process.env.NODE_ENV !== "production") {
+                            console.warn("image_load_failed", { link_id: link.id });
+                          }
                           setFailedImages((current) => new Set(current).add(link.id));
                         }}
                       />

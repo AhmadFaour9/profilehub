@@ -17,7 +17,7 @@ function getInitials(name: string): string {
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
 
-export function Topbar({ profile }: { profile?: Profile }) {
+export function Topbar({ profile, onMenuClick }: { profile?: Profile; onMenuClick?: () => void }) {
   const { resolvedTheme, setTheme } = useTheme();
   const { setLanguage, t } = useTranslation();
   const displayName = profile?.displayName || "";
@@ -27,8 +27,9 @@ export function Topbar({ profile }: { profile?: Profile }) {
   return (
     <header className="h-16 border-b bg-background flex items-center justify-between px-4 md:px-8">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" className="md:hidden" data-testid="mobile-menu">
+        <Button variant="ghost" size="icon" className="md:hidden" data-testid="mobile-menu" onClick={onMenuClick}>
           <Menu className="h-5 w-5" />
+          <span className="sr-only">Open navigation</span>
         </Button>
         {displayName && (
           <div className="hidden sm:block">

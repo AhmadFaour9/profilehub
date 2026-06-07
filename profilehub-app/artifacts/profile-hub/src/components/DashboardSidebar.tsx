@@ -4,10 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "@/hooks/use-translation";
 import { LayoutDashboard, User, Link as LinkIcon, Briefcase, Box, Image, Palette, BarChart, Settings, LogOut } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export function DashboardSidebar() {
+type DashboardSidebarProps = {
+  variant?: "desktop" | "mobile";
+  onNavigate?: () => void;
+};
+
+export function DashboardSidebar({ variant = "desktop", onNavigate }: DashboardSidebarProps) {
   const location = usePathname();
   const { t } = useTranslation();
+  const isMobile = variant === "mobile";
 
   const links = [
     { href: "/dashboard", label: t("nav.dashboard"), icon: LayoutDashboard },
@@ -22,7 +29,12 @@ export function DashboardSidebar() {
   ];
 
   return (
-    <aside className="w-full md:w-64 bg-sidebar border-r border-sidebar-border hidden md:flex flex-col">
+    <aside
+      className={cn(
+        "w-full bg-sidebar border-sidebar-border flex-col",
+        isMobile ? "flex h-full border-r" : "hidden md:flex md:w-64 border-r"
+      )}
+    >
       <div className="p-6">
         <h2 className="text-xl font-serif font-bold text-sidebar-foreground">ProfileHub</h2>
       </div>
@@ -40,6 +52,7 @@ export function DashboardSidebar() {
                   : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
               }`}
               data-testid={`nav-${link.href.replace("/dashboard", "") || "overview"}`}
+              onClick={onNavigate}
             >
               <link.icon className="w-4 h-4" />
               {link.label}
@@ -53,6 +66,7 @@ export function DashboardSidebar() {
           prefetch={false}
           className="flex w-full items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
           data-testid="nav-logout"
+          onClick={onNavigate}
         >
           <LogOut className="w-4 h-4" />
           {t("nav.logout")}

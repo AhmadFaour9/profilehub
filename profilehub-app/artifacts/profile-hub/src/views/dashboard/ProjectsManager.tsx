@@ -20,7 +20,7 @@ import { Plus, Briefcase, Github, Loader2, Check, Sparkles } from "lucide-react"
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProjectCard } from "@/components/profile/ProjectCard";
 import { useToast } from "@/hooks/use-toast";
-import { deleteProject, updateProject } from "@/app/dashboard/actions";
+import { createProject, deleteProject, updateProject } from "@/app/dashboard/actions";
 
 interface GithubProject {
   title: string;
@@ -57,6 +57,15 @@ const API_ERROR_MESSAGES: Record<string, string> = {
   target_required: "Enter a GitHub username or repository URL.",
   invalid_projects_payload: "No valid GitHub projects were selected.",
   profile_missing: "Could not load your profile before importing projects.",
+};
+
+const EMPTY_PROJECT_FORM: ProjectFormState = {
+  title: "",
+  description: "",
+  projectUrl: "",
+  repoUrl: "",
+  imageUrl: "",
+  tags: "",
 };
 
 function safeTextError(text: string): string {
@@ -145,15 +154,11 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
   const [githubResults, setGithubResults] = useState<GithubProject[]>([]);
   const [selectedRepos, setSelectedRepos] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState<ProjectFormState>(EMPTY_PROJECT_FORM);
+  const [createSaving, setCreateSaving] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [editForm, setEditForm] = useState<ProjectFormState>({
-    title: "",
-    description: "",
-    projectUrl: "",
-    repoUrl: "",
-    imageUrl: "",
-    tags: "",
-  });
+  const [editForm, setEditForm] = useState<ProjectFormState>(EMPTY_PROJECT_FORM);
   const [editSaving, setEditSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
   const [deleteSaving, setDeleteSaving] = useState(false);
@@ -260,6 +265,11 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
   const openEditDialog = (project: Project) => {
     setEditingProject(project);
     setEditForm(formFromProject(project));
+  };
+
+  const openCreateDialog = () => {
+    setCreateForm(EMPTY_PROJECT_FORM);
+    setCreateOpen(true);
   };
 
   const selectedProjectContext = (project: Project) => {
@@ -380,6 +390,43 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
     }
   };
 
+  const handleCreateSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    setCreateSaving(true);
+    try {
+      const result = await createProject({
+        title: createForm.title,
+        description: createForm.description,
+        projectUrl: createForm.projectUrl,
+        repoUrl: createForm.repoUrl,
+        imageUrl: createForm.imageUrl,
+        tags: normalizeTags(createForm.tags),
+        position: allProjects.length,
+        isFeatured: false,
+        isActive: true,
+      });
+
+      if (!result.ok) {
+        throw new Error(result.message || "Could not create project.");
+      }
+
+      const created = normalizeProjectFromRow(result.data);
+      setAllProjects((prev) => [...prev, created]);
+      setCreateOpen(false);
+      setCreateForm(EMPTY_PROJECT_FORM);
+      toast({ title: "Project created", description: "Your project has been added." });
+    } catch (error: any) {
+      toast({
+        title: "Create failed",
+        description: error?.message || "Could not create project.",
+        variant: "destructive",
+      });
+    } finally {
+      setCreateSaving(false);
+    }
+  };
+
   const handleDeleteProject = async () => {
     if (!deleteTarget) return;
 
@@ -411,7 +458,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
           <h1 className="text-3xl font-serif">Projects</h1>
           <p className="text-muted-foreground mt-1">Showcase your best work.</p>
         </div>
-        <Button data-testid="btn-add-project">
+        <Button data-testid="btn-add-project" onClick={openCreateDialog}>
           <Plus className="w-4 h-4 mr-2" /> Add Project
         </Button>
       </div>
@@ -522,7 +569,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
           icon={<Briefcase className="w-6 h-6" />}
           title="No projects yet"
           description="Add your first project to showcase your work to visitors."
-          action={<Button><Plus className="w-4 h-4 mr-2" /> Add Project</Button>}
+          action={<Button onClick={openCreateDialog}><Plus className="w-4 h-4 mr-2" /> Add Project</Button>}
         />
       ) : (
         <div className="grid md:grid-cols-2 gap-6">
@@ -555,6 +602,83 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
           ))}
         </div>
       )}
+
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add Project</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateSubmit} className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="space-y-2 text-sm font-medium">
+                <span>Title</span>
+                <Input
+                  value={createForm.title}
+                  onChange={(event) => setCreateForm((prev) => ({ ...prev, title: event.target.value }))}
+                  required
+                  maxLength={100}
+                />
+              </label>
+              <label className="space-y-2 text-sm font-medium">
+                <span>Tags</span>
+                <Input
+                  value={createForm.tags}
+                  onChange={(event) => setCreateForm((prev) => ({ ...prev, tags: event.target.value }))}
+                  placeholder="react, supabase, portfolio"
+                />
+              </label>
+            </div>
+
+            <label className="space-y-2 text-sm font-medium block">
+              <span>Description</span>
+              <Textarea
+                value={createForm.description}
+                onChange={(event) => setCreateForm((prev) => ({ ...prev, description: event.target.value }))}
+                maxLength={800}
+                rows={4}
+              />
+            </label>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="space-y-2 text-sm font-medium">
+                <span>Project URL</span>
+                <Input
+                  value={createForm.projectUrl}
+                  onChange={(event) => setCreateForm((prev) => ({ ...prev, projectUrl: event.target.value }))}
+                  placeholder="https://..."
+                />
+              </label>
+              <label className="space-y-2 text-sm font-medium">
+                <span>Repository URL</span>
+                <Input
+                  value={createForm.repoUrl}
+                  onChange={(event) => setCreateForm((prev) => ({ ...prev, repoUrl: event.target.value }))}
+                  placeholder="https://github.com/owner/repo"
+                />
+              </label>
+            </div>
+
+            <label className="space-y-2 text-sm font-medium block">
+              <span>Image URL</span>
+              <Input
+                value={createForm.imageUrl}
+                onChange={(event) => setCreateForm((prev) => ({ ...prev, imageUrl: event.target.value }))}
+                placeholder="https://..."
+              />
+            </label>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)} disabled={createSaving}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createSaving}>
+                {createSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Create
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={Boolean(editingProject)} onOpenChange={(open) => !open && setEditingProject(null)}>
         <DialogContent className="sm:max-w-2xl">

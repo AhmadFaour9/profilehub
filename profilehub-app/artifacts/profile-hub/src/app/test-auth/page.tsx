@@ -1,8 +1,14 @@
 import { getAuthenticatedUser } from "@/modules/auth";
 import { getOrCreateProfile } from "@/lib/profile-data";
 import { isSupabaseConfigured } from "@/lib/env";
+import { isDebugAuthEnabled } from "@/lib/debug-auth-tests";
+import { notFound } from "next/navigation";
 
 export default async function TestPage() {
+  if (!isDebugAuthEnabled()) {
+    notFound();
+  }
+
   if (!isSupabaseConfigured()) {
     return <div>Supabase not configured</div>;
   }

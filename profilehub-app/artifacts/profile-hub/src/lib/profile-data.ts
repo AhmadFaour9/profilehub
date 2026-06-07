@@ -398,7 +398,7 @@ async function resolveDashboardProjects(
   }
 
   const rows = authProjects.data || [];
-  console.info("[DASHBOARD] dashboard_projects_query_success", {
+  debugLog("DASHBOARD", "dashboard_projects_query_success", {
     profile_id: profileId,
     count: rows.length,
   });
@@ -409,7 +409,7 @@ async function resolveDashboardProjects(
   if (adminProjects?.error) return rows;
 
   const adminRows = adminProjects?.data || [];
-  console.info("[DASHBOARD] dashboard_projects_admin_verify_count", {
+  debugLog("DASHBOARD", "dashboard_projects_admin_verify_count", {
     profile_id: profileId,
     count: adminRows.length,
   });

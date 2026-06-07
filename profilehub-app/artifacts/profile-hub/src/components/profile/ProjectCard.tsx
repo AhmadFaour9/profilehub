@@ -48,11 +48,13 @@ export function ProjectCard({ project, theme }: { project: Project; theme?: Prof
   const showImage = Boolean(imageSrc);
 
   const handleImageError = () => {
-    console.warn("[PROJECT] image_load_failed", {
-      project_id: project.id,
-      image_host: safeImageHost(imageSrc),
-      fallback_available: imageIndex < imageCandidates.length - 1,
-    });
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[PROJECT] image_load_failed", {
+        project_id: project.id,
+        image_host: safeImageHost(imageSrc),
+        fallback_available: imageIndex < imageCandidates.length - 1,
+      });
+    }
     setImageLoaded(false);
     setImageIndex((current) => current + 1);
   };

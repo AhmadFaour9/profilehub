@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getOrCreateProfile } from "@/lib/profile-data";
+import { debugLog } from "@/lib/perf";
 import { createAIService } from "@/modules/ai";
 import { getAuthenticatedUser } from "@/modules/auth";
 
@@ -257,7 +258,7 @@ export async function POST(request: Request) {
     return json({ ok: false, error: "AI did not return a usable description." }, 502);
   }
 
-  console.info("[AI] project_description_generated", {
+  debugLog("AI", "project_description_generated", {
     ai_feature: "project_description",
     project_id: project.id,
     provider: result.provider,

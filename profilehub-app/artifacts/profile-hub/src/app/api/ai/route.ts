@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createAIService, type AIFeature } from "@/modules/ai";
 import { getAuthenticatedUser } from "@/modules/auth";
 import { isSupabaseConfigured } from "@/lib/env";
+import { debugLog } from "@/lib/perf";
 import { log } from "@/modules/logging";
 
 const FEATURES = [
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
   const aiService = createAIService(client, userId);
 
   try {
-    console.info("[ai] api_ai_provider_config", {
+    debugLog("AI", "api_ai_provider_config", {
       AI_PROVIDER: process.env.AI_PROVIDER?.trim() || "default",
       feature: parsed.data.feature,
     });

@@ -38,7 +38,7 @@ export default function Register() {
       else if (code === "profile_insert_failed") uiMessage = "Could not initialize your profile. Please contact support.";
       else if (code === "schema_mismatch") uiMessage = "Database setup is incomplete. Please contact support.";
       else uiMessage = code || "An unexpected error occurred.";
-      setMessage(`DEBUG_REGISTER_ERROR: ${uiMessage}`);
+      setMessage(uiMessage);
     } else {
       setMessage(result.message === "register_success" ? "Check your email to confirm your account." : result.message || "Account created.");
     }

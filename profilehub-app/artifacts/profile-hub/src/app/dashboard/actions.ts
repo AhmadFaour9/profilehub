@@ -8,7 +8,7 @@ import { debugLog, measureServer } from "@/lib/perf";
 import { createProfileService } from "@/modules/profile";
 import { createStoragePath, validateStorageFile, type StorageBucket } from "@/modules/storage";
 import { log } from "@/modules/logging";
-import { linkFormSchema, projectFormSchema, serviceFormSchema, profileFormSchema, socialLinksFormSchema } from "@/modules/shared";
+import { linkFormSchema, projectFormSchema, serviceFormSchema, profileFormSchema, safeTextSchema, socialLinksFormSchema } from "@/modules/shared";
 
 type ActionResult<T = unknown> = {
   ok: boolean;
@@ -334,6 +334,88 @@ export async function deleteService(id: string): Promise<ActionResult> {
   }
 }
 
+export async function uploadGalleryImage(formData: FormData): Promise<ActionResult> {
+  const ctx = await getServices();
+  if (!ctx) return { ok: false, message: "Unauthorized." };
+
+  let uploadedPath: string | null = null;
+
+  try {
+    const file = formData.get("file");
+    const caption = safeTextSchema(160).parse(String(formData.get("caption") || ""));
+
+    if (!(file instanceof File)) return { ok: false, message: "Missing file." };
+    if (!file.type.startsWith("image/")) {
+      return { ok: false, message: "Gallery currently supports image uploads only." };
+    }
+
+    const validationError = validateStorageFile("gallery-media", file);
+    if (validationError) return { ok: false, message: validationError };
+
+    const path = createStoragePath(ctx.user.id, file);
+    uploadedPath = path;
+    const { error: uploadError } = await ctx.client.storage
+      .from("gallery-media")
+      .upload(path, file, { upsert: false, contentType: file.type });
+
+    if (uploadError) {
+      await log("warn", "storage", "Gallery upload failed", { reason: uploadError.message });
+      return { ok: false, message: "The image could not be uploaded." };
+    }
+
+    const { data: publicUrl } = ctx.client.storage.from("gallery-media").getPublicUrl(path);
+    const { data: latest } = await ctx.client
+      .from("media")
+      .select("position")
+      .eq("profile_id", ctx.profile.id)
+      .order("position", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const data = await ctx.profileService.addMedia(ctx.profile.id, {
+      url: publicUrl.publicUrl,
+      alt: caption,
+      caption,
+      type: "image",
+      position: typeof latest?.position === "number" ? latest.position + 1 : 0,
+    });
+
+    revalidateProfile(ctx.profile.username, "/dashboard/gallery");
+    return { ok: true, data };
+  } catch (error) {
+    if (uploadedPath) {
+      await ctx.client.storage.from("gallery-media").remove([uploadedPath]);
+    }
+    return { ok: false, message: errorMessage(error) };
+  }
+}
+
+export async function deleteGalleryItem(id: string): Promise<ActionResult> {
+  const ctx = await getServices();
+  if (!ctx) return { ok: false, message: "Unauthorized." };
+
+  try {
+    const { data: media } = await ctx.client
+      .from("media")
+      .select("url")
+      .eq("id", id)
+      .eq("profile_id", ctx.profile.id)
+      .maybeSingle();
+
+    await ctx.profileService.deleteMedia(id, ctx.profile.id);
+
+    const storagePath = getStoragePathFromPublicUrl(media?.url || "", "gallery-media");
+    if (storagePath) {
+      await ctx.client.storage.from("gallery-media").remove([storagePath]);
+    }
+
+    revalidateProfile(ctx.profile.username, "/dashboard/gallery");
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, message: errorMessage(error) };
+  }
+}
+
 export async function updateTheme(tokens: Record<string, unknown>): Promise<ActionResult> {
   const ctx = await getServices();
   if (!ctx) return { ok: false, message: "Unauthorized." };
@@ -392,6 +474,16 @@ function revalidateProfile(username: string, dashboardPath: string) {
   revalidatePath(dashboardPath);
   revalidatePath(`/${username}`);
   revalidateTag(`profile:${username}`, "max");
+}
+
+function getStoragePathFromPublicUrl(url: string, bucket: StorageBucket): string | null {
+  if (!url) return null;
+  const marker = `/object/public/${bucket}/`;
+  const markerIndex = url.indexOf(marker);
+  if (markerIndex === -1) return null;
+
+  const path = url.slice(markerIndex + marker.length).split("?")[0];
+  return path ? decodeURIComponent(path) : null;
 }
 
 function errorMessage(error: unknown): string {

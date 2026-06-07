@@ -3,6 +3,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getAuthenticatedUser } from "@/modules/auth";
 import { getOrCreateProfile } from "@/lib/profile-data";
+import { debugLog } from "@/lib/perf";
 
 const optionalHttpUrlSchema = z.preprocess((value) => {
   const raw = typeof value === "string" ? value.trim() : "";
@@ -80,7 +81,7 @@ export async function POST(req: Request) {
       return json({ ok: false, error: "not_authenticated" }, 401);
     }
 
-    console.info("[GITHUB] github_import_started", { user_id: user.id, route: "save" });
+    debugLog("GITHUB", "github_import_started", { user_id: user.id, route: "save" });
 
     const parsed = saveGithubProjectsSchema.safeParse(await readJsonBody(req));
     if (!parsed.success) {
@@ -99,7 +100,7 @@ export async function POST(req: Request) {
     }
 
     parsed.data.projects.forEach((project) => {
-      console.info("[GITHUB] github_import_repo_url", { user_id: user.id, repo_url: project.repo_url });
+      debugLog("GITHUB", "github_import_repo_url", { user_id: user.id, repo_url: project.repo_url });
     });
 
     const { count } = await client
@@ -136,7 +137,7 @@ export async function POST(req: Request) {
     revalidatePath(`/${profile.username}`);
     revalidateTag(`profile:${profile.username}`, "max");
 
-    console.info("[GITHUB] github_import_success", {
+    debugLog("GITHUB", "github_import_success", {
       user_id: user.id,
       route: "save",
       saved_count: data?.length || 0,
