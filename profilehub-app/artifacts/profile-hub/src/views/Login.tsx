@@ -42,10 +42,11 @@ export default function Login({ nextPath = "/dashboard" }: { nextPath?: string }
         </div>
 
         <Button variant="outline" className="w-full mb-6" data-testid="btn-google-login" asChild>
-          <Link href={`/auth/google?next=${encodeURIComponent(nextPath)}`}>
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- /auth/google is a Route Handler that mints a PKCE pair; <Link> would prefetch it and desync the stored verifier from the challenge sent to Google. */}
+          <a href={`/auth/google?next=${encodeURIComponent(nextPath)}`}>
             <SiGoogle className="mr-2 h-4 w-4" />
             {t("auth.continueWithGoogle")}
-          </Link>
+          </a>
         </Button>
 
         <div className="relative mb-6">

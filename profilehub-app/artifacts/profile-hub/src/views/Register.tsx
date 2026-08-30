@@ -56,10 +56,11 @@ export default function Register() {
         </div>
 
         <Button variant="outline" className="w-full mb-6" data-testid="btn-google-register" asChild>
-          <Link href="/auth/google?next=/onboarding">
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- /auth/google is a Route Handler that mints a PKCE pair; <Link> would prefetch it and desync the stored verifier from the challenge sent to Google. */}
+          <a href="/auth/google?next=/onboarding">
             <SiGoogle className="mr-2 h-4 w-4" />
-            Sign up with Google
-          </Link>
+            {t("auth.continueWithGoogle")}
+          </a>
         </Button>
 
         <div className="relative mb-6">
