@@ -67,24 +67,24 @@ export default function Settings({ currentEmail = "" }: { currentEmail?: string 
     <div className="space-y-8 max-w-2xl">
       <div>
         <h1 className="text-3xl font-serif">{t("settings.title")}</h1>
-        <p className="text-muted-foreground mt-1">Manage your account credentials and preferences.</p>
+        <p className="text-muted-foreground mt-1">{t("settings.subtitle")}</p>
       </div>
 
       <form onSubmit={submitEmail} className="space-y-6 p-6 border rounded-xl bg-card">
-        <h2 className="text-xl font-medium">Email Address</h2>
+        <h2 className="text-xl font-medium">{t("settings.emailAddress")}</h2>
         <div className="space-y-2">
-          <Label htmlFor="current-email">Current Email</Label>
+          <Label htmlFor="current-email">{t("settings.currentEmail")}</Label>
           <Input id="current-email" value={displayEmail} disabled className="max-w-md" />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="new-email">New Email</Label>
+          <Label htmlFor="new-email">{t("settings.newEmail")}</Label>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Input
               id="new-email"
               type="email"
               value={newEmail}
               onChange={(event) => setNewEmail(event.target.value)}
-              placeholder="Enter new email"
+              placeholder={t("settings.newEmailPlaceholder")}
               className="max-w-md"
               autoComplete="email"
               required
@@ -98,7 +98,7 @@ export default function Settings({ currentEmail = "" }: { currentEmail?: string 
       </form>
 
       <form onSubmit={submitPassword} className="space-y-6 p-6 border rounded-xl bg-card">
-        <h2 className="text-xl font-medium">Change Password</h2>
+        <h2 className="text-xl font-medium">{t("settings.changePassword")}</h2>
         <div className="space-y-4 max-w-md">
           <p className="text-sm text-muted-foreground">
             We will send a secure password change link to your account email. After confirming the link, you can set a new password.
@@ -111,13 +111,13 @@ export default function Settings({ currentEmail = "" }: { currentEmail?: string 
       </form>
 
       <div className="space-y-6 p-6 border border-destructive/20 rounded-xl bg-destructive/5">
-        <h2 className="text-xl font-medium text-destructive">Danger Zone</h2>
+        <h2 className="text-xl font-medium text-destructive">{t("settings.dangerZone")}</h2>
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-medium">Delete Account</h3>
-            <p className="text-sm text-muted-foreground">Permanently delete your account and all data.</p>
+            <h3 className="font-medium">{t("settings.deleteAccount")}</h3>
+            <p className="text-sm text-muted-foreground">{t("settings.deleteAccountHint")}</p>
           </div>
-          <Button variant="destructive">Delete Account</Button>
+          <Button variant="destructive">{t("settings.deleteAccount")}</Button>
         </div>
       </div>
     </div>

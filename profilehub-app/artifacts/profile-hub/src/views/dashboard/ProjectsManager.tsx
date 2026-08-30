@@ -459,22 +459,19 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-serif">{t("projects.title")}</h1>
-          <p className="text-muted-foreground mt-1">Showcase your best work.</p>
+          <p className="text-muted-foreground mt-1">{t("projects.subtitle")}</p>
         </div>
         <Button data-testid="btn-add-project" onClick={openCreateDialog}>
-          <Plus className="w-4 h-4 mr-2" /> Add Project
-        </Button>
+          <Plus className="w-4 h-4 mr-2" />{t("projects.addProject")}</Button>
       </div>
 
       {/* GitHub Import Section */}
       <div className="p-6 border rounded-xl bg-card space-y-4">
         <div className="flex items-center gap-2">
           <Github className="w-5 h-5 text-muted-foreground" />
-          <h2 className="text-lg font-medium">Import from GitHub</h2>
+          <h2 className="text-lg font-medium">{t("projects.importGithub")}</h2>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Paste a GitHub username or repository URL to import projects automatically.
-        </p>
+        <p className="text-sm text-muted-foreground">{t("projects.importHint")}</p>
         <div className="flex gap-3">
           <Input
             value={githubTarget}
@@ -508,12 +505,8 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium">{githubResults.length} repositories found</p>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => setSelectedRepos(new Set(githubResults.map(r => r.repo_url)))}>
-                  Select All
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => setSelectedRepos(new Set())}>
-                  Clear
-                </Button>
+                <Button size="sm" variant="outline" onClick={() => setSelectedRepos(new Set(githubResults.map(r => r.repo_url)))}>{t("form.selectAll")}</Button>
+                <Button size="sm" variant="outline" onClick={() => setSelectedRepos(new Set())}>{t("form.clear")}</Button>
               </div>
             </div>
             <div className="grid gap-2 max-h-80 overflow-y-auto">
@@ -570,9 +563,9 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
       {allProjects.length === 0 ? (
         <EmptyState 
           icon={<Briefcase className="w-6 h-6" />}
-          title="No projects yet"
-          description="Add your first project to showcase your work to visitors."
-          action={<Button onClick={openCreateDialog}><Plus className="w-4 h-4 mr-2" /> Add Project</Button>}
+          title={t("projects.emptyTitle")}
+          description={t("projects.emptyBody")}
+          action={<Button onClick={openCreateDialog}><Plus className="w-4 h-4 mr-2" />{t("projects.addProject")}</Button>}
         />
       ) : (
         <div className="grid md:grid-cols-2 gap-6">
@@ -594,12 +587,8 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
                   )}
                   Improve
                 </Button>
-                <Button type="button" size="sm" variant="secondary" onClick={() => openEditDialog(project)}>
-                  Edit
-                </Button>
-                <Button type="button" size="sm" variant="destructive" onClick={() => setDeleteTarget(project)}>
-                  Delete
-                </Button>
+                <Button type="button" size="sm" variant="secondary" onClick={() => openEditDialog(project)}>{t("action.edit")}</Button>
+                <Button type="button" size="sm" variant="destructive" onClick={() => setDeleteTarget(project)}>{t("action.delete")}</Button>
               </div>
             </div>
           ))}
@@ -609,12 +598,12 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Add Project</DialogTitle>
+            <DialogTitle>{t("projects.addProject")}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateSubmit} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-2 text-sm font-medium">
-                <span>Title</span>
+                <span>{t("form.title")}</span>
                 <Input
                   value={createForm.title}
                   onChange={(event) => setCreateForm((prev) => ({ ...prev, title: event.target.value }))}
@@ -623,7 +612,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
                 />
               </label>
               <label className="space-y-2 text-sm font-medium">
-                <span>Tags</span>
+                <span>{t("form.tags")}</span>
                 <Input
                   value={createForm.tags}
                   onChange={(event) => setCreateForm((prev) => ({ ...prev, tags: event.target.value }))}
@@ -633,7 +622,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
             </div>
 
             <label className="space-y-2 text-sm font-medium block">
-              <span>Description</span>
+              <span>{t("form.description")}</span>
               <Textarea
                 value={createForm.description}
                 onChange={(event) => setCreateForm((prev) => ({ ...prev, description: event.target.value }))}
@@ -644,7 +633,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
 
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-2 text-sm font-medium">
-                <span>Project URL</span>
+                <span>{t("form.projectUrl")}</span>
                 <Input
                   value={createForm.projectUrl}
                   onChange={(event) => setCreateForm((prev) => ({ ...prev, projectUrl: event.target.value }))}
@@ -652,7 +641,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
                 />
               </label>
               <label className="space-y-2 text-sm font-medium">
-                <span>Repository URL</span>
+                <span>{t("form.repoUrl")}</span>
                 <Input
                   value={createForm.repoUrl}
                   onChange={(event) => setCreateForm((prev) => ({ ...prev, repoUrl: event.target.value }))}
@@ -662,7 +651,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
             </div>
 
             <label className="space-y-2 text-sm font-medium block">
-              <span>Image URL</span>
+              <span>{t("form.imageUrl")}</span>
               <Input
                 value={createForm.imageUrl}
                 onChange={(event) => setCreateForm((prev) => ({ ...prev, imageUrl: event.target.value }))}
@@ -671,9 +660,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
             </label>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)} disabled={createSaving}>
-                Cancel
-              </Button>
+              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)} disabled={createSaving}>{t("action.cancel")}</Button>
               <Button type="submit" disabled={createSaving}>
                 {createSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Create
@@ -686,12 +673,12 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
       <Dialog open={Boolean(editingProject)} onOpenChange={(open) => !open && setEditingProject(null)}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Edit Project</DialogTitle>
+            <DialogTitle>{t("projects.editProject")}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleEditSubmit} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-2 text-sm font-medium">
-                <span>Title</span>
+                <span>{t("form.title")}</span>
                 <Input
                   value={editForm.title}
                   onChange={(event) => setEditForm((prev) => ({ ...prev, title: event.target.value }))}
@@ -700,7 +687,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
                 />
               </label>
               <label className="space-y-2 text-sm font-medium">
-                <span>Tags</span>
+                <span>{t("form.tags")}</span>
                 <Input
                   value={editForm.tags}
                   onChange={(event) => setEditForm((prev) => ({ ...prev, tags: event.target.value }))}
@@ -711,7 +698,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
 
             <div className="space-y-2 text-sm font-medium">
               <div className="flex items-center justify-between gap-3">
-                <span>Description</span>
+                <span>{t("form.description")}</span>
                 <Button
                   type="button"
                   size="sm"
@@ -737,7 +724,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
 
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-2 text-sm font-medium">
-                <span>Project URL</span>
+                <span>{t("form.projectUrl")}</span>
                 <Input
                   value={editForm.projectUrl}
                   onChange={(event) => setEditForm((prev) => ({ ...prev, projectUrl: event.target.value }))}
@@ -745,7 +732,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
                 />
               </label>
               <label className="space-y-2 text-sm font-medium">
-                <span>Repository URL</span>
+                <span>{t("form.repoUrl")}</span>
                 <Input
                   value={editForm.repoUrl}
                   onChange={(event) => setEditForm((prev) => ({ ...prev, repoUrl: event.target.value }))}
@@ -755,7 +742,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
             </div>
 
             <label className="space-y-2 text-sm font-medium block">
-              <span>Image URL</span>
+              <span>{t("form.imageUrl")}</span>
               <Input
                 value={editForm.imageUrl}
                 onChange={(event) => setEditForm((prev) => ({ ...prev, imageUrl: event.target.value }))}
@@ -764,9 +751,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
             </label>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setEditingProject(null)} disabled={editSaving}>
-                Cancel
-              </Button>
+              <Button type="button" variant="outline" onClick={() => setEditingProject(null)} disabled={editSaving}>{t("action.cancel")}</Button>
               <Button type="submit" disabled={editSaving}>
                 {editSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save
@@ -792,9 +777,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
 
           {aiLoading ? (
             <div className="flex items-center gap-3 rounded-lg border p-4 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Improving the selected project description...
-            </div>
+              <Loader2 className="h-4 w-4 animate-spin" />{t("projects.improving")}</div>
           ) : (
             <div className="space-y-4">
               {aiProviderMessage && (
@@ -837,13 +820,13 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete project?</AlertDialogTitle>
+            <AlertDialogTitle>{t("projects.deleteConfirm")}</AlertDialogTitle>
             <AlertDialogDescription>
               This removes {deleteTarget?.title ? `"${deleteTarget.title}"` : "this project"} from your profile.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteSaving}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteSaving}>{t("action.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={deleteSaving}
               onClick={(event) => {

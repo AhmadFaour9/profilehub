@@ -1,6 +1,12 @@
+"use client";
+
+import { useLocale } from "@/lib/i18n/client";
+
 export default function DashboardLoading() {
+  const { t } = useLocale();
+
   return (
-    <div className="space-y-6" aria-label="Loading dashboard">
+    <div className="space-y-6" aria-label={t("dashboard.loading")}>
       <div className="space-y-3">
         <div className="h-7 w-48 animate-pulse rounded-md bg-muted" />
         <div className="h-4 w-72 max-w-full animate-pulse rounded-md bg-muted" />

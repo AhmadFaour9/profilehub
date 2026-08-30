@@ -1,9 +1,12 @@
+"use client";
+
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { SmartLinkCard } from "@/components/profile/SmartLinkCard";
 import { ProjectCard } from "@/components/profile/ProjectCard";
 import { ServiceCard } from "@/components/profile/ServiceCard";
 import { GalleryGrid } from "@/components/profile/GalleryGrid";
 import type { Profile, Link, Project, Service, GalleryItem } from "@/modules/shared";
+import { useLocale } from "@/lib/i18n/client";
 
 interface MobilePreviewProps {
   profile: Profile;
@@ -14,6 +17,7 @@ interface MobilePreviewProps {
 }
 
 export function MobilePreview({ profile, links = [], projects = [], services = [], gallery = [] }: MobilePreviewProps) {
+  const { t } = useLocale();
   const visibleLinks = links
     .filter((link) => link.isActive)
     .sort((a, b) => {
@@ -40,7 +44,7 @@ export function MobilePreview({ profile, links = [], projects = [], services = [
                        <SmartLinkCard key={link.id} link={link} theme={profile.theme} />
                      ))
                    ) : (
-                     <div className="p-4 text-center text-sm text-muted-foreground border rounded-xl border-dashed">No links yet</div>
+                     <div className="p-4 text-center text-sm text-muted-foreground border rounded-xl border-dashed">{t("preview.noLinks")}</div>
                    )}
                  </div>
                  
@@ -50,7 +54,7 @@ export function MobilePreview({ profile, links = [], projects = [], services = [
                        <ProjectCard key={project.id} project={project} theme={profile.theme} />
                      ))
                    ) : (
-                     <div className="p-4 text-center text-sm text-muted-foreground border rounded-xl border-dashed">No projects yet</div>
+                     <div className="p-4 text-center text-sm text-muted-foreground border rounded-xl border-dashed">{t("preview.noProjects")}</div>
                    )}
                  </div>
                  
@@ -60,14 +64,14 @@ export function MobilePreview({ profile, links = [], projects = [], services = [
                        <ServiceCard key={service.id} service={service} theme={profile.theme} />
                      ))
                    ) : (
-                     <div className="p-4 text-center text-sm text-muted-foreground border rounded-xl border-dashed">Add your first service</div>
+                     <div className="p-4 text-center text-sm text-muted-foreground border rounded-xl border-dashed">{t("preview.addFirstService")}</div>
                    )}
                  </div>
                  
                  {gallery.length > 0 ? (
                    <GalleryGrid items={gallery.slice(0, 6)} />
                  ) : (
-                   <div className="p-4 text-center text-sm text-muted-foreground border rounded-xl border-dashed mx-4">No media yet</div>
+                   <div className="p-4 text-center text-sm text-muted-foreground border rounded-xl border-dashed mx-4">{t("preview.noMedia")}</div>
                  )}
                  
                </div>

@@ -96,7 +96,7 @@ export default function GalleryManager({ gallery = [] }: { gallery?: GalleryItem
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-serif">{t("gallery.title")}</h1>
-          <p className="text-muted-foreground mt-1">A visual grid of your work, studio, or behind the scenes.</p>
+          <p className="text-muted-foreground mt-1">{t("gallery.gridHint")}</p>
         </div>
         <Button data-testid="btn-add-image" onClick={openFilePicker} disabled={uploading}>
           {uploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
@@ -107,8 +107,8 @@ export default function GalleryManager({ gallery = [] }: { gallery?: GalleryItem
       {items.length === 0 ? (
         <EmptyState 
           icon={<ImageIcon className="w-6 h-6" />}
-          title="Gallery is empty"
-          description="Upload photos to create a visual moodboard."
+          title={t("gallery.emptyTitle")}
+          description={t("gallery.emptyBody")}
           action={
             <Button onClick={openFilePicker} disabled={uploading}>
               {uploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
@@ -128,7 +128,7 @@ export default function GalleryManager({ gallery = [] }: { gallery?: GalleryItem
                   variant="destructive"
                   className="w-10 h-10 rounded-full p-0"
                   onClick={() => setDeleteTarget(item)}
-                  aria-label="Delete image"
+                  aria-label={t("gallery.deleteImage")}
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
@@ -141,13 +141,11 @@ export default function GalleryManager({ gallery = [] }: { gallery?: GalleryItem
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete image?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This removes the image from your gallery and public profile.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t("gallery.deleteConfirm")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("gallery.deleteBody")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteSaving}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteSaving}>{t("action.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={deleteSaving}
               onClick={(event) => {

@@ -161,7 +161,7 @@ function ctaHref(cta: { id?: string; url: string }) {
 function PrimaryCta({ cta, t }: { cta: { id?: string; title: string; url: string; description?: string | null }; t: Translate }) {
   return (
     <section className="rounded-2xl border bg-card p-5 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Start Here</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">{t("public.startHere")}</p>
       <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <h2 className="text-xl font-serif text-foreground">{cta.title}</h2>

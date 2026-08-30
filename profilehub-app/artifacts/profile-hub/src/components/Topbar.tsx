@@ -29,7 +29,7 @@ export function Topbar({ profile, onMenuClick }: { profile?: Profile; onMenuClic
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" className="md:hidden" data-testid="mobile-menu" onClick={onMenuClick}>
           <Menu className="h-5 w-5" />
-          <span className="sr-only">Open navigation</span>
+          <span className="sr-only">{t("nav.openNavigation")}</span>
         </Button>
         {displayName && (
           <div className="hidden sm:block">
@@ -48,9 +48,7 @@ export function Topbar({ profile, onMenuClick }: { profile?: Profile; onMenuClic
             className="hidden sm:flex"
             asChild
           >
-            <Link href={`/${encodeProfileUsername(username)}`} target="_blank" prefetch={false} data-testid="preview-link">
-              Preview Profile
-            </Link>
+            <Link href={`/${encodeProfileUsername(username)}`} target="_blank" prefetch={false} data-testid="preview-link">{t("nav.previewProfile")}</Link>
           </Button>
         )}
         

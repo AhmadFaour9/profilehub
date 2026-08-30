@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/client";
+
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -13,6 +15,7 @@ function passwordMeetsMinimum(value: string) {
 }
 
 export function UpdatePasswordForm({ email }: { email?: string | null }) {
+  const { t } = useLocale();
   const router = useRouter();
   const { toast } = useToast();
   const [password, setPassword] = useState("");
@@ -32,7 +35,7 @@ export function UpdatePasswordForm({ email }: { email?: string | null }) {
     }
 
     if (!passwordMeetsMinimum(password)) {
-      const nextMessage = "Use at least 8 characters with uppercase, lowercase, and a number.";
+      const nextMessage = t("auth.passwordHint");
       setMessage(nextMessage);
       toast({ title: "Password update failed", description: nextMessage, variant: "destructive" });
       return;
@@ -59,11 +62,12 @@ export function UpdatePasswordForm({ email }: { email?: string | null }) {
     <form onSubmit={submitPassword} className="space-y-5">
       {email && (
         <div className="rounded-lg border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-          Updating password for <span className="font-medium text-foreground">{email}</span>
+          {t("auth.updatingFor")}{" "}
+          <span className="font-medium text-foreground">{email}</span>
         </div>
       )}
       <div className="space-y-2">
-        <Label htmlFor="new-password">New password</Label>
+        <Label htmlFor="new-password">{t("auth.newPassword")}</Label>
         <Input
           id="new-password"
           type="password"
@@ -72,10 +76,10 @@ export function UpdatePasswordForm({ email }: { email?: string | null }) {
           autoComplete="new-password"
           required
         />
-        <p className="text-xs text-muted-foreground">Use at least 8 characters with uppercase, lowercase, and a number.</p>
+        <p className="text-xs text-muted-foreground">{t("auth.passwordHint")}</p>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="confirm-password">Confirm new password</Label>
+        <Label htmlFor="confirm-password">{t("auth.confirmNewPassword")}</Label>
         <Input
           id="confirm-password"
           type="password"

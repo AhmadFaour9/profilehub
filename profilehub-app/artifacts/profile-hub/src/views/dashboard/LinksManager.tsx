@@ -281,17 +281,16 @@ export default function LinksManager({
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-serif">{t("links.title")}</h1>
-          <p className="text-muted-foreground mt-1">Manage identity accounts and public action links.</p>
+          <p className="text-muted-foreground mt-1">{t("links.subtitle")}</p>
         </div>
         <Button onClick={openCreateDialog} data-testid="btn-add-link">
-          <Plus className="w-4 h-4 mr-2" /> Add Link
-        </Button>
+          <Plus className="w-4 h-4 mr-2" />{t("links.addLinkShort")}</Button>
       </div>
 
       <section className="space-y-4">
         <div>
-          <h2 className="text-xl font-medium">Social Links</h2>
-          <p className="text-sm text-muted-foreground">Identity accounts shown as icons in the public profile header.</p>
+          <h2 className="text-xl font-medium">{t("links.socialTitle")}</h2>
+          <p className="text-sm text-muted-foreground">{t("links.socialHint")}</p>
         </div>
         <div className="grid md:grid-cols-2 gap-4">
           {SOCIAL_PLATFORMS.map((platform) => (
@@ -320,7 +319,7 @@ export default function LinksManager({
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-medium">Public Smart Links</h2>
+            <h2 className="text-xl font-medium">{t("links.publicSmartLinks")}</h2>
             <p className="text-sm text-muted-foreground">{totalClicks} total clicks tracked through Smart Links.</p>
           </div>
         </div>
@@ -328,12 +327,11 @@ export default function LinksManager({
         {links.length === 0 ? (
           <EmptyState
             icon={<LinkIcon className="w-6 h-6" />}
-            title="No smart links yet"
-            description="Add links to consultations, files, demos, newsletters, or featured resources."
+            title={t("links.emptyTitle")}
+            description={t("links.emptyBody")}
             action={
               <Button onClick={openCreateDialog}>
-                <Plus className="w-4 h-4 mr-2" /> Add Link
-              </Button>
+                <Plus className="w-4 h-4 mr-2" />{t("links.addLinkShort")}</Button>
             }
           />
         ) : (
@@ -374,8 +372,7 @@ export default function LinksManager({
                       <h3 className="font-medium text-foreground truncate">{link.title}</h3>
                       {link.isFeatured && (
                         <Badge variant="secondary" className="gap-1">
-                          <Star className="w-3 h-3" /> Featured
-                        </Badge>
+                          <Star className="w-3 h-3" />{t("status.featured")}</Badge>
                       )}
                       {link.category && <Badge variant="outline">{link.category}</Badge>}
                       <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">
@@ -392,21 +389,21 @@ export default function LinksManager({
 
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Active</span>
+                      <span className="text-xs text-muted-foreground">{t("status.active")}</span>
                       <Switch checked={link.isActive} onCheckedChange={(checked) => patchSmartLink(link, { isActive: checked })} />
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Featured</span>
+                      <span className="text-xs text-muted-foreground">{t("status.featured")}</span>
                       <Switch checked={Boolean(link.isFeatured)} onCheckedChange={(checked) => patchSmartLink(link, { isFeatured: checked })} />
                     </div>
                     <div className="flex items-center gap-1 border-l pl-4 ml-1">
-                      <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => moveLink(link, -1)} disabled={index === 0} title="Move up">
+                      <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => moveLink(link, -1)} disabled={index === 0} title={t("form.moveUp")}>
                         <ArrowUp className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => moveLink(link, 1)} disabled={index === links.length - 1} title="Move down">
+                      <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => moveLink(link, 1)} disabled={index === links.length - 1} title={t("form.moveDown")}>
                         <ArrowDown className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => openEditDialog(link)} title="Edit link">
+                      <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => openEditDialog(link)} title={t("links.editLink")}>
                         <Pencil className="w-4 h-4" />
                       </Button>
                       <Button
@@ -414,7 +411,7 @@ export default function LinksManager({
                         size="icon"
                         className="w-8 h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={() => handleDelete(link)}
-                        title="Delete link"
+                        title={t("links.deleteLink")}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -431,12 +428,12 @@ export default function LinksManager({
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editingLink ? "Edit Smart Link" : "Create Smart Link"}</DialogTitle>
-            <DialogDescription>Smart Links are the primary public action links on your profile.</DialogDescription>
+            <DialogDescription>{t("links.smartLinksHint")}</DialogDescription>
           </DialogHeader>
 
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="link-title">Title</Label>
+              <Label htmlFor="link-title">{t("form.title")}</Label>
               <Input id="link-title" value={form.title} onChange={(event) => updateForm("title", event.target.value)} />
             </div>
             <div className="space-y-2">
@@ -444,7 +441,7 @@ export default function LinksManager({
               <Input id="link-url" value={form.url} placeholder="https://" onChange={(event) => updateForm("url", event.target.value)} />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="link-description">Description</Label>
+              <Label htmlFor="link-description">{t("form.description")}</Label>
               <Textarea
                 id="link-description"
                 value={form.description}
@@ -453,19 +450,19 @@ export default function LinksManager({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="link-icon">Icon</Label>
+              <Label htmlFor="link-icon">{t("form.icon")}</Label>
               <Input id="link-icon" value={form.icon} placeholder="calendar, file, demo" onChange={(event) => updateForm("icon", event.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="link-category">Category</Label>
-              <Input id="link-category" value={form.category} placeholder="Consulting, Resume, Demo" onChange={(event) => updateForm("category", event.target.value)} />
+              <Label htmlFor="link-category">{t("form.category")}</Label>
+              <Input id="link-category" value={form.category} placeholder={t("links.categoryPlaceholder")} onChange={(event) => updateForm("category", event.target.value)} />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="link-thumbnail">Thumbnail/Image URL</Label>
+              <Label htmlFor="link-thumbnail">{t("form.thumbnailUrl")}</Label>
               <Input id="link-thumbnail" value={form.thumbnailUrl} placeholder="https://" onChange={(event) => updateForm("thumbnailUrl", event.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="link-sort">Sort Order</Label>
+              <Label htmlFor="link-sort">{t("form.sortOrder")}</Label>
               <Input
                 id="link-sort"
                 type="number"
@@ -476,20 +473,14 @@ export default function LinksManager({
             </div>
             <div className="flex items-center gap-6 pt-6">
               <label className="flex items-center gap-2 text-sm">
-                <Switch checked={form.isActive} onCheckedChange={(checked) => updateForm("isActive", checked)} />
-                Active
-              </label>
+                <Switch checked={form.isActive} onCheckedChange={(checked) => updateForm("isActive", checked)} />{t("status.active")}</label>
               <label className="flex items-center gap-2 text-sm">
-                <Switch checked={form.isFeatured} onCheckedChange={(checked) => updateForm("isFeatured", checked)} />
-                Featured
-              </label>
+                <Switch checked={form.isFeatured} onCheckedChange={(checked) => updateForm("isFeatured", checked)} />{t("status.featured")}</label>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>{t("action.cancel")}</Button>
             <Button onClick={handleSaveSmartLink} disabled={saving}>
               {saving ? "Saving..." : editingLink ? "Save Link" : "Create Link"}
             </Button>

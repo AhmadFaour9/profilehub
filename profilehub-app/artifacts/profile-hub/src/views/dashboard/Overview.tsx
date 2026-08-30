@@ -28,7 +28,7 @@ export default function Overview({
     <div className="space-y-8 max-w-5xl">
       <div>
         <h1 className="text-3xl font-serif text-foreground">{t("dashboard.greeting")}, {firstName}</h1>
-        <p className="text-muted-foreground mt-1">Here is how your profile is performing today.</p>
+        <p className="text-muted-foreground mt-1">{t("dashboard.todaySubtitle")}</p>
       </div>
 
       {analytics && <AnalyticsCards data={analytics} />}
@@ -37,11 +37,9 @@ export default function Overview({
         <div className="p-6 border rounded-xl bg-card">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-medium flex items-center gap-2">
-              <LinkIcon className="w-5 h-5 text-primary" />
-              Links Performance
-            </h2>
+              <LinkIcon className="w-5 h-5 text-primary" />{t("dashboard.linksPerformance")}</h2>
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/dashboard/analytics">View All <ArrowRight className="w-4 h-4 ml-1" /></Link>
+              <Link href="/dashboard/analytics">{t("dashboard.viewAll")}<ArrowRight className="w-4 h-4 ml-1" /></Link>
             </Button>
           </div>
           <div className="space-y-4">
@@ -52,7 +50,7 @@ export default function Overview({
               </div>
             ))}
             {topLinks.length === 0 && (
-              <p className="text-sm text-muted-foreground">No link clicks yet.</p>
+              <p className="text-sm text-muted-foreground">{t("dashboard.noClicks")}</p>
             )}
           </div>
         </div>
@@ -60,11 +58,9 @@ export default function Overview({
         <div className="p-6 border rounded-xl bg-card">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-medium flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-primary" />
-              Projects
-            </h2>
+              <Briefcase className="w-5 h-5 text-primary" />{t("projects.title")}</h2>
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/dashboard/projects">Manage <ArrowRight className="w-4 h-4 ml-1" /></Link>
+              <Link href="/dashboard/projects">{t("dashboard.manage")}<ArrowRight className="w-4 h-4 ml-1" /></Link>
             </Button>
           </div>
           {projects.length > 0 ? (
@@ -83,10 +79,10 @@ export default function Overview({
               <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                 <Briefcase className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="text-base font-medium mb-1">Add a new project</h3>
-              <p className="text-sm text-muted-foreground mb-4">Keep your portfolio fresh by adding your latest work.</p>
+              <h3 className="text-base font-medium mb-1">{t("dashboard.addProjectTitle")}</h3>
+              <p className="text-sm text-muted-foreground mb-4">{t("dashboard.addProjectBody")}</p>
               <Button asChild>
-                <Link href="/dashboard/projects">Add Project</Link>
+                <Link href="/dashboard/projects">{t("projects.addProject")}</Link>
               </Button>
             </div>
           )}

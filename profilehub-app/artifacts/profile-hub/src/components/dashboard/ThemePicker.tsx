@@ -1,5 +1,8 @@
+"use client";
+
 import { ProfileTheme } from "@/modules/shared";
 import { Check } from "lucide-react";
+import { useLocale } from "@/lib/i18n/client";
 
 const THEME_PRESETS = [
   { id: "thm_1", primaryColor: "#3A4F41", backgroundColor: "#FAF9F6", label: "Forest" },
@@ -11,6 +14,7 @@ const THEME_PRESETS = [
 ];
 
 export function ThemePicker({ value, onChange }: { value?: ProfileTheme; onChange: (theme: ProfileTheme) => void }) {
+  const { t } = useLocale();
   const handleColorSelect = (preset: typeof THEME_PRESETS[0]) => {
     onChange({
       ...value,
@@ -31,7 +35,7 @@ export function ThemePicker({ value, onChange }: { value?: ProfileTheme; onChang
   return (
     <div className="space-y-8" data-testid="theme-picker">
       <div>
-        <h3 className="text-sm font-medium mb-4">Color Palette</h3>
+        <h3 className="text-sm font-medium mb-4">{t("theme.colorPalette")}</h3>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
           {THEME_PRESETS.map((preset) => (
             <button
@@ -62,7 +66,7 @@ export function ThemePicker({ value, onChange }: { value?: ProfileTheme; onChang
       </div>
 
       <div>
-        <h3 className="text-sm font-medium mb-4">Button Style</h3>
+        <h3 className="text-sm font-medium mb-4">{t("theme.buttonStyle")}</h3>
         <div className="grid grid-cols-3 gap-4">
           {[
             { id: "rounded", label: "Rounded", class: "rounded-xl" },

@@ -42,9 +42,10 @@ export default function ForgotPassword() {
               <CheckCircle2 className="h-12 w-12 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-serif mb-2">Check your email</h1>
+              <h1 className="text-2xl font-serif mb-2">{t("auth.checkEmail")}</h1>
               <p className="text-muted-foreground">
-                We've sent a password reset link to <span className="font-medium text-foreground">{form.getValues().email}</span>
+                {t("auth.resetLinkSent")}{" "}
+                <span className="font-medium text-foreground">{form.getValues().email}</span>
               </p>
             </div>
             <Button className="w-full" asChild>
@@ -55,7 +56,7 @@ export default function ForgotPassword() {
           <>
             <div className="text-center mb-8">
               <h1 className="text-3xl font-serif mb-2">{t("auth.resetPassword")}</h1>
-              <p className="text-muted-foreground">Enter your email and we'll send you a reset link</p>
+              <p className="text-muted-foreground">{t("auth.resetHint")}</p>
             </div>
 
             <Form {...form}>
@@ -74,13 +75,13 @@ export default function ForgotPassword() {
                   )}
                 />
                 {message && <p className="text-sm text-destructive">{message}</p>}
-                <Button type="submit" className="w-full mt-6" data-testid="btn-submit-reset">Send reset link</Button>
+                <Button type="submit" className="w-full mt-6" data-testid="btn-submit-reset">{t("auth.sendResetLink")}</Button>
               </form>
             </Form>
 
             <div className="mt-8 text-center">
               <Link href="/login" className="text-sm text-primary hover:underline font-medium">
-                Back to log in
+                {t("authStatus.backToLogin")}
               </Link>
             </div>
           </>

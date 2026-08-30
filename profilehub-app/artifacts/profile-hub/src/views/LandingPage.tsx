@@ -184,7 +184,7 @@ export default async function LandingPage() {
                 <Link href="/register">{t("landing.createProfile")}</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/AhmadFaour1">View demo</Link>
+                <Link href="/AhmadFaour1">{t("landing.viewDemo")}</Link>
               </Button>
             </div>
           </div>

@@ -257,22 +257,20 @@ export default function ServicesManager({ services = [] }: { services?: Service[
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-serif">{t("services.title")}</h1>
-          <p className="text-muted-foreground mt-1">List what you offer and how visitors can inquire.</p>
+          <p className="text-muted-foreground mt-1">{t("services.subtitle")}</p>
         </div>
         <Button onClick={openCreateDialog} data-testid="btn-add-service">
-          <Plus className="w-4 h-4 mr-2" /> Add Service
-        </Button>
+          <Plus className="w-4 h-4 mr-2" />{t("services.addService")}</Button>
       </div>
 
       {allServices.length === 0 ? (
         <EmptyState
           icon={<Box className="w-6 h-6" />}
-          title="No services listed"
-          description="Offer services to your audience directly from your profile."
+          title={t("services.emptyTitle")}
+          description={t("services.emptyBody")}
           action={
             <Button onClick={openCreateDialog}>
-              <Plus className="w-4 h-4 mr-2" /> Add Service
-            </Button>
+              <Plus className="w-4 h-4 mr-2" />{t("services.addService")}</Button>
           }
         />
       ) : (
@@ -281,27 +279,21 @@ export default function ServicesManager({ services = [] }: { services?: Service[
             <div key={service.id} className="relative group" data-testid={`service-row-${service.id}`}>
               <ServiceCard service={service} theme={{ id: "default", buttonStyle: "rounded" }} />
               <div className="absolute top-4 right-4 z-10 flex flex-wrap gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button type="button" size="icon" variant="secondary" className="h-8 w-8" onClick={() => moveService(service, -1)} disabled={index === 0} title="Move up">
+                <Button type="button" size="icon" variant="secondary" className="h-8 w-8" onClick={() => moveService(service, -1)} disabled={index === 0} title={t("form.moveUp")}>
                   <ArrowUp className="h-4 w-4" />
                 </Button>
-                <Button type="button" size="icon" variant="secondary" className="h-8 w-8" onClick={() => moveService(service, 1)} disabled={index === allServices.length - 1} title="Move down">
+                <Button type="button" size="icon" variant="secondary" className="h-8 w-8" onClick={() => moveService(service, 1)} disabled={index === allServices.length - 1} title={t("form.moveDown")}>
                   <ArrowDown className="h-4 w-4" />
                 </Button>
-                <div className="flex h-8 items-center gap-2 rounded-md border bg-background px-2 text-xs">
-                  Active
-                  <Switch checked={service.isActive} onCheckedChange={(checked) => patchService(service, { isActive: checked })} />
+                <div className="flex h-8 items-center gap-2 rounded-md border bg-background px-2 text-xs">{t("status.active")}<Switch checked={service.isActive} onCheckedChange={(checked) => patchService(service, { isActive: checked })} />
                 </div>
                 <Button type="button" size="sm" variant="secondary" onClick={() => openEditDialog(service)}>
-                  <Pencil className="h-4 w-4 mr-1" /> Edit
-                </Button>
+                  <Pencil className="h-4 w-4 mr-1" />{t("action.edit")}</Button>
                 <Button type="button" size="sm" variant="destructive" onClick={() => setDeleteTarget(service)}>
-                  <Trash2 className="h-4 w-4 mr-1" /> Delete
-                </Button>
+                  <Trash2 className="h-4 w-4 mr-1" />{t("action.delete")}</Button>
               </div>
               {!service.isActive && (
-                <div className="absolute left-4 top-4 rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
-                  Inactive
-                </div>
+                <div className="absolute left-4 top-4 rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">{t("status.inactive")}</div>
               )}
             </div>
           ))}
@@ -319,7 +311,7 @@ export default function ServicesManager({ services = [] }: { services?: Service[
           <form onSubmit={saveService} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="service-title">Title</Label>
+                <Label htmlFor="service-title">{t("form.title")}</Label>
                 <Input
                   id="service-title"
                   value={form.title}
@@ -330,19 +322,19 @@ export default function ServicesManager({ services = [] }: { services?: Service[
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="service-price">Price</Label>
+                <Label htmlFor="service-price">{t("form.price")}</Label>
                 <Input
                   id="service-price"
                   value={form.price}
                   onChange={(event) => updateForm("price", event.target.value)}
-                  placeholder="From $500, $120/hr, Free consult"
+                  placeholder={t("services.pricePlaceholder")}
                   maxLength={80}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="service-description">Description</Label>
+              <Label htmlFor="service-description">{t("form.description")}</Label>
               <Textarea
                 id="service-description"
                 value={form.description}
@@ -355,7 +347,7 @@ export default function ServicesManager({ services = [] }: { services?: Service[
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="service-duration">Duration</Label>
+                <Label htmlFor="service-duration">{t("form.duration")}</Label>
                 <Input
                   id="service-duration"
                   value={form.duration}
@@ -365,19 +357,19 @@ export default function ServicesManager({ services = [] }: { services?: Service[
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="service-cta-label">CTA Label</Label>
+                <Label htmlFor="service-cta-label">{t("form.ctaLabel")}</Label>
                 <Input
                   id="service-cta-label"
                   value={form.ctaLabel}
                   onChange={(event) => updateForm("ctaLabel", event.target.value)}
-                  placeholder="Book now, Inquire, Contact me"
+                  placeholder={t("services.ctaPlaceholder")}
                   maxLength={60}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="service-cta-url">CTA URL or Inquiry Link</Label>
+              <Label htmlFor="service-cta-url">{t("form.ctaUrl")}</Label>
               <Input
                 id="service-cta-url"
                 value={form.ctaUrl}
@@ -388,7 +380,7 @@ export default function ServicesManager({ services = [] }: { services?: Service[
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="service-icon">Icon</Label>
+                <Label htmlFor="service-icon">{t("form.icon")}</Label>
                 <Input
                   id="service-icon"
                   value={form.icon}
@@ -398,7 +390,7 @@ export default function ServicesManager({ services = [] }: { services?: Service[
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="service-image">Image URL</Label>
+                <Label htmlFor="service-image">{t("form.imageUrl")}</Label>
                 <Input
                   id="service-image"
                   value={form.imageUrl}
@@ -410,7 +402,7 @@ export default function ServicesManager({ services = [] }: { services?: Service[
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="service-sort-order">Sort Order</Label>
+                <Label htmlFor="service-sort-order">{t("form.sortOrder")}</Label>
                 <Input
                   id="service-sort-order"
                   type="number"
@@ -421,14 +413,12 @@ export default function ServicesManager({ services = [] }: { services?: Service[
               </div>
               <div className="flex items-center gap-3 pt-7">
                 <Switch checked={form.isActive} onCheckedChange={(checked) => updateForm("isActive", checked)} />
-                <Label>Active on public profile</Label>
+                <Label>{t("form.activeOnProfile")}</Label>
               </div>
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
-                Cancel
-              </Button>
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>{t("action.cancel")}</Button>
               <Button type="submit" disabled={saving}>
                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {editingService ? "Save Service" : "Create Service"}
@@ -441,13 +431,13 @@ export default function ServicesManager({ services = [] }: { services?: Service[
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete service?</AlertDialogTitle>
+            <AlertDialogTitle>{t("services.deleteConfirm")}</AlertDialogTitle>
             <AlertDialogDescription>
               This removes {deleteTarget?.title ? `"${deleteTarget.title}"` : "this service"} from your profile.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteSaving}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteSaving}>{t("action.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={deleteSaving}
               onClick={(event) => {

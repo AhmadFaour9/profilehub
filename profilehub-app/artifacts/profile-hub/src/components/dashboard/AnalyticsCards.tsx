@@ -1,3 +1,5 @@
+"use client";
+
 import { AnalyticsOverview } from "@/modules/shared";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, MousePointerClick, Users, TrendingUp } from "lucide-react";

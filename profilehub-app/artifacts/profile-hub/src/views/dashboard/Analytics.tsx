@@ -35,20 +35,20 @@ export default function Analytics({
     <div className="space-y-8 max-w-6xl">
       <div>
         <h1 className="text-3xl font-serif">{t("analytics.title")}</h1>
-        <p className="text-muted-foreground mt-1">Track your profile views and link clicks over time.</p>
+        <p className="text-muted-foreground mt-1">{t("analytics.subtitle")}</p>
       </div>
 
       <AnalyticsCards data={overview} />
 
       <div className="grid gap-4 md:grid-cols-3">
-        <RangeMetric label="Daily views" value={rangeSummary.dailyViews} helper="Last 24 hours" />
-        <RangeMetric label="Weekly views" value={rangeSummary.weeklyViews} helper="Last 7 days" />
-        <RangeMetric label="Monthly views" value={rangeSummary.monthlyViews} helper="Last 30 days" />
+        <RangeMetric label={t("analytics.dailyViews")} value={rangeSummary.dailyViews} helper={t("analytics.last24h")} />
+        <RangeMetric label={t("analytics.weeklyViews")} value={rangeSummary.weeklyViews} helper={t("analytics.last7days")} />
+        <RangeMetric label={t("analytics.monthlyViews")} value={rangeSummary.monthlyViews} helper={t("analytics.last30days")} />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 border rounded-xl bg-card p-6">
-          <h2 className="text-lg font-medium mb-6">Page Views (Last 30 Days)</h2>
+          <h2 className="text-lg font-medium mb-6">{t("analytics.pageViews30")}</h2>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={pageViews}>
@@ -78,23 +78,23 @@ export default function Analytics({
         </div>
 
         <div className="border rounded-xl bg-card p-6">
-          <h2 className="text-lg font-medium mb-6">Top Links</h2>
+          <h2 className="text-lg font-medium mb-6">{t("analytics.topLinks")}</h2>
           <BreakdownList
             items={linkAnalytics.map((link) => ({ label: link.title, value: link.clicks, percentage: link.percentage }))}
-            emptyText="No link clicks yet."
+            emptyText={t("dashboard.noClicks")}
           />
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <BreakdownPanel title="Top Referrers" items={referrers} emptyText="No referrer data yet." />
-        <BreakdownPanel title="Countries" items={countries} emptyText="No country data yet." />
-        <BreakdownPanel title="Devices" items={devices} emptyText="No device data yet." />
+        <BreakdownPanel title={t("analytics.topReferrers")} items={referrers} emptyText={t("analytics.noReferrers")} />
+        <BreakdownPanel title={t("analytics.countries")} items={countries} emptyText={t("analytics.noCountries")} />
+        <BreakdownPanel title={t("analytics.devices")} items={devices} emptyText={t("analytics.noDevices")} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <TrendList title="Weekly Views" items={weeklyViews} />
-        <TrendList title="Monthly Views" items={monthlyViews} />
+        <TrendList title={t("analytics.weeklyViews")} items={weeklyViews} />
+        <TrendList title={t("analytics.monthlyViews")} items={monthlyViews} />
       </div>
     </div>
   );

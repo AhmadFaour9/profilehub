@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/client";
+
 import QRCode from "qrcode";
 import { Download, ExternalLink, QrCode } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -8,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { buildProfileUrl, getClientAppUrl } from "@/lib/profile-url";
 
 export function QRButton({ username, url }: { username: string; url?: string }) {
+  const { t } = useLocale();
   const safeUsername = useMemo(() => username.trim(), [username]);
   const [shareUrl, setShareUrl] = useState(url || "");
   const [qrDataUrl, setQrDataUrl] = useState("");
@@ -85,15 +88,15 @@ export function QRButton({ username, url }: { username: string; url?: string }) 
       </DialogTrigger>
       <DialogContent className="sm:max-w-md flex flex-col items-center justify-center p-8">
         <DialogHeader>
-          <DialogTitle className="text-center font-serif text-2xl">Share Profile</DialogTitle>
+          <DialogTitle className="text-center font-serif text-2xl">{t("public.shareProfile")}</DialogTitle>
         </DialogHeader>
         
         <div className="my-8 p-4 bg-white rounded-xl shadow-sm border">
           <div className="w-48 h-48 flex items-center justify-center">
             {!safeUsername ? (
-              <p className="px-4 text-center text-sm text-black">Set username to generate QR</p>
+              <p className="px-4 text-center text-sm text-black">{t("public.setUsernameForQr")}</p>
             ) : isGenerating ? (
-              <p className="px-4 text-center text-sm text-black">Generating QR...</p>
+              <p className="px-4 text-center text-sm text-black">{t("qr.generating")}</p>
             ) : qrError ? (
               <p className="px-4 text-center text-sm text-destructive">{qrError}</p>
             ) : qrDataUrl ? (
@@ -110,23 +113,21 @@ export function QRButton({ username, url }: { username: string; url?: string }) 
               className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm text-center"
               value={shareUrl}
               readOnly
-              placeholder="Set username to generate QR"
+              placeholder={t("public.setUsernameForQr")}
             />
           </div>
-          <Button type="button" disabled={!shareUrl} onClick={() => navigator.clipboard.writeText(shareUrl)}>
-            Copy
-          </Button>
-          <Button type="button" variant="outline" disabled={!qrDataUrl} onClick={handleDownload} aria-label="Download QR PNG">
+          <Button type="button" disabled={!shareUrl} onClick={() => navigator.clipboard.writeText(shareUrl)}>{t("action.copy")}</Button>
+          <Button type="button" variant="outline" disabled={!qrDataUrl} onClick={handleDownload} aria-label={t("qr.downloadPng")}>
             <Download className="h-4 w-4" />
           </Button>
           {shareUrl ? (
             <Button type="button" variant="outline" asChild>
-              <a href={shareUrl} target="_blank" rel="noopener noreferrer" aria-label="Open profile">
+              <a href={shareUrl} target="_blank" rel="noopener noreferrer" aria-label={t("qr.openProfile")}>
                 <ExternalLink className="h-4 w-4" />
               </a>
             </Button>
           ) : (
-            <Button type="button" variant="outline" disabled aria-label="Open profile">
+            <Button type="button" variant="outline" disabled aria-label={t("qr.openProfile")}>
               <ExternalLink className="h-4 w-4" />
             </Button>
           )}

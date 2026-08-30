@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/client";
+
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +23,7 @@ export function AIHelperPanel({
   links?: Link[];
   projects?: Project[];
 }) {
+  const { t } = useLocale();
   const [result, setResult] = useState<string>("Select an AI action.");
   const [providerMessage, setProviderMessage] = useState<string | null>(null);
   const [providerMessageType, setProviderMessageType] = useState<"live" | "fallback">("live");
@@ -67,7 +70,7 @@ export function AIHelperPanel({
     <div className="p-6 border rounded-xl bg-card space-y-4">
       <h2 className="text-lg font-medium flex items-center gap-2">
         <Sparkles className="w-5 h-5 text-primary" />
-        AI Assistant
+        {t("ai.helper")}
       </h2>
       <div className="flex flex-wrap gap-2">
         {ACTIONS.map((action) => (

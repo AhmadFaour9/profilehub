@@ -118,7 +118,7 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
                 name="displayName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Display Name</FormLabel>
+                    <FormLabel>{t("profile.displayName")}</FormLabel>
                     <FormControl>
                       <Input {...field} data-testid="input-display-name" />
                     </FormControl>
@@ -131,7 +131,7 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel>{t("profile.username")}</FormLabel>
                     <FormControl>
                       <Input {...field} data-testid="input-username" />
                     </FormControl>
@@ -142,7 +142,7 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
                           type="button"
                           onClick={handleCopyUrl}
                           className="text-muted-foreground hover:text-foreground transition-colors"
-                          title="Copy Public URL"
+                          title={t("profile.copyUrl")}
                         >
                           {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
                         </button>
@@ -159,7 +159,7 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
               name="profession"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Profession</FormLabel>
+                  <FormLabel>{t("profile.profession")}</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="e.g. Senior Product Designer" data-testid="input-profession" />
                   </FormControl>
@@ -177,7 +177,7 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
                   <FormControl>
                     <Textarea 
                       {...field} 
-                      placeholder="Tell us about yourself..." 
+                      placeholder={t("profile.bioPlaceholder")} 
                       className="resize-none" 
                       rows={4}
                       data-testid="input-bio" 
@@ -194,7 +194,7 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
                 name="location"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Location</FormLabel>
+                    <FormLabel>{t("profile.location")}</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="e.g. Dubai, UAE" data-testid="input-location" />
                     </FormControl>
@@ -207,7 +207,7 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
                 name="website"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Personal Website</FormLabel>
+                    <FormLabel>{t("profile.personalWebsite")}</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="https://" data-testid="input-website" />
                     </FormControl>
@@ -256,7 +256,7 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
               />
             </div>
 
-            <Button type="submit" data-testid="btn-save-profile">Save Changes</Button>
+            <Button type="submit" data-testid="btn-save-profile">{t("action.save")}</Button>
           </form>
         </Form>
       </div>
