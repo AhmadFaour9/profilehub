@@ -1,84 +1,122 @@
 "use client";
 
-import { ProfileHeader } from "@/components/profile/ProfileHeader";
-import { SmartLinkCard } from "@/components/profile/SmartLinkCard";
-import { ProjectCard } from "@/components/profile/ProjectCard";
-import { ServiceCard } from "@/components/profile/ServiceCard";
-import { GalleryGrid } from "@/components/profile/GalleryGrid";
-import type { Profile, Link, Project, Service, GalleryItem } from "@/modules/shared";
-import { useLocale } from "@/lib/i18n/client";
+import { useEffect, useRef, useState } from "react";
+import { ExternalLink, RotateCw } from "lucide-react";
 
-interface MobilePreviewProps {
+import { Button } from "@/components/ui/button";
+import { useLocale } from "@/lib/i18n/client";
+import type { GalleryItem, Link, Profile, Project, Service } from "@/modules/shared";
+
+/**
+ * Phone preview of the real public profile.
+ *
+ * This used to rebuild the page by hand from the same data, which guaranteed
+ * drift: it had its own section order, its own empty states, and never gained
+ * the skills section or the footer. Worse, Tailwind breakpoints measure the
+ * viewport, so inside a 320px div on a desktop screen every `sm:` and `md:`
+ * rule still matched and cards laid themselves out as if they had the full
+ * width - the opposite of what a phone shows.
+ *
+ * An iframe has its own viewport, so /account/preview renders exactly what a
+ * phone renders, from the same component as the live page. There is only one
+ * rendering of the profile to keep correct.
+ *
+ * The trade-off is that an iframe shows saved state, not the unsaved form
+ * values the editor holds. That is stated in the caption rather than hidden,
+ * and the frame reloads whenever the saved profile changes.
+ */
+const VIEWPORT_WIDTH = 390;
+const VIEWPORT_HEIGHT = 844;
+const FRAME_WIDTH = 320;
+
+const SCALE = FRAME_WIDTH / VIEWPORT_WIDTH;
+
+export function MobilePreview({
+  profile,
+}: {
   profile: Profile;
   links?: Link[];
   projects?: Project[];
   services?: Service[];
   gallery?: GalleryItem[];
-}
-
-export function MobilePreview({ profile, links = [], projects = [], services = [], gallery = [] }: MobilePreviewProps) {
+}) {
   const { t } = useLocale();
-  const visibleLinks = links
-    .filter((link) => link.isActive)
-    .sort((a, b) => {
-      if (Boolean(a.isFeatured) !== Boolean(b.isFeatured)) return a.isFeatured ? -1 : 1;
-      return (a.sortOrder ?? a.order ?? a.position ?? 0) - (b.sortOrder ?? b.order ?? b.position ?? 0);
-    });
-  const visibleServices = services
-    .filter((service) => service.isActive)
-    .sort((a, b) => (a.sortOrder ?? a.order ?? a.position ?? 0) - (b.sortOrder ?? b.order ?? b.position ?? 0));
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const [nonce, setNonce] = useState(0);
+
+  // A save bumps updatedAt on the server, and the dashboard refreshes, so this
+  // is the signal that the previewed page has actually changed.
+  useEffect(() => {
+    setNonce((value) => value + 1);
+  }, [profile.updatedAt]);
+
+  const reload = () => setNonce((value) => value + 1);
 
   return (
-    <div className="hidden lg:block sticky top-8" data-testid="mobile-preview">
-      <div className="w-[320px] h-[680px] rounded-[3rem] border-8 border-black overflow-hidden shadow-2xl relative bg-background" style={profile.theme?.backgroundColor ? { backgroundColor: profile.theme.backgroundColor } : undefined}>
-        <div className="absolute top-0 inset-x-0 h-6 bg-black z-20 rounded-b-3xl mx-16"></div>
-        <div className="absolute inset-0 overflow-y-auto no-scrollbar pt-6">
-           <div className="pointer-events-none origin-top scale-[0.85] w-[117%] -ml-[8.5%]">
-             <div className="min-h-screen text-foreground pb-20">
-               <ProfileHeader profile={profile} />
-               <div className="px-4 mt-8 space-y-10">
-                 
-                 <div className="space-y-3">
-                   {visibleLinks.length > 0 ? (
-                     visibleLinks.map((link) => (
-                       <SmartLinkCard key={link.id} link={link} theme={profile.theme} />
-                     ))
-                   ) : (
-                     <div className="p-4 text-center text-sm text-muted-foreground border rounded-xl border-dashed">{t("preview.noLinks")}</div>
-                   )}
-                 </div>
-                 
-                 <div className="grid gap-6">
-                   {projects.length > 0 ? (
-                     projects.slice(0, 3).map((project) => (
-                       <ProjectCard key={project.id} project={project} theme={profile.theme} />
-                     ))
-                   ) : (
-                     <div className="p-4 text-center text-sm text-muted-foreground border rounded-xl border-dashed">{t("preview.noProjects")}</div>
-                   )}
-                 </div>
-                 
-                 <div className="grid gap-4">
-                   {visibleServices.length > 0 ? (
-                     visibleServices.slice(0, 3).map((service) => (
-                       <ServiceCard key={service.id} service={service} theme={profile.theme} />
-                     ))
-                   ) : (
-                     <div className="p-4 text-center text-sm text-muted-foreground border rounded-xl border-dashed">{t("preview.addFirstService")}</div>
-                   )}
-                 </div>
-                 
-                 {gallery.length > 0 ? (
-                   <GalleryGrid items={gallery.slice(0, 6)} />
-                 ) : (
-                   <div className="p-4 text-center text-sm text-muted-foreground border rounded-xl border-dashed mx-4">{t("preview.noMedia")}</div>
-                 )}
-                 
-               </div>
-             </div>
-           </div>
-        </div>
+    <div className="hidden lg:block sticky top-8 space-y-2" data-testid="mobile-preview">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium text-muted-foreground">{t("preview.title")}</span>
+
+        <span className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={reload}
+            aria-label={t("preview.refresh")}
+            title={t("preview.refresh")}
+          >
+            <RotateCw className="h-3.5 w-3.5" aria-hidden />
+          </Button>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            asChild
+          >
+            <a
+              href="/account/preview"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={t("preview.openFull")}
+              title={t("preview.openFull")}
+            >
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+            </a>
+          </Button>
+        </span>
       </div>
+
+      <div
+        className="relative overflow-hidden rounded-[3rem] border-8 border-black bg-background shadow-2xl"
+        style={{ width: FRAME_WIDTH, height: VIEWPORT_HEIGHT * SCALE }}
+      >
+        <div className="absolute inset-x-0 top-0 z-20 mx-16 h-6 rounded-b-3xl bg-black" />
+
+        <iframe
+          ref={frameRef}
+          key={nonce}
+          src={`/account/preview?preview=${nonce}`}
+          title={t("preview.title")}
+          // The iframe carries the phone's real viewport; the wrapper scales
+          // the rendered result down to fit the sidebar.
+          width={VIEWPORT_WIDTH}
+          height={VIEWPORT_HEIGHT}
+          style={{
+            transform: `scale(${SCALE})`,
+            transformOrigin: "top left",
+            border: 0,
+          }}
+          loading="lazy"
+        />
+      </div>
+
+      <p className="max-w-[320px] text-xs leading-relaxed text-muted-foreground">
+        {t("preview.savedOnly")}
+      </p>
     </div>
   );
 }
