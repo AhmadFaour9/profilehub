@@ -6,6 +6,7 @@ import { SmartLinkCard } from "./SmartLinkCard";
 import { ProjectCard } from "./ProjectCard";
 import { ServiceCard } from "./ServiceCard";
 import { GalleryGrid } from "./GalleryGrid";
+import { SkillsSection } from "./SkillsSection";
 import { PageViewBeacon } from "./PageViewBeacon";
 import { buildProfileJsonLd, getPrimaryProfileCta } from "@/lib/profile-seo";
 import { getTranslations } from "@/lib/i18n/server";
@@ -54,6 +55,7 @@ export async function PublicProfile({
   const visibleProjects = (visibility.projects ? profile.projects : [])
     .filter((project) => project.isActive !== false)
     .sort((a, b) => (a.order ?? a.position ?? 0) - (b.order ?? b.position ?? 0));
+  const visibleSkills = visibility.skills ? (profile.skills ?? []) : [];
   const visibleGallery = (visibility.gallery ? profile.gallery : [])
     .filter((item) => item.imageUrl || item.url)
     .sort((a, b) => (a.order ?? a.position ?? 0) - (b.order ?? b.position ?? 0));
@@ -73,7 +75,7 @@ export async function PublicProfile({
   const linkCards = primaryCtaId ? visibleLinks.filter((link) => link.id !== primaryCtaId) : visibleLinks;
   const featuredLinks = linkCards.filter((link) => link.isFeatured);
   const regularLinks = linkCards.filter((link) => !link.isFeatured);
-  const hasPublicContent = Boolean(primaryCta || linkCards.length || visibleProjects.length || visibleServices.length || visibleGallery.length);
+  const hasPublicContent = Boolean(primaryCta || linkCards.length || visibleSkills.length || visibleProjects.length || visibleServices.length || visibleGallery.length);
 
   return (
     <div
@@ -112,6 +114,8 @@ export async function PublicProfile({
               </div>
             </section>
           )}
+
+          {visibleSkills.length > 0 && <SkillsSection skills={visibleSkills} t={t} />}
 
           {visibleProjects.length > 0 && (
             <section className="space-y-4">

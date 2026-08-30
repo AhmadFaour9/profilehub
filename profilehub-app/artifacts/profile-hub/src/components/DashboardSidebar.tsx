@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "@/hooks/use-translation";
-import { LayoutDashboard, User, Link as LinkIcon, Briefcase, Box, Image, Palette, BarChart, Settings, LogOut, FileText } from "lucide-react";
+import { LayoutDashboard, User, Link as LinkIcon, Briefcase, Box, Image, Palette, BarChart, Settings, LogOut, FileText, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type DashboardSidebarProps = {
@@ -22,6 +22,7 @@ export function DashboardSidebar({ variant = "desktop", onNavigate }: DashboardS
     { href: "/dashboard/links", label: t("nav.links"), icon: LinkIcon },
     { href: "/dashboard/projects", label: t("nav.projects"), icon: Briefcase },
     { href: "/dashboard/services", label: t("nav.services"), icon: Box },
+    { href: "/dashboard/skills", label: t("nav.skills"), icon: Sparkles },
     { href: "/dashboard/gallery", label: t("nav.gallery"), icon: Image },
     { href: "/dashboard/theme", label: t("nav.theme"), icon: Palette },
     { href: "/dashboard/analytics", label: t("nav.analytics"), icon: BarChart },

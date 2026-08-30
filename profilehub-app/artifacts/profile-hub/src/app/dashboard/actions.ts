@@ -10,7 +10,7 @@ import { createProfileService } from "@/modules/profile";
 import { createStoragePath, validateStorageFile, type StorageBucket } from "@/modules/storage";
 import { log } from "@/modules/logging";
 import { z } from "zod";
-import { linkFormSchema, projectFormSchema, serviceFormSchema, profileFormSchema, safeTextSchema, socialLinksFormSchema } from "@/modules/shared";
+import { linkFormSchema, projectFormSchema, serviceFormSchema, profileFormSchema, safeTextSchema, socialLinksFormSchema, skillFormSchema, skillGroupFormSchema } from "@/modules/shared";
 import {
   SECTION_KEYS,
   parseSectionVisibility,
@@ -501,6 +501,151 @@ export async function updateSectionVisibility(input: unknown): Promise<ActionRes
   } catch (error) {
     return { ok: false, message: errorMessage(error) };
   }
+}
+
+// ── Skills ──────────────────────────────────────────────────────────────────
+
+function toSkillRow(profileId: string, input: { category: string; name: string; level?: string; position?: number; isActive?: boolean }) {
+  return {
+    profile_id: profileId,
+    category: input.category.trim(),
+    name: input.name.trim(),
+    level: input.level?.trim() || null,
+    position: input.position ?? 0,
+    is_active: input.isActive ?? true,
+  };
+}
+
+export async function createSkill(input: unknown): Promise<ActionResult> {
+  const ctx = await getServices();
+  if (!ctx) return { ok: false, message: "Unauthorized." };
+
+  const parsed = skillFormSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message || "Invalid skill." };
+
+  const { data, error } = await ctx.client
+    .from("skills")
+    .insert(toSkillRow(ctx.profile.id, parsed.data))
+    .select()
+    .single();
+
+  if (error) {
+    // The unique constraint is per (profile, category, name); a duplicate is a
+    // user mistake, not a failure worth surfacing as an error.
+    if (error.code === "23505") return { ok: false, message: "That skill is already in this category." };
+    return { ok: false, message: error.message };
+  }
+
+  revalidateProfile(ctx.profile.username, "/dashboard/skills");
+  return { ok: true, data };
+}
+
+/**
+ * Adds a whole category at once from a comma-separated list, which is how
+ * skills actually arrive - pasted from a CV rather than typed one at a time.
+ * Existing entries are skipped rather than erroring the whole batch.
+ */
+export async function createSkillGroup(input: unknown): Promise<ActionResult<{ added: number; skipped: number }>> {
+  const ctx = await getServices();
+  if (!ctx) return { ok: false, message: "Unauthorized." };
+
+  const parsed = skillGroupFormSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message || "Invalid input." };
+
+  const names = Array.from(
+    new Set(
+      parsed.data.names
+        .split(/[,\n;]/)
+        .map((name) => name.trim())
+        .filter((name) => name.length > 0 && name.length <= 60)
+    )
+  );
+
+  if (!names.length) return { ok: false, message: "Add at least one skill." };
+
+  const { data: existing } = await ctx.client
+    .from("skills")
+    .select("position")
+    .eq("profile_id", ctx.profile.id)
+    .order("position", { ascending: false })
+    .limit(1);
+
+  let position = (existing?.[0]?.position ?? -1) + 1;
+
+  const rows = names.map((name) =>
+    toSkillRow(ctx.profile.id, { category: parsed.data.category, name, position: position++ })
+  );
+
+  const { data, error } = await ctx.client
+    .from("skills")
+    .upsert(rows, { onConflict: "profile_id,category,name", ignoreDuplicates: true })
+    .select();
+
+  if (error) return { ok: false, message: error.message };
+
+  const added = data?.length ?? 0;
+  revalidateProfile(ctx.profile.username, "/dashboard/skills");
+  return { ok: true, data: { added, skipped: names.length - added } };
+}
+
+export async function updateSkill(id: string, input: unknown): Promise<ActionResult> {
+  const ctx = await getServices();
+  if (!ctx) return { ok: false, message: "Unauthorized." };
+
+  const parsed = skillFormSchema.partial().safeParse(input);
+  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message || "Invalid skill." };
+
+  const payload: Record<string, unknown> = {};
+  if (parsed.data.category !== undefined) payload.category = parsed.data.category.trim();
+  if (parsed.data.name !== undefined) payload.name = parsed.data.name.trim();
+  if (parsed.data.level !== undefined) payload.level = parsed.data.level.trim() || null;
+  if (parsed.data.position !== undefined) payload.position = parsed.data.position;
+  if (parsed.data.isActive !== undefined) payload.is_active = parsed.data.isActive;
+
+  const { data, error } = await ctx.client
+    .from("skills")
+    .update(payload)
+    .eq("id", id)
+    .eq("profile_id", ctx.profile.id)
+    .select()
+    .single();
+
+  if (error) return { ok: false, message: error.message };
+
+  revalidateProfile(ctx.profile.username, "/dashboard/skills");
+  return { ok: true, data };
+}
+
+export async function deleteSkill(id: string): Promise<ActionResult> {
+  const ctx = await getServices();
+  if (!ctx) return { ok: false, message: "Unauthorized." };
+
+  const { error } = await ctx.client
+    .from("skills")
+    .delete()
+    .eq("id", id)
+    .eq("profile_id", ctx.profile.id);
+
+  if (error) return { ok: false, message: error.message };
+
+  revalidateProfile(ctx.profile.username, "/dashboard/skills");
+  return { ok: true };
+}
+
+export async function deleteSkillCategory(category: string): Promise<ActionResult> {
+  const ctx = await getServices();
+  if (!ctx) return { ok: false, message: "Unauthorized." };
+
+  const { error } = await ctx.client
+    .from("skills")
+    .delete()
+    .eq("profile_id", ctx.profile.id)
+    .eq("category", category);
+
+  if (error) return { ok: false, message: error.message };
+
+  revalidateProfile(ctx.profile.username, "/dashboard/skills");
+  return { ok: true };
 }
 
 export async function updateTheme(tokens: Record<string, unknown>): Promise<ActionResult> {

@@ -15,6 +15,7 @@ export default async function DashboardProfilePage() {
     projects: content.projects.length,
     services: content.services.length,
     gallery: content.media.length,
+    skills: content.skills.length,
     email: content.profile.email?.trim() ? 1 : 0,
     location: content.profile.location?.trim() ? 1 : 0,
     website: content.profile.website?.trim() ? 1 : 0,

@@ -13,6 +13,7 @@ export type SectionVisibility = {
   projects: boolean;
   services: boolean;
   gallery: boolean;
+  skills: boolean;
   email: boolean;
   location: boolean;
   website: boolean;
@@ -25,6 +26,7 @@ export const SECTION_KEYS = [
   "projects",
   "services",
   "gallery",
+  "skills",
   "email",
   "location",
   "website",
@@ -39,6 +41,7 @@ export const DEFAULT_SECTION_VISIBILITY: SectionVisibility = {
   projects: true,
   services: true,
   gallery: true,
+  skills: true,
   email: true,
   location: true,
   website: true,
@@ -53,7 +56,7 @@ export const SECTION_GROUPS: {
   {
     id: "content",
     labelKey: "visibility.title",
-    keys: ["about", "socialLinks", "smartLinks", "projects", "services", "gallery"],
+    keys: ["about", "socialLinks", "smartLinks", "skills", "projects", "services", "gallery"],
   },
   {
     id: "contact",
@@ -69,6 +72,7 @@ export const SECTION_LABEL_KEYS: Record<SectionKey, MessageKey> = {
   projects: "visibility.showProjects",
   services: "visibility.showServices",
   gallery: "visibility.showGallery",
+  skills: "visibility.showSkills",
   email: "visibility.showEmail",
   location: "visibility.showLocation",
   website: "visibility.showWebsite",

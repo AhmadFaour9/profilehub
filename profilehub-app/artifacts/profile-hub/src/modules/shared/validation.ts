@@ -99,6 +99,20 @@ export const projectFormSchema = z.object({
   isActive: z.coerce.boolean().optional(),
 });
 
+export const skillFormSchema = z.object({
+  category: safeTextSchema(60).pipe(z.string().min(1)),
+  name: safeTextSchema(60).pipe(z.string().min(1)),
+  level: safeTextSchema(40).optional(),
+  position: z.coerce.number().int().min(0).optional(),
+  isActive: z.coerce.boolean().optional(),
+});
+
+/** Bulk entry: one category with a comma-separated list of skills. */
+export const skillGroupFormSchema = z.object({
+  category: safeTextSchema(60).pipe(z.string().min(1)),
+  names: z.string().max(2000),
+});
+
 export const serviceFormSchema = z.object({
   title: safeTextSchema(100).pipe(z.string().min(1)),
   description: safeTextSchema(800).optional(),
