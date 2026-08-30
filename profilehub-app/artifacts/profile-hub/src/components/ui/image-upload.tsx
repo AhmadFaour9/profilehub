@@ -114,6 +114,17 @@ export function ImageUpload({
   const displayUrl = preview || value;
   const isAvatar = variant === "avatar";
 
+  // Mirrors how each image actually appears on the public profile, so the
+  // preview shows the real crop: a circle for the avatar, a wide banner for
+  // the cover. Both frames are `relative` because next/image `fill` positions
+  // itself against the nearest positioned ancestor - without it the image
+  // escaped the circular frame and rendered as a full-width rectangle.
+  const frameClasses = isAvatar
+    ? "relative h-32 w-32 shrink-0 rounded-full border-4 border-background ring-1 ring-border shadow-sm"
+    : "relative aspect-[3/1] w-full rounded-xl border ring-1 ring-border/50 shadow-sm";
+
+  const overlayRadius = isAvatar ? "rounded-full" : "rounded-xl";
+
   return (
     <div className={`space-y-2 ${className}`}>
       {label && (
@@ -132,54 +143,48 @@ export function ImageUpload({
       />
 
       {displayUrl ? (
-        <div className="relative group">
-          <div
-            className={`overflow-hidden border bg-muted ${
-              isAvatar
-                ? "w-28 h-28 rounded-full"
-                : "w-full h-40 rounded-xl"
-            }`}
-          >
+        <div className={`group ${isAvatar ? "inline-block" : "block"}`}>
+          <div className={`${frameClasses} overflow-hidden bg-muted`}>
             <Image
               src={displayUrl}
               alt={label || bucket}
               fill
               className="object-cover"
-              sizes={isAvatar ? "112px" : "100vw"}
+              sizes={isAvatar ? "128px" : "(max-width: 768px) 100vw, 640px"}
               unoptimized
             />
-          </div>
 
-          {/* Overlay buttons */}
-          <div
-            className={`absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity ${
-              isAvatar ? "rounded-full" : "rounded-xl"
-            }`}
-          >
-            <Button
-              type="button"
-              size="icon"
-              variant="secondary"
-              className="h-8 w-8"
-              onClick={() => inputRef.current?.click()}
-              disabled={uploading}
+            {/* Controls stay visible on touch devices, where hover never fires. */}
+            <div
+              className={`absolute inset-0 flex items-center justify-center gap-2 bg-black/50 transition-opacity ${overlayRadius} opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100`}
             >
-              {uploading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Upload className="h-4 w-4" />
-              )}
-            </Button>
-            <Button
-              type="button"
-              size="icon"
-              variant="destructive"
-              className="h-8 w-8"
-              onClick={handleRemove}
-              disabled={uploading}
-            >
-              <X className="h-4 w-4" />
-            </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="secondary"
+                className="h-8 w-8"
+                onClick={() => inputRef.current?.click()}
+                disabled={uploading}
+                aria-label={`Replace ${label || bucket}`}
+              >
+                {uploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="destructive"
+                className="h-8 w-8"
+                onClick={handleRemove}
+                disabled={uploading}
+                aria-label={`Remove ${label || bucket}`}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       ) : (
@@ -187,19 +192,19 @@ export function ImageUpload({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-muted-foreground/25 bg-muted/50 hover:bg-muted transition-colors cursor-pointer ${
+          className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-muted-foreground/25 bg-muted/50 transition-colors hover:bg-muted disabled:cursor-not-allowed ${
             isAvatar
-              ? "w-28 h-28 rounded-full"
-              : "w-full h-40 rounded-xl"
+              ? "h-32 w-32 rounded-full"
+              : "aspect-[3/1] w-full rounded-xl"
           }`}
         >
           {uploading ? (
-            <Loader2 className="h-6 w-6 text-muted-foreground animate-spin" />
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           ) : (
             <>
               <Upload className="h-6 w-6 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">
-                {isAvatar ? "Upload" : "Upload Cover"}
+              <span className="px-2 text-center text-xs text-muted-foreground">
+                {isAvatar ? "Upload photo" : "Upload cover"}
               </span>
             </>
           )}

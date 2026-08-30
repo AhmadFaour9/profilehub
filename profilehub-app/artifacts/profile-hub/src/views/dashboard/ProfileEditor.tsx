@@ -217,7 +217,7 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
               />
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6 items-start">
+            <div className="grid gap-8 md:grid-cols-[auto_1fr] md:items-start">
               <FormField
                 control={form.control}
                 name="avatarUrl"
@@ -227,7 +227,7 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
                       <ImageUpload
                         bucket="avatars"
                         variant="avatar"
-                        label="Profile Photo"
+                        label={t("profile.avatar")}
                         value={field.value}
                         onChange={(url) => form.setValue("avatarUrl", url, { shouldDirty: true })}
                       />
@@ -245,7 +245,7 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
                       <ImageUpload
                         bucket="covers"
                         variant="cover"
-                        label="Cover Image"
+                        label={t("profile.cover")}
                         value={field.value}
                         onChange={(url) => form.setValue("coverUrl", url, { shouldDirty: true })}
                       />
