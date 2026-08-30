@@ -100,6 +100,33 @@ async function logRequestDomainDiagnostic(source: AuthDiagnosticSource) {
   }
 }
 
+/**
+ * Auth cookies must carry Secure on HTTPS.
+ *
+ * @supabase/ssr does not add it, and without it the browser would not send the
+ * PKCE code verifier back through the cross-site redirect chain that ends an
+ * OAuth sign-in (Google -> Supabase -> this app). The exchange then failed with
+ * "PKCE code verifier not found in storage" even though the cookie had been
+ * written correctly.
+ *
+ * Derived from APP_URL rather than NODE_ENV so local http development, where a
+ * Secure cookie would simply be dropped, keeps working.
+ */
+function usesHttps(): boolean {
+  const configured = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "";
+  if (configured) return configured.startsWith("https://");
+  return process.env.NODE_ENV === "production";
+}
+
+function hardenCookieOptions<T extends Record<string, unknown> | undefined>(options: T) {
+  const secure = usesHttps();
+  return {
+    ...(options ?? {}),
+    sameSite: (options as any)?.sameSite ?? "lax",
+    secure: (options as any)?.secure ?? secure,
+  };
+}
+
 async function createSupabaseServerClientWithMode(
   source: AuthDiagnosticSource,
   mode: CookieClientMode,
@@ -137,7 +164,7 @@ async function createSupabaseServerClientWithMode(
           }
 
           try {
-            cookieStore.set(name, value, options);
+            cookieStore.set(name, value, hardenCookieOptions(options));
             diagnostics.succeeded.push(name);
             if (operation === "set") diagnostics.setSucceeded.push(name);
             debugLog("AUTH", "supabase_cookie_set_success", {
