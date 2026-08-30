@@ -7,6 +7,7 @@ import { ProjectCard } from "./ProjectCard";
 import { ServiceCard } from "./ServiceCard";
 import { GalleryGrid } from "./GalleryGrid";
 import { SkillsSection } from "./SkillsSection";
+import { ProfileFooter } from "./ProfileFooter";
 import { PageViewBeacon } from "./PageViewBeacon";
 import { buildProfileJsonLd, getPrimaryProfileCta } from "@/lib/profile-seo";
 import { getTranslations } from "@/lib/i18n/server";
@@ -153,6 +154,9 @@ export async function PublicProfile({
           )}
         </div>
       </div>
+
+      <ProfileFooter profile={shownProfile} profileUrl={profileUrl} t={t} />
+
       {primaryCta && <StickyMobileCta cta={primaryCta} />}
     </div>
   );

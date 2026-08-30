@@ -2,7 +2,7 @@ import { GalleryItem } from "@/modules/shared";
 
 export function GalleryGrid({ items }: { items: GalleryItem[] }) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4" data-testid="gallery-grid">
+    <div className="@container grid grid-cols-2 @md:grid-cols-3 gap-2 @md:gap-4" data-testid="gallery-grid">
       {items.map((item) => (
         <div 
           key={item.id} 

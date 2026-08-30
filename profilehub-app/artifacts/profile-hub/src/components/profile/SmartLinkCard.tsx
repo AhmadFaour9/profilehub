@@ -13,7 +13,7 @@ export function SmartLinkCard({ link, theme }: { link: Link; theme?: ProfileThem
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={`group flex items-center p-4 bg-card hover:bg-accent border border-card-border transition-all ${radiusClass} hover-elevate`}
+      className={`@container group flex items-center p-4 bg-card hover:bg-accent border border-card-border transition-all ${radiusClass} hover-elevate`}
       style={theme?.primaryColor ? { '--hover-bg': theme.primaryColor } as any : {}}
       data-testid={`link-${link.id}`}
     >
@@ -27,7 +27,7 @@ export function SmartLinkCard({ link, theme }: { link: Link; theme?: ProfileThem
         )}
       </div>
       
-      <div className="flex-1 min-w-0 pr-4 text-center sm:text-left">
+      <div className="flex-1 min-w-0 pr-4 text-center @sm:text-left">
         <h3 className="text-base font-medium text-card-foreground truncate">{link.title}</h3>
         {link.description && (
           <p className="text-sm text-muted-foreground truncate mt-0.5">{link.description}</p>

@@ -9,8 +9,8 @@ export function ServiceCard({ service, theme }: { service: Service; theme?: Prof
   const priceText = service.priceLabel || service.price;
 
   return (
-    <div className={`p-6 bg-card border border-card-border ${radiusClass}`} data-testid={`service-${service.id}`}>
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+    <div className={`@container p-6 bg-card border border-card-border ${radiusClass}`} data-testid={`service-${service.id}`}>
+      <div className="flex flex-col @md:flex-row @md:items-start justify-between gap-4 mb-4">
         <div className="flex gap-4 min-w-0">
           {(service.imageUrl || service.icon) && (
             <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-muted grid place-items-center">
@@ -27,14 +27,14 @@ export function ServiceCard({ service, theme }: { service: Service; theme?: Prof
             </div>
           )}
           <div className="min-w-0">
-            <h3 className="text-lg font-medium text-foreground">{service.title}</h3>
+            <h3 className="text-lg font-medium text-foreground text-balance">{service.title}</h3>
             {service.description && (
               <p className="text-sm text-muted-foreground mt-2 max-w-xl leading-relaxed">{service.description}</p>
             )}
           </div>
         </div>
         
-        <div className="text-left sm:text-right shrink-0">
+        <div className="text-left @md:text-right @md:shrink-0">
           {priceText && (
             <div className="text-lg font-medium text-foreground">
               {priceText}
@@ -49,7 +49,7 @@ export function ServiceCard({ service, theme }: { service: Service; theme?: Prof
       {service.ctaUrl && (
         <Button 
           asChild 
-          className={`w-full sm:w-auto mt-2 ${isPill ? 'rounded-full' : isRounded ? 'rounded-md' : 'rounded-none'}`}
+          className={`w-full @md:w-auto mt-2 ${isPill ? 'rounded-full' : isRounded ? 'rounded-md' : 'rounded-none'}`}
         >
           <a href={service.ctaUrl} target="_blank" rel="noopener noreferrer">
             {service.ctaLabel || "Inquire"}
