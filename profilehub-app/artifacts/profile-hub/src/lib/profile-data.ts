@@ -21,6 +21,7 @@ import {
   type Project,
   type PublicProfile,
   type Service,
+  type Skill,
   type SocialLink,
 } from "@/modules/shared";
 import { parseSectionVisibility } from "@/lib/profile-visibility";
@@ -42,6 +43,7 @@ type ProfileContent = {
   projects: Project[];
   services: Service[];
   media: GalleryItem[];
+  skills: Skill[];
 };
 
 type RelationQueryResult<T = any> = {
@@ -320,7 +322,7 @@ function buildFallbackProfileFromUser(user: User, options: ProfileEnsureOptions 
 }
 
 function emptyProfileContent(profile: Profile): ProfileContent {
-  return { profile, links: [], projects: [], services: [], media: [] };
+  return { profile, links: [], projects: [], services: [], media: [], skills: [] };
 }
 
 function isMissingColumnError(error: SupabaseDbError | null | undefined, column: string): boolean {
@@ -455,7 +457,7 @@ async function loadProfileContentFromClient(
   profile: Profile,
   options: { throwOnErrors?: boolean } = {}
 ): Promise<ProfileContent> {
-  const [links, socialLinks, projects, services, media] = await measureServer(
+  const [links, socialLinks, projects, services, media, skills] = await measureServer(
     "dashboard_relations_query",
     () =>
       Promise.all([
@@ -472,11 +474,14 @@ async function loadProfileContentFromClient(
         measureServer("dashboard_media_query", () =>
           client.from("media").select("*").eq("profile_id", profile.id).order("position")
         ),
+        measureServer("dashboard_skills_query", () =>
+          client.from("skills").select("*").eq("profile_id", profile.id).order("position")
+        ),
       ]),
     { profile_id: profile.id }
   );
 
-  const errors = [links.error, socialLinks.error, projects.error, services.error, media.error].filter(Boolean);
+  const errors = [links.error, socialLinks.error, projects.error, services.error, media.error, skills.error].filter(Boolean);
   if (errors.length > 0) {
     console.warn("[DASHBOARD] profile_relation_load_partial_failure", {
       profile_id: profile.id,
@@ -500,6 +505,19 @@ async function loadProfileContentFromClient(
     projects: projectRows.map(mapProjectRow),
     services: (services.data || []).map(mapServiceRow),
     media: (media.data || []).map(mapMediaRow),
+    skills: (skills.data || []).map(mapSkillRow),
+  };
+}
+
+function mapSkillRow(row: any): Skill {
+  return {
+    id: row.id,
+    profileId: row.profile_id,
+    category: row.category,
+    name: row.name,
+    level: row.level,
+    position: row.position ?? 0,
+    isActive: row.is_active !== false,
   };
 }
 
@@ -507,12 +525,13 @@ async function loadPublicProfileRelations(
   client: SupabaseClient,
   profile: Profile
 ): Promise<Omit<PublicProfile, keyof Profile> & { socialLinks: SocialLink[] }> {
-  const [links, socialLinks, projects, services, media, themeRes] = await Promise.all([
+  const [links, socialLinks, projects, services, media, skills, themeRes] = await Promise.all([
     client.from("smart_links").select("*").eq("profile_id", profile.id).eq("is_active", true).order("is_featured", { ascending: false }).order("sort_order"),
     client.from("social_links").select("*").eq("profile_id", profile.id).eq("is_active", true).order("sort_order"),
     client.from("projects").select("*").eq("profile_id", profile.id).eq("is_active", true).order("position"),
     client.from("services").select("*").eq("profile_id", profile.id).eq("is_active", true).order("sort_order"),
     client.from("media").select("*").eq("profile_id", profile.id).order("position"),
+    client.from("skills").select("*").eq("profile_id", profile.id).eq("is_active", true).order("position"),
     profile.themeId ? client.from("themes").select("*").eq("id", profile.themeId).maybeSingle() : Promise.resolve({ data: null, error: null }),
   ]);
 
@@ -528,6 +547,7 @@ async function loadPublicProfileRelations(
     projects: (projects.data || []).map(mapProjectRow),
     services: (services.data || []).map(mapServiceRow),
     gallery: (media.data || []).map(mapMediaRow),
+    skills: (skills.data || []).map(mapSkillRow),
   };
 }
 

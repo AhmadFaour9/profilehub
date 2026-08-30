@@ -118,7 +118,18 @@ export type GalleryItem = {
   createdAt: string;
 };
 
+export type Skill = {
+  id: string;
+  profileId: string;
+  category: string;
+  name: string;
+  level?: string | null;
+  position: number;
+  isActive: boolean;
+};
+
 export type PublicProfile = Profile & {
+  skills: Skill[];
   links: Link[];
   projects: Project[];
   services: Service[];

@@ -222,3 +222,51 @@ describe("model chain exhaustion", () => {
     expect(source).not.toContain("meta-llama/llama-3.1-8b-instruct:free");
   });
 });
+
+describe("generation limits per feature", () => {
+  /**
+   * A flat max_tokens of 500 silently truncated analyze_resume. The provider
+   * returned finish_reason "length" and reported success, so the only visible
+   * symptom was "analysis could not be completed" while the model had actually
+   * answered - just not to the end. A real CV needs roughly 2000 completion
+   * tokens for the full JSON.
+   */
+  async function capturedRequestBody(feature: string) {
+    process.env.AI_PROVIDER = "openrouter";
+    process.env.OPENROUTER_API_KEY = "test-key";
+    process.env.OPENROUTER_MODELS = "test/model:free";
+
+    let body: any = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: any, init: any) => {
+        body = JSON.parse(init.body);
+        return new Response(
+          JSON.stringify({
+            choices: [{ message: { content: "ok" }, finish_reason: "stop" }],
+            model: "test/model:free",
+          }),
+          { status: 200, headers: { "content-type": "application/json" } }
+        );
+      })
+    );
+
+    await createOpenRouterProvider().generate(feature as any, { resumeText: "x".repeat(500) });
+    return body;
+  }
+
+  it("gives analyze_resume room for a full CV analysis", async () => {
+    const body = await capturedRequestBody("analyze_resume");
+    expect(body.max_tokens).toBeGreaterThanOrEqual(3000);
+  });
+
+  it("uses a low temperature for structured extraction", async () => {
+    const body = await capturedRequestBody("analyze_resume");
+    expect(body.temperature).toBeLessThanOrEqual(0.3);
+  });
+
+  it("leaves the short copy features on the small default", async () => {
+    const body = await capturedRequestBody("generate_bio");
+    expect(body.max_tokens).toBe(500);
+  });
+});

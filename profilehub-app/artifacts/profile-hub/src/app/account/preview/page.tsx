@@ -19,6 +19,7 @@ export default async function AccountPreviewPage() {
     projects: content.projects,
     services: content.services,
     gallery: content.media,
+    skills: content.skills,
   };
   return <PublicProfile username={profile.username} profile={profile} profileUrl={getCanonicalProfileUrl(profile.username)} />;
 }

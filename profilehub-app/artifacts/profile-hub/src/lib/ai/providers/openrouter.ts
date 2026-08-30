@@ -26,6 +26,31 @@ const DEFAULT_OPENROUTER_MODELS = [
 ];
 const DEFAULT_OPENROUTER_TIMEOUT_MS = 20_000;
 
+/**
+ * Per-feature generation limits.
+ *
+ * A flat max_tokens of 500 suited the short copywriting features but silently
+ * truncated analyze_resume: its JSON carries twelve extracted fields, seven
+ * section scores with comments, and up to eight advice items, so a real CV
+ * produced output that stopped mid-structure and failed to parse. The provider
+ * reported success while the feature appeared broken.
+ *
+ * Structured extraction also wants a low temperature - it is transcription and
+ * judgement, not creative writing.
+ */
+const GENERATION_LIMITS: Partial<Record<AIFeature, { maxTokens: number; temperature: number }>> = {
+  analyze_resume: { maxTokens: 4000, temperature: 0.2 },
+  improve_project_description: { maxTokens: 1200, temperature: 0.5 },
+  brand_score: { maxTokens: 900, temperature: 0.4 },
+  analyze_brand: { maxTokens: 900, temperature: 0.4 },
+};
+
+const DEFAULT_GENERATION = { maxTokens: 500, temperature: 0.7 };
+
+function generationFor(feature: AIFeature) {
+  return GENERATION_LIMITS[feature] ?? DEFAULT_GENERATION;
+}
+
 export type OpenRouterDebugCode =
   | "openrouter_missing_key"
   | "openrouter_model_unavailable"
@@ -48,6 +73,7 @@ type OpenRouterResponse = {
       content?: OpenRouterMessageContent;
     };
     text?: string;
+    finish_reason?: string;
   }>;
   model?: string;
   usage?: {
@@ -414,8 +440,8 @@ async function requestOpenRouter({
             content: buildPrompt(feature, input),
           },
         ],
-        max_tokens: 500,
-        temperature: 0.7,
+        max_tokens: generationFor(feature).maxTokens,
+        temperature: generationFor(feature).temperature,
       }),
     });
   } catch (error) {
@@ -476,6 +502,21 @@ async function requestOpenRouter({
       true,
       [attemptedModel]
     );
+  }
+
+  // finish_reason "length" means the token budget ran out mid-answer. The call
+  // still reports success, so without this the caller sees only that parsing
+  // failed and has no way to tell a truncated answer from a malformed one.
+  const finishReason = parsed.choices?.[0]?.finish_reason;
+  if (finishReason === "length") {
+    logOpenRouter("warn", "openrouter_response_truncated", {
+      provider: "openrouter",
+      model: parsed.model || attemptedModel,
+      feature,
+      maxTokens: generationFor(feature).maxTokens,
+      characters: content.length,
+      status: "truncated",
+    });
   }
 
   return {
