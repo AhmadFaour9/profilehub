@@ -1,6 +1,6 @@
 # ProfileHub Project Context Compact
 
-Last updated: 2026-06-06
+Last updated: 2026-08-29
 
 This file is a compact handoff for continuing ProfileHub without needing the full previous conversation.
 
@@ -166,9 +166,9 @@ Important files:
 - `src/lib/github-extractor.ts`
 - `src/app/api/ai/project-description/route.ts`
 
-Current known limitation:
+Current state:
 
-- Manual "Add Project" button is visible, but the visible manual create modal/action is not fully wired. GitHub import plus edit/delete are available.
+- Manual project creation is complete. The "Add Project" dialog collects title, tags, description, project URL, repo URL, and image URL, submits through the `createProject` server action, and updates local state on success. GitHub import, edit, and delete all work alongside it.
 
 ### Services
 
@@ -322,9 +322,9 @@ LOG_HASH_SALT=<random-secret>
 
 ## Current Risks
 
+- The Supabase project pauses on the free tier after about 7 days of inactivity. When paused it serves no API keys and no connections, so Vercel keeps serving the frontend while every data-backed page fails. Check `npx supabase projects list` first when debugging "everything is broken".
 - Production Supabase migrations must be applied manually when new migration files are added.
 - Free OpenRouter models may remain unreliable; multi-model fallback reduces but does not eliminate fallback use.
-- Manual Project creation UI is incomplete.
 - GitHub image extraction is best-effort.
 - Supabase email templates must be manually pasted into the hosted Supabase Dashboard.
 - Next.js warns that `middleware` convention is deprecated in favor of `proxy`.
@@ -333,7 +333,9 @@ LOG_HASH_SALT=<random-secret>
 
 ## Next Recommended Phase
 
-1. Finish manual Project creation UI.
+See `NEXT_STEPS.md` for the authoritative, current task list. In short:
+
+1. Restore the paused Supabase project — it is `INACTIVE` and blocks everything.
 2. Run a full production smoke test in incognito:
    - login
    - dashboard navigation
