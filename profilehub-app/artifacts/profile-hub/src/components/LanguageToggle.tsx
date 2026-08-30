@@ -75,7 +75,11 @@ export function LanguageToggle({
 export function GlobalLanguageToggle() {
   const pathname = usePathname();
 
+  // The dashboard carries its own switcher in the top bar, and /account/preview
+  // is the public page rendered inside the dashboard's phone frame - a floating
+  // control there would appear to be part of the visitor's profile.
   if (pathname?.startsWith("/dashboard")) return null;
+  if (pathname?.startsWith("/account/preview")) return null;
 
   return <LanguageToggle variant="floating" />;
 }

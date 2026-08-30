@@ -116,7 +116,7 @@ export async function PublicProfile({
             </section>
           )}
 
-          {visibleSkills.length > 0 && <SkillsSection skills={visibleSkills} t={t} />}
+          {visibleSkills.length > 0 && <SkillsSection skills={visibleSkills} projects={visibleProjects} t={t} />}
 
           {visibleProjects.length > 0 && (
             <section className="space-y-4">

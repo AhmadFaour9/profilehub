@@ -112,13 +112,18 @@ export function ProjectCard({ project, theme }: { project: Project; theme?: Prof
       href={project.url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`group block p-4 bg-card border border-card-border hover-elevate ${radiusClass}`}
+      className={`group block scroll-mt-8 p-4 bg-card border border-card-border hover-elevate target:ring-2 target:ring-primary target:ring-offset-2 ${radiusClass}`}
+      id={`project-${project.id}`}
       data-testid={`project-${project.id}`}
     >
       <Content />
     </a>
   ) : (
-    <div className={`group block p-4 bg-card border border-card-border ${radiusClass}`} data-testid={`project-${project.id}`}>
+    <div
+      id={`project-${project.id}`}
+      className={`group block scroll-mt-8 p-4 bg-card border border-card-border target:ring-2 target:ring-primary target:ring-offset-2 ${radiusClass}`}
+      data-testid={`project-${project.id}`}
+    >
       <Content />
     </div>
   );

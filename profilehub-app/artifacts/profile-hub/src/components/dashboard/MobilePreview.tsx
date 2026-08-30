@@ -26,10 +26,7 @@ import type { GalleryItem, Link, Profile, Project, Service } from "@/modules/sha
  * and the frame reloads whenever the saved profile changes.
  */
 const VIEWPORT_WIDTH = 390;
-const VIEWPORT_HEIGHT = 844;
-const FRAME_WIDTH = 320;
-
-const SCALE = FRAME_WIDTH / VIEWPORT_WIDTH;
+const VIEWPORT_HEIGHT = 760;
 
 export function MobilePreview({
   profile,
@@ -91,30 +88,30 @@ export function MobilePreview({
       </div>
 
       <div
-        className="relative overflow-hidden rounded-[3rem] border-8 border-black bg-background shadow-2xl"
-        style={{ width: FRAME_WIDTH, height: VIEWPORT_HEIGHT * SCALE }}
+        className="relative overflow-hidden rounded-[2.5rem] border-[10px] border-neutral-900 bg-background shadow-2xl dark:border-neutral-700"
+        style={{ width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT }}
       >
-        <div className="absolute inset-x-0 top-0 z-20 mx-16 h-6 rounded-b-3xl bg-black" />
+        {/* Speaker slot rather than a full notch bar: it reads as a device
+            without covering the first rows of the page. */}
+        <div className="pointer-events-none absolute inset-x-0 top-2 z-20 flex justify-center">
+          <span className="h-1.5 w-16 rounded-full bg-neutral-900/70 dark:bg-neutral-600" />
+        </div>
 
         <iframe
           ref={frameRef}
           key={nonce}
           src={`/account/preview?preview=${nonce}`}
           title={t("preview.title")}
-          // The iframe carries the phone's real viewport; the wrapper scales
-          // the rendered result down to fit the sidebar.
+          // Rendered at the device's own width with no transform, so text is
+          // the size a phone actually shows and nothing is resampled.
           width={VIEWPORT_WIDTH}
           height={VIEWPORT_HEIGHT}
-          style={{
-            transform: `scale(${SCALE})`,
-            transformOrigin: "top left",
-            border: 0,
-          }}
+          className="block h-full w-full border-0"
           loading="lazy"
         />
       </div>
 
-      <p className="max-w-[320px] text-xs leading-relaxed text-muted-foreground">
+      <p className="max-w-[390px] text-xs leading-relaxed text-muted-foreground">
         {t("preview.savedOnly")}
       </p>
     </div>
