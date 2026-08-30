@@ -24,6 +24,7 @@ export const RESUME_FIELDS = [
   "education",
   "certifications",
   "languages",
+  "links",
 ] as const;
 
 export type ResumeFieldKey = (typeof RESUME_FIELDS)[number];
@@ -41,6 +42,7 @@ export const RESUME_FIELD_LABEL_KEYS: Record<ResumeFieldKey, MessageKey> = {
   education: "resume.field.education",
   certifications: "resume.field.certifications",
   languages: "resume.field.languages",
+  links: "resume.field.links",
 };
 
 /** Which resume fields can be written onto a ProfileHub profile, and where. */
@@ -55,6 +57,105 @@ export const PROFILE_FIELD_MAP = {
 export type ApplicableResumeField = keyof typeof PROFILE_FIELD_MAP;
 
 export const APPLICABLE_RESUME_FIELDS = Object.keys(PROFILE_FIELD_MAP) as ApplicableResumeField[];
+
+/**
+ * A CV contact line is usually one run of text:
+ *
+ *   Riyadh | +966-... | me@example.com | linkedin.com/in/x | github.com/y
+ *
+ * so a model asked for "website" happily returns the whole tail of it. That is
+ * neither a website nor a valid URL, and offering it as a profile suggestion
+ * wastes the reader's time.
+ *
+ * Candidates are split apart, normalized, then classified: profile URLs go to
+ * `links`, and `website` keeps a single personal site.
+ *
+ * Note on accuracy: PDF text extraction reads the visible label, not the
+ * underlying href. A CV that prints a shortened label pointing somewhere else
+ * yields the label, so a link is only ever as precise as what the page shows.
+ */
+const SOCIAL_HOSTS = [
+  "linkedin.com",
+  "github.com",
+  "gitlab.com",
+  "x.com",
+  "twitter.com",
+  "facebook.com",
+  "instagram.com",
+  "youtube.com",
+  "medium.com",
+  "dev.to",
+  "stackoverflow.com",
+  "kaggle.com",
+  "huggingface.co",
+  "behance.net",
+  "dribbble.com",
+];
+
+export function splitLinkCandidates(value: string): string[] {
+  return (value || "")
+    .split(/[|,;\s]+/)
+    .map((part) => part.trim().replace(/[).,]+$/, ""))
+    .filter(Boolean);
+}
+
+/** Adds a scheme to a bare domain and drops anything that is not a URL. */
+export function normalizeLinkCandidate(value: string): string | null {
+  const raw = value.trim();
+  if (!raw) return null;
+
+  if (raw.startsWith("mailto:") || raw.includes("@")) return null;
+
+  const withScheme = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+
+  try {
+    const url = new URL(withScheme);
+    // A hostname with no dot is a stray word, not a domain.
+    if (!url.hostname.includes(".")) return null;
+    return url.toString().replace(/\/$/, "");
+  } catch {
+    return null;
+  }
+}
+
+export function isProfileLink(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, "").toLowerCase();
+    return SOCIAL_HOSTS.some((social) => host === social || host.endsWith(`.${social}`));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Splits whatever landed in `website` and `links` into one personal site and a
+ * deduplicated list of profile links.
+ */
+export function partitionLinks(website: string, links: string[]): { website: string; links: string[] } {
+  const candidates = [...splitLinkCandidates(website), ...links.flatMap(splitLinkCandidates)];
+
+  const seen = new Set<string>();
+  const personal: string[] = [];
+  const profiles: string[] = [];
+
+  for (const candidate of candidates) {
+    const url = normalizeLinkCandidate(candidate);
+    if (!url) continue;
+
+    const key = url.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    (isProfileLink(url) ? profiles : personal).push(url);
+  }
+
+  return {
+    // Extra personal sites are still worth keeping, just not in the single
+    // website slot the profile has.
+    website: personal[0] ?? "",
+    links: [...personal.slice(1), ...profiles].slice(0, 12),
+  };
+}
 
 const clampScore = (value: unknown): number => {
   const n = typeof value === "number" ? value : Number(value);
@@ -123,6 +224,7 @@ export const resumeFieldsSchema = z.object({
   education: stringList(300, 12).optional().default([]),
   certifications: stringList(200, 15).optional().default([]),
   languages: stringList(60, 12).optional().default([]),
+  links: stringList(400, 15).optional().default([]),
 });
 
 export const resumeAnalysisSchema = z.object({
@@ -214,6 +316,12 @@ export function parseResumeAnalysis(raw: string): ResumeAnalysis | null {
   if (!parsed.success) return null;
 
   const { fields, sectionScores, advice, overallScore } = parsed.data;
+
+  // The model routinely returns a whole contact line here; separate it before
+  // anything downstream treats it as a single URL.
+  const separated = partitionLinks(fields.website, fields.links);
+  fields.website = separated.website;
+  fields.links = separated.links;
   const scores = summarizeScores(sectionScores, overallScore);
 
   const impactRank = { high: 0, medium: 1, low: 2 } as const;
