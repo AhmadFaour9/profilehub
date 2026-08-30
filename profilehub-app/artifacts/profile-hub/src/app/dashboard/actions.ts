@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { getAuthenticatedUser } from "@/modules/auth";
 import { getOrCreateProfile } from "@/lib/profile-data";
+import { profileCacheTag } from "@/lib/profile-cache";
 import { debugLog, measureServer } from "@/lib/perf";
 import { createProfileService } from "@/modules/profile";
 import { createStoragePath, validateStorageFile, type StorageBucket } from "@/modules/storage";
@@ -559,7 +560,9 @@ export async function uploadProfileImage(formData: FormData): Promise<ActionResu
 function revalidateProfile(username: string, dashboardPath: string) {
   revalidatePath(dashboardPath);
   revalidatePath(`/${username}`);
-  revalidateTag(`profile:${username}`, "max");
+  // Must match the normalization in getPublicProfileCached, or a profile
+  // visited under different casing keeps serving the pre-save version.
+  revalidateTag(profileCacheTag(username), "max");
 }
 
 function getStoragePathFromPublicUrl(url: string, bucket: StorageBucket): string | null {

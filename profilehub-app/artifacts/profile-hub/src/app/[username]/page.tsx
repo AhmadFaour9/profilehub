@@ -5,7 +5,19 @@ import { getCanonicalProfileUrl } from "@/lib/request-url";
 import { getAppUrl } from "@/lib/env";
 import { getProfileOgImageUrl, getProfileSeoDescription, getProfileSeoTitle } from "@/lib/profile-seo";
 
-export const revalidate = 300;
+/**
+ * No route-level time cache.
+ *
+ * `revalidate` cached the whole rendered route per exact path, on top of the
+ * tag-based data cache in getPublicProfileCached. Because a save can only call
+ * revalidatePath with the canonical username, a visitor who reached the page
+ * under different casing kept the pre-save render for the full window.
+ *
+ * The data is still cached and is now invalidated by tag the moment anything
+ * is saved, so edits appear immediately while the database is still shielded
+ * from per-request load.
+ */
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,

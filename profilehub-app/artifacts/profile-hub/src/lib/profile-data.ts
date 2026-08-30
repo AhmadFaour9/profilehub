@@ -24,6 +24,7 @@ import {
   type SocialLink,
 } from "@/modules/shared";
 import { parseSectionVisibility } from "@/lib/profile-visibility";
+import { profileCacheKey, profileCacheTag } from "@/lib/profile-cache";
 
 type ProfileEnsureSource = "signup" | "login" | "oauth" | "auth_callback" | "dashboard" | "onboarding" | "profile_update";
 
@@ -872,8 +873,8 @@ export async function requireMyProfileContent(path: string = "/dashboard") {
 export function getPublicProfileCached(username: string) {
   return unstable_cache(
     () => getPublicProfile(username),
-    ["public-profile", username],
-    { revalidate: 300, tags: [`profile:${username}`] }
+    profileCacheKey(username),
+    { revalidate: 300, tags: [profileCacheTag(username)] }
   )();
 }
 
