@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import { FileText, Sparkles, Upload, AlertTriangle, Check } from "lucide-react";
+import { useMemo, useState } from "react";
+import { FileText, Sparkles, AlertTriangle, Check } from "lucide-react";
 
 import { applyResumeFields } from "@/app/dashboard/actions";
+import { ResumeDropZone } from "@/components/dashboard/ResumeDropZone";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -63,7 +64,6 @@ type FieldPlan = {
 export default function ResumeAnalyzer({ profile }: { profile: Profile }) {
   const { t, locale } = useLocale();
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [file, setFile] = useState<File | null>(null);
   const [pastedText, setPastedText] = useState("");
@@ -187,25 +187,14 @@ export default function ResumeAnalyzer({ profile }: { profile: Profile }) {
           </TabsList>
 
           <TabsContent value="upload" className="pt-4">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="flex w-full flex-col items-center gap-3 rounded-lg border border-dashed px-6 py-10 text-center transition-colors hover:bg-accent/40"
-            >
-              <Upload className="h-6 w-6 text-muted-foreground" aria-hidden />
-              <span className="text-sm font-medium">{file ? file.name : t("resume.upload")}</span>
-              <span className="text-xs text-muted-foreground">{t("resume.uploadHint")}</span>
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-              className="sr-only"
-              onChange={(event) => {
-                setFile(event.target.files?.[0] ?? null);
-                setPastedText("");
+            <ResumeDropZone
+              file={file}
+              disabled={loading}
+              onFile={(next) => {
+                setFile(next);
+                if (next) setPastedText("");
               }}
-              data-testid="resume-file-input"
+              onError={(key) => toast({ title: t(key), variant: "destructive" })}
             />
           </TabsContent>
 

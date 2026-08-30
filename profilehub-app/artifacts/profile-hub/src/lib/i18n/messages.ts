@@ -260,6 +260,8 @@ export const en = {
   // ── Resume analysis ───────────────────────────────────────────────────────
   "resume.title": "Resume Analysis",
   "resume.subtitle": "Upload your CV and get a structured read of it, a strength score, and concrete advice.",
+  "resume.dropOrBrowse": "Drag your CV here, or click to browse",
+  "resume.dropHere": "Drop to upload",
   "resume.upload": "Upload a file",
   "resume.uploadHint": "PDF or DOCX, up to 5 MB.",
   "resume.pasteTab": "Paste text",
@@ -700,6 +702,8 @@ export const ar: Record<MessageKey, string> = {
   // ── Resume analysis ───────────────────────────────────────────────────────
   "resume.title": "تحليل السيرة الذاتية",
   "resume.subtitle": "ارفع سيرتك الذاتية واحصل على قراءة منظّمة لها، ودرجة قوة، ونصائح عملية.",
+  "resume.dropOrBrowse": "اسحب سيرتك إلى هنا، أو انقر للاختيار",
+  "resume.dropHere": "أفلت الملف للرفع",
   "resume.upload": "رفع ملف",
   "resume.uploadHint": "PDF أو DOCX، بحد أقصى 5 ميغابايت.",
   "resume.pasteTab": "لصق نص",

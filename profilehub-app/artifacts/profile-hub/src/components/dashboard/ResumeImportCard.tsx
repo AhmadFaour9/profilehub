@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileUp, Sparkles, X, Check } from "lucide-react";
+import { Sparkles, X, Check } from "lucide-react";
 
 import { applyResumeFields } from "@/app/dashboard/actions";
+import { ResumeDropZone } from "@/components/dashboard/ResumeDropZone";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +39,6 @@ export function ResumeImportCard({ onDismiss }: { onDismiss?: () => void }) {
   const { t, locale } = useLocale();
   const { toast } = useToast();
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [dismissed, setDismissed] = useState(false);
   const [showPaste, setShowPaste] = useState(false);
@@ -154,38 +154,26 @@ export function ResumeImportCard({ onDismiss }: { onDismiss?: () => void }) {
         </div>
       ) : (
         <>
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            <Button
-              onClick={() => fileInputRef.current?.click()}
+          <div className="mt-4">
+            <ResumeDropZone
+              file={null}
+              compact
               disabled={loading}
-              data-testid="btn-onboarding-resume-upload"
-            >
-              <FileUp className="me-2 h-4 w-4" aria-hidden />
-              {loading ? t("resume.analyzing") : t("resume.upload")}
-            </Button>
+              onFile={(next) => {
+                if (next) handleFile(next);
+              }}
+              onError={(key) => toast({ title: t(key), variant: "destructive" })}
+            />
+          </div>
 
-            <Button variant="ghost" onClick={() => setShowPaste((prev) => !prev)} disabled={loading}>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setShowPaste((prev) => !prev)} disabled={loading}>
               {t("resume.pasteTab")}
             </Button>
-
-            <Button variant="ghost" onClick={dismiss} disabled={loading}>
+            <Button variant="ghost" size="sm" onClick={dismiss} disabled={loading}>
               {t("onboarding.resumeSkip")}
             </Button>
           </div>
-
-          <p className="mt-2 text-xs text-muted-foreground">{t("resume.uploadHint")}</p>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            className="sr-only"
-            onChange={(event) => {
-              const selected = event.target.files?.[0];
-              if (selected) handleFile(selected);
-              event.target.value = "";
-            }}
-          />
 
           {showPaste && (
             <div className="mt-4 space-y-2">
