@@ -189,3 +189,36 @@ describe("AI provider fallback", () => {
     expect(response.text).toContain("Sara");
   });
 });
+
+describe("model chain exhaustion", () => {
+  it("names every attempted model when the whole chain fails", async () => {
+    process.env.AI_PROVIDER = "openrouter";
+    process.env.OPENROUTER_API_KEY = "test-key";
+    process.env.OPENROUTER_MODELS = "dead/one:free,dead/two:free,dead/three:free";
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(JSON.stringify({ error: { message: "No endpoints found." } }), { status: 404 })
+      )
+    );
+
+    const provider = createOpenRouterProvider();
+
+    // A stale chain must not read as one broken model.
+    await expect(provider.generate("generate_bio", {})).rejects.toThrow(/All 3 OpenRouter models failed/);
+    await expect(provider.generate("generate_bio", {})).rejects.toThrow(/dead\/one:free/);
+    await expect(provider.generate("generate_bio", {})).rejects.toThrow(/dead\/three:free/);
+  });
+
+  it("ships a default chain with no withdrawn model ids", async () => {
+    // These were retired by OpenRouter and returned 404 for every request while
+    // still being the shipped defaults, which silently disabled live AI.
+    const source = await import("node:fs").then((fs) =>
+      fs.readFileSync("src/lib/ai/providers/openrouter.ts", "utf8")
+    );
+
+    expect(source).not.toContain("mistralai/mistral-7b-instruct:free");
+    expect(source).not.toContain("meta-llama/llama-3.1-8b-instruct:free");
+  });
+});

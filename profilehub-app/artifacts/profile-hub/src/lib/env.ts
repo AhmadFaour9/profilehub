@@ -10,10 +10,6 @@ export function getAppUrl(): string {
   return "http://localhost:24359";
 }
 
-export function getGatewayUrl(): string {
-  return process.env.GATEWAY_URL || "http://localhost:4000";
-}
-
 export type SupabasePublicKeySource =
   | "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
   | "NEXT_PUBLIC_SUPABASE_ANON_KEY"

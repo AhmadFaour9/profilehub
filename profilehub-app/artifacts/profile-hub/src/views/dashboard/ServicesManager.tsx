@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/client";
+
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { Service } from "@/modules/shared";
@@ -100,6 +102,7 @@ function normalizeService(row: any, fallback?: Service): Service {
 }
 
 export default function ServicesManager({ services = [] }: { services?: Service[] }) {
+  const { t } = useLocale();
   const router = useRouter();
   const { toast } = useToast();
   const [allServices, setAllServices] = useState<Service[]>(() => sortServices(services));
@@ -253,7 +256,7 @@ export default function ServicesManager({ services = [] }: { services?: Service[
     <div className="max-w-5xl space-y-8">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-serif">Services</h1>
+          <h1 className="text-3xl font-serif">{t("services.title")}</h1>
           <p className="text-muted-foreground mt-1">List what you offer and how visitors can inquire.</p>
         </div>
         <Button onClick={openCreateDialog} data-testid="btn-add-service">

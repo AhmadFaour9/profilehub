@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { IProfileRepository } from "../domain/interfaces";
 import type { Profile, Service, GalleryItem } from "@/modules/shared";
+import { parseSectionVisibility } from "@/lib/profile-visibility";
 
 // Basic mapping function
 const mapProfile = (row: any): Profile => ({
@@ -21,6 +22,7 @@ const mapProfile = (row: any): Profile => ({
   socialLinks: [],
   seoTitle: row.seo_title,
   seoDescription: row.seo_description,
+  sectionVisibility: parseSectionVisibility(row.section_visibility),
   theme: row.theme ? { id: row.theme.id, ...row.theme.tokens } : { id: "default" },
   createdAt: row.created_at,
   updatedAt: row.updated_at,

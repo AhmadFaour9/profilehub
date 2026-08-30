@@ -1,5 +1,6 @@
 import type { AIFeature } from "../prompts";
 import { minimizeInput } from "../prompts";
+import { analyzeResumeHeuristically, buildHeuristicAdvice } from "@/lib/resume/heuristic";
 
 export type AIProviderResponse = {
   content: string;
@@ -78,6 +79,20 @@ export function createMockProvider(): AIProvider {
           return response(
             "CTA ideas:\n- Book a Call\n- View My Work\n- Start a Project\n- Request a Quote\n- Get in Touch\nBest fit: use the action that matches your highest-value visitor intent."
           );
+        case "analyze_resume": {
+          // Real extraction, not placeholder text: the offline reader still
+          // returns schema-valid JSON so the UI renders a usable report.
+          const resumeText = typeof input.resumeText === "string" ? input.resumeText : "";
+          const result = analyzeResumeHeuristically(resumeText);
+          return response(
+            JSON.stringify({
+              fields: result.fields,
+              sectionScores: result.sectionScores,
+              advice: buildHeuristicAdvice(result),
+              overallScore: result.overallScore,
+            })
+          );
+        }
         case "brand_score":
         case "analyze_brand":
           return response(

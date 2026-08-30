@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/client";
+
 import { useState } from "react";
 import { ThemePicker } from "@/components/dashboard/ThemePicker";
 import { MobilePreview } from "@/components/dashboard/MobilePreview";
@@ -9,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { updateTheme } from "@/app/dashboard/actions";
 
 export default function ThemeEditor({ content }: { content: { profile: Profile, links: Link[], projects: Project[], services: Service[], media: GalleryItem[] } }) {
+  const { t } = useLocale();
   const profile = content.profile;
   const [theme, setTheme] = useState<ProfileTheme>(profile.theme || { id: "default" });
   const [saving, setSaving] = useState(false);
@@ -41,8 +44,8 @@ export default function ThemeEditor({ content }: { content: { profile: Profile, 
     <div className="flex gap-12 max-w-6xl">
       <div className="flex-1 space-y-8">
         <div>
-          <h1 className="text-3xl font-serif">Appearance</h1>
-          <p className="text-muted-foreground">Customize colors and button styles.</p>
+          <h1 className="text-3xl font-serif">{t("theme.title")}</h1>
+          <p className="text-muted-foreground">{t("theme.subtitle")}</p>
         </div>
 
         <ThemePicker value={theme} onChange={setTheme} />

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { ClientProviders } from "@/components/ClientProviders";
+import { getDirection } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18n/server";
 import "../index.css";
 
 export const metadata: Metadata = {
@@ -7,11 +9,15 @@ export const metadata: Metadata = {
   description: "Create and publish a professional profile hub.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Resolved on the server so lang/dir are correct on first paint, with no
+  // flash of the wrong direction before hydration.
+  const locale = await getLocale();
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} dir={getDirection(locale)} suppressHydrationWarning>
       <body>
-        <ClientProviders>{children}</ClientProviders>
+        <ClientProviders locale={locale}>{children}</ClientProviders>
       </body>
     </html>
   );

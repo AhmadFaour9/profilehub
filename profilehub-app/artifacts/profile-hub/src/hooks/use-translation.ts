@@ -1,26 +1,15 @@
-import { create } from "zustand";
-import { translations, Language } from "../lib/i18n";
+"use client";
 
-type TranslationStore = {
-  language: Language;
-  setLanguage: (lang: Language) => void;
-};
+import { useLocale } from "@/lib/i18n/client";
+import type { Locale } from "@/lib/i18n";
 
-const useTranslationStore = create<TranslationStore>((set) => ({
-  language: "en",
-  setLanguage: (lang) => {
-    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
-    document.documentElement.lang = lang;
-    set({ language: lang });
-  },
-}));
+export type Language = Locale;
 
+/**
+ * Backwards-compatible adapter over the locale context. Kept so existing call
+ * sites keep working; new code can use useLocale() directly.
+ */
 export function useTranslation() {
-  const { language, setLanguage } = useTranslationStore();
-
-  const t = (key: keyof typeof translations.en) => {
-    return translations[language][key] || key;
-  };
-
-  return { t, language, setLanguage };
+  const { t, locale, setLocale, dir } = useLocale();
+  return { t, language: locale, setLanguage: setLocale, dir };
 }

@@ -23,6 +23,7 @@ import {
   type Service,
   type SocialLink,
 } from "@/modules/shared";
+import { parseSectionVisibility } from "@/lib/profile-visibility";
 
 type ProfileEnsureSource = "signup" | "login" | "oauth" | "auth_callback" | "dashboard" | "onboarding" | "profile_update";
 
@@ -66,6 +67,7 @@ function mapProfileRow(row: any): Profile {
     socialLinks: [],
     seoTitle: row.seo_title,
     seoDescription: row.seo_description,
+    sectionVisibility: parseSectionVisibility(row.section_visibility),
     theme: row.theme ? { id: row.theme.id, ...row.theme.tokens } : { id: "default" },
     createdAt: row.created_at,
     updatedAt: row.updated_at,

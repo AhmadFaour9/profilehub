@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/client";
+
 import { AnalyticsCards } from "@/components/dashboard/AnalyticsCards";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import type { AnalyticsBreakdownItem, AnalyticsOverview, AnalyticsRangeSummary, LinkAnalytics, TimeSeriesPoint } from "@/modules/shared";
@@ -28,10 +30,11 @@ export default function Analytics({
   devices?: AnalyticsBreakdownItem[];
   rangeSummary?: AnalyticsRangeSummary;
 }) {
+  const { t } = useLocale();
   return (
     <div className="space-y-8 max-w-6xl">
       <div>
-        <h1 className="text-3xl font-serif">Analytics</h1>
+        <h1 className="text-3xl font-serif">{t("analytics.title")}</h1>
         <p className="text-muted-foreground mt-1">Track your profile views and link clicks over time.</p>
       </div>
 

@@ -6,10 +6,23 @@ import type { AIProvider, AIProviderResponse } from "./mock";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_REFERER = PRODUCTION_APP_URL;
 const MAX_LOG_STRING_LENGTH = 800;
+/**
+ * Fallback chain used only when OPENROUTER_MODELS is not set.
+ *
+ * OpenRouter retires free model ids without notice, and a stale entry here is
+ * worse than none: every request fails and the app silently degrades to the
+ * local provider while the key is perfectly valid. The previous defaults
+ * (llama-3.1-8b:free, mistral-7b:free) had both been withdrawn and returned 404.
+ *
+ * Verified working 2026-08-29. Re-check with:
+ *   curl https://openrouter.ai/api/v1/models -H "Authorization: Bearer $KEY"
+ *   then keep the ids ending in :free
+ */
 const DEFAULT_OPENROUTER_MODELS = [
+  "minimax/minimax-m3:free",
+  "nvidia/nemotron-3-super-120b-a12b:free",
+  "google/gemma-4-31b-it:free",
   "google/gemma-4-26b-a4b-it:free",
-  "meta-llama/llama-3.1-8b-instruct:free",
-  "mistralai/mistral-7b-instruct:free",
 ];
 const DEFAULT_OPENROUTER_TIMEOUT_MS = 20_000;
 
@@ -329,8 +342,24 @@ export function createOpenRouterProvider(): AIProvider {
         }
       }
 
+      // Reporting only the last model's error hides the real situation: when a
+      // stale chain is configured, every model fails and the message names just
+      // the final one, which reads like a single broken model rather than a
+      // model list that needs replacing.
+      const exhaustedMessage =
+        attemptedModels.length > 1
+          ? `All ${attemptedModels.length} OpenRouter models failed (${attemptedModels.join(", ")}). ` +
+            `Last error: ${lastError?.message || "OpenRouter request failed."}`
+          : lastError?.message || "OpenRouter request failed.";
+
+      logOpenRouter("warn", "openrouter_all_models_failed", {
+        attemptedModels,
+        lastDebugCode: lastError?.debugCode,
+        lastStatus: lastError?.status,
+      });
+
       throw new OpenRouterProviderError(
-        lastError?.message || "OpenRouter request failed.",
+        exhaustedMessage,
         lastError?.status,
         lastError?.code,
         lastError?.debugCode || "openrouter_bad_request",

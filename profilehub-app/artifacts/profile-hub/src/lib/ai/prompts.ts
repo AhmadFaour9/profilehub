@@ -7,7 +7,8 @@ export type AIFeature =
   | "project_names"
   | "improve_project_description"
   | "suggest_cta"
-  | "brand_score";
+  | "brand_score"
+  | "analyze_resume";
 
 type SafeInput = {
   displayName?: string;
@@ -26,6 +27,13 @@ type SafeInput = {
     technologies?: string[];
     tags?: string[];
   };
+  /**
+   * Raw resume text. Deliberately exempt from SENSITIVE_KEYS redaction: a CV
+   * contains an email and phone by nature and the user asked for them to be
+   * extracted. It is never logged and never persisted.
+   */
+  resumeText?: string;
+  locale?: string;
   links?: Array<{ title?: string; description?: string; type?: string }>;
   projects?: Array<{ title?: string; description?: string; tags?: string[] }>;
   services?: Array<{ title?: string; description?: string; priceLabel?: string; ctaLabel?: string }>;
@@ -87,6 +95,8 @@ export function minimizeInput(input: Record<string, unknown>): SafeInput {
   const project = safeObject(filtered.project);
 
   return {
+    resumeText: typeof input.resumeText === "string" ? input.resumeText.slice(0, 20000) : undefined,
+    locale: cleanText(filtered.locale, 8),
     displayName: cleanText(filtered.displayName ?? filtered.name, 80),
     title: cleanText(filtered.title, 120),
     profession: cleanText(filtered.profession, 120),
@@ -200,6 +210,45 @@ export function buildPrompt(feature: AIFeature, input: Record<string, unknown>):
         "Avoid aggressive sales language.",
         `Safe public context: ${context}`,
       ].join("\n");
+
+    case "analyze_resume": {
+      const language = safe.locale === "ar" ? "Arabic" : "English";
+      return [
+        "You are an expert technical recruiter and CV reviewer.",
+        "Read the RESUME below and return a SINGLE JSON object. No prose, no markdown fences.",
+        "",
+        "Schema:",
+        "{",
+        '  "fields": {',
+        '    "fullName": string, "headline": string, "summary": string,',
+        '    "email": string, "phone": string, "location": string, "website": string,',
+        '    "skills": string[], "experience": string[], "education": string[],',
+        '    "certifications": string[], "languages": string[]',
+        "  },",
+        '  "sectionScores": [{ "key": string, "score": 0-100, "comment": string }],',
+        '  "advice": [{ "title": string, "detail": string, "impact": "high"|"medium"|"low", "field": string|null }],',
+        '  "overallScore": 0-100',
+        "}",
+        "",
+        "Rules:",
+        "- For every field EXCEPT headline and summary: extract only what the resume actually states.",
+        '  Use "" or [] when it is absent. Never invent an employer, date, credential, or number.',
+        '- "headline" and "summary" are DERIVED, not extracted. Always produce them by condensing',
+        "  the roles and skills already in the resume. Leave them empty only if the resume is unreadable.",
+        '- "experience" entries read "Role - Company (dates)". "education" entries read "Degree - Institution (dates)".',
+        '- "summary": 2-3 sentences for a public profile, built only from facts already in the resume.',
+        '- "headline": a short professional title inferred from the most recent role and main skills,',
+        '  e.g. "Senior Backend Engineer" or "Payments Infrastructure Engineer". Never leave it empty',
+        "  when at least one role is present.",
+        "- sectionScores must cover exactly these keys: contact, summary, experience, education, skills, impact, formatting.",
+        "- Score each honestly: 0-40 missing or weak, 41-70 acceptable, 71-100 strong. Do not inflate.",
+        '- "impact" scores how well achievements are quantified with concrete numbers and outcomes.',
+        "- advice: 4-8 specific, actionable items ordered by impact. Reference a fields key in \"field\" when the advice targets one, otherwise null.",
+        `- Write every human-readable string (summary, comment, title, detail) in ${language}. Keep JSON keys in English.`,
+        "",
+        `RESUME:\n${safe.resumeText || ""}`,
+      ].join("\n");
+    }
 
     case "brand_score":
     case "analyze_brand":

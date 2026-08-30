@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/client";
+
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import type { GalleryItem } from "@/modules/shared";
 import { Button } from "@/components/ui/button";
@@ -19,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { deleteGalleryItem, uploadGalleryImage } from "@/app/dashboard/actions";
 
 export default function GalleryManager({ gallery = [] }: { gallery?: GalleryItem[] }) {
+  const { t } = useLocale();
   const [items, setItems] = useState<GalleryItem[]>(gallery);
   const [uploading, setUploading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<GalleryItem | null>(null);
@@ -92,7 +95,7 @@ export default function GalleryManager({ gallery = [] }: { gallery?: GalleryItem
       <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-serif">Gallery</h1>
+          <h1 className="text-3xl font-serif">{t("gallery.title")}</h1>
           <p className="text-muted-foreground mt-1">A visual grid of your work, studio, or behind the scenes.</p>
         </div>
         <Button data-testid="btn-add-image" onClick={openFilePicker} disabled={uploading}>

@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/client";
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +18,7 @@ const formSchema = z.object({
 });
 
 export default function ForgotPassword() {
+  const { t } = useLocale();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const form = useForm<z.infer<typeof formSchema>>({
@@ -45,13 +48,13 @@ export default function ForgotPassword() {
               </p>
             </div>
             <Button className="w-full" asChild>
-              <Link href="/login">Return to log in</Link>
+              <Link href="/login">{t("auth.login")}</Link>
             </Button>
           </div>
         ) : (
           <>
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-serif mb-2">Reset password</h1>
+              <h1 className="text-3xl font-serif mb-2">{t("auth.resetPassword")}</h1>
               <p className="text-muted-foreground">Enter your email and we'll send you a reset link</p>
             </div>
 
@@ -62,7 +65,7 @@ export default function ForgotPassword() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{t("auth.email")}</FormLabel>
                       <FormControl>
                         <Input placeholder="you@example.com" {...field} data-testid="input-email" />
                       </FormControl>

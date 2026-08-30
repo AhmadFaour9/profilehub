@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/client";
+
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Link as SmartLink, SocialLink } from "@/modules/shared";
@@ -114,6 +116,7 @@ export default function LinksManager({
   initialLinks?: SmartLink[];
   initialSocialLinks?: SocialLink[];
 }) {
+  const { t } = useLocale();
   const router = useRouter();
   const { toast } = useToast();
   const [links, setLinks] = useState(() => sortSmartLinks(initialLinks));
@@ -277,7 +280,7 @@ export default function LinksManager({
     <div className="max-w-4xl space-y-8">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-serif">Smart Links</h1>
+          <h1 className="text-3xl font-serif">{t("links.title")}</h1>
           <p className="text-muted-foreground mt-1">Manage identity accounts and public action links.</p>
         </div>
         <Button onClick={openCreateDialog} data-testid="btn-add-link">

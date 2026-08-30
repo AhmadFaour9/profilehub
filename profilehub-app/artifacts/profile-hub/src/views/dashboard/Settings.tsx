@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/client";
+
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { sendAccountPasswordRecoveryEmail, updateAccountEmail } from "@/app/dashboard/settings/actions";
 
 export default function Settings({ currentEmail = "" }: { currentEmail?: string }) {
+  const { t } = useLocale();
   const { toast } = useToast();
   const [displayEmail, setDisplayEmail] = useState(currentEmail);
   const [newEmail, setNewEmail] = useState("");
@@ -63,7 +66,7 @@ export default function Settings({ currentEmail = "" }: { currentEmail?: string 
   return (
     <div className="space-y-8 max-w-2xl">
       <div>
-        <h1 className="text-3xl font-serif">Account Settings</h1>
+        <h1 className="text-3xl font-serif">{t("settings.title")}</h1>
         <p className="text-muted-foreground mt-1">Manage your account credentials and preferences.</p>
       </div>
 

@@ -1,9 +1,10 @@
 import ProfileEditor from "@/views/dashboard/ProfileEditor";
+import { ResumeImportCard } from "@/components/dashboard/ResumeImportCard";
 import { isSupabaseConfigured } from "@/lib/env";
 import { getMyProfileContent } from "@/lib/profile-data";
+import { getTranslations } from "@/lib/i18n/server";
 import { getAuthenticatedUser } from "@/modules/auth";
 import { redirect } from "next/navigation";
-
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,8 @@ export default async function OnboardingPage() {
   if (!user) {
     redirect("/login?next=/onboarding");
   }
+
+  const { t } = await getTranslations();
 
   try {
     content = await getMyProfileContent();
@@ -34,9 +37,25 @@ export default async function OnboardingPage() {
     );
   }
 
+  // Only offer the CV import while there is nothing to overwrite. Once the user
+  // has written a headline or bio, the full report at /dashboard/resume is the
+  // right place — it asks before replacing anything.
+  const profile = content.profile;
+  const isBlank =
+    !profile.bio?.trim() && !profile.title?.trim() && !profile.location?.trim();
+
   return (
     <main className="min-h-screen bg-background p-4 md:p-8">
-      <ProfileEditor content={content} />
+      <div className="mx-auto max-w-6xl space-y-8">
+        <header className="space-y-1">
+          <h1 className="text-3xl font-serif">{t("onboarding.title")}</h1>
+          <p className="text-muted-foreground">{t("onboarding.subtitle")}</p>
+        </header>
+
+        {isBlank && <ResumeImportCard />}
+
+        <ProfileEditor content={content} />
+      </div>
     </main>
   );
 }

@@ -14,9 +14,17 @@ function preventAuthCache(response: NextResponse): NextResponse {
   return response;
 }
 
+export const PATHNAME_HEADER = "x-profilehub-pathname";
+
 export async function middleware(request: NextRequest) {
-  const supabaseResponse = NextResponse.next({ request });
   const pathname = request.nextUrl.pathname;
+
+  // Layouts do not receive the pathname in the App Router, so it is forwarded
+  // as a request header for the dashboard layout to read.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set(PATHNAME_HEADER, pathname);
+
+  const supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } });
 
   if (isAuthSensitivePath(pathname) || isAuthPath(pathname)) {
     return preventAuthCache(supabaseResponse);

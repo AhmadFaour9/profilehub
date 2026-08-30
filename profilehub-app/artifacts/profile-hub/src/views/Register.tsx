@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/client";
+
 import { useForm } from "react-hook-form";
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,6 +21,7 @@ const formSchema = z.object({
 });
 
 export default function Register() {
+  const { t } = useLocale();
   const [message, setMessage] = useState<string | null>(null);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -48,8 +51,8 @@ export default function Register() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-muted/30">
       <div className="w-full max-w-md bg-card p-8 rounded-2xl shadow-sm border">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-serif mb-2">Create your account</h1>
-          <p className="text-muted-foreground">Start building your premium identity</p>
+          <h1 className="text-3xl font-serif mb-2">{t("auth.registerTitle")}</h1>
+          <p className="text-muted-foreground">{t("auth.registerSubtitle")}</p>
         </div>
 
         <Button variant="outline" className="w-full mb-6" data-testid="btn-google-register" asChild>
@@ -62,7 +65,7 @@ export default function Register() {
         <div className="relative mb-6">
           <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">Or sign up with email</span>
+            <span className="bg-card px-2 text-muted-foreground">{t("auth.or")}</span>
           </div>
         </div>
 
@@ -73,7 +76,7 @@ export default function Register() {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username</FormLabel>
+                  <FormLabel>{t("profile.username")}</FormLabel>
                   <FormControl>
                     <Input placeholder="your-name" {...field} data-testid="input-username" />
                   </FormControl>
@@ -86,7 +89,7 @@ export default function Register() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t("auth.email")}</FormLabel>
                   <FormControl>
                     <Input placeholder="you@example.com" {...field} data-testid="input-email" />
                   </FormControl>
@@ -99,7 +102,7 @@ export default function Register() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>{t("auth.password")}</FormLabel>
                   <FormControl>
                     <Input type="password" {...field} data-testid="input-password" />
                   </FormControl>
@@ -108,12 +111,12 @@ export default function Register() {
               )}
             />
             {message && <p className={message.includes("Check") || message.includes("created") ? "text-sm text-primary" : "text-sm text-destructive"}>{message}</p>}
-            <Button type="submit" className="w-full mt-6" data-testid="btn-submit-register">Create Account</Button>
+            <Button type="submit" className="w-full mt-6" data-testid="btn-submit-register">{t("auth.register")}</Button>
           </form>
         </Form>
 
         <p className="text-center text-sm text-muted-foreground mt-8">
-          Already have an account? <Link href="/login" className="text-primary hover:underline font-medium">Log in</Link>
+          {t("auth.haveAccount")}{" "}<Link href="/login" className="text-primary hover:underline font-medium">{t("auth.login")}</Link>
         </p>
       </div>
     </div>

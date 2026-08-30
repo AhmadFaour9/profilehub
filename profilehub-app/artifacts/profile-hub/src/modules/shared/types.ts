@@ -1,3 +1,5 @@
+import type { SectionVisibility } from "@/lib/profile-visibility";
+
 export type SocialLink = {
   id?: string;
   platform: string;
@@ -36,6 +38,7 @@ export type Profile = {
   onboardingCompleted?: boolean | null;
   seoTitle?: string | null;
   seoDescription?: string | null;
+  sectionVisibility?: SectionVisibility;
   createdAt: string;
   updatedAt: string;
 };

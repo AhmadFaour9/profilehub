@@ -8,7 +8,14 @@ import { debugLog, measureServer } from "@/lib/perf";
 import { createProfileService } from "@/modules/profile";
 import { createStoragePath, validateStorageFile, type StorageBucket } from "@/modules/storage";
 import { log } from "@/modules/logging";
+import { z } from "zod";
 import { linkFormSchema, projectFormSchema, serviceFormSchema, profileFormSchema, safeTextSchema, socialLinksFormSchema } from "@/modules/shared";
+import {
+  SECTION_KEYS,
+  parseSectionVisibility,
+  serializeSectionVisibility,
+  type SectionVisibility,
+} from "@/lib/profile-visibility";
 
 type ActionResult<T = unknown> = {
   ok: boolean;
@@ -411,6 +418,85 @@ export async function deleteGalleryItem(id: string): Promise<ActionResult> {
 
     revalidateProfile(ctx.profile.username, "/dashboard/gallery");
     return { ok: true };
+  } catch (error) {
+    return { ok: false, message: errorMessage(error) };
+  }
+}
+
+/**
+ * Writes selected resume fields onto the profile.
+ *
+ * Only the fields the user actually chose are sent, and each is re-validated
+ * with the same schema the profile form uses - the values originate from a
+ * language model, so they are treated as untrusted input.
+ */
+const resumeApplySchema = z.object({
+  displayName: safeTextSchema(80).pipe(z.string().min(2)).optional(),
+  profession: safeTextSchema(120).optional(),
+  bio: safeTextSchema(500).optional(),
+  location: safeTextSchema(120).optional(),
+  website: z.string().trim().url().max(400).optional().or(z.literal("")),
+});
+
+export async function applyResumeFields(input: unknown): Promise<ActionResult> {
+  const ctx = await getServices();
+  if (!ctx) return { ok: false, message: "Unauthorized." };
+
+  const parsed = resumeApplySchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0]?.message || "Invalid resume fields." };
+  }
+
+  const updates: Record<string, string> = {};
+  if (parsed.data.displayName) updates.displayName = parsed.data.displayName;
+  if (parsed.data.profession) updates.title = parsed.data.profession;
+  if (parsed.data.bio) updates.bio = parsed.data.bio;
+  if (parsed.data.location) updates.location = parsed.data.location;
+  if (parsed.data.website) updates.website = parsed.data.website;
+
+  if (!Object.keys(updates).length) {
+    return { ok: false, message: "Nothing to apply." };
+  }
+
+  try {
+    const data = await ctx.profileService.updateProfile(ctx.profile.id, updates);
+    revalidateProfile(ctx.profile.username, "/dashboard/profile");
+    revalidatePath("/dashboard/resume");
+
+    await log("info", "profile", "Resume fields applied", {
+      profileId: ctx.profile.id,
+      fields: Object.keys(updates),
+    });
+
+    return { ok: true, data };
+  } catch (error) {
+    return { ok: false, message: errorMessage(error) };
+  }
+}
+
+export async function updateSectionVisibility(input: unknown): Promise<ActionResult<SectionVisibility>> {
+  const ctx = await getServices();
+  if (!ctx) return { ok: false, message: "Unauthorized." };
+
+  // Only known keys survive, and anything not explicitly false stays visible.
+  const visibility = parseSectionVisibility(input);
+  const payload = serializeSectionVisibility(visibility);
+
+  try {
+    const { error } = await ctx.client
+      .from("profiles")
+      .update({ section_visibility: payload })
+      .eq("id", ctx.profile.id);
+
+    if (error) return { ok: false, message: error.message };
+
+    revalidateProfile(ctx.profile.username, "/dashboard/profile");
+    await log("info", "profile", "Section visibility updated", {
+      profileId: ctx.profile.id,
+      hidden: SECTION_KEYS.filter((key) => payload[key] === false),
+    });
+
+    return { ok: true, data: visibility };
   } catch (error) {
     return { ok: false, message: errorMessage(error) };
   }

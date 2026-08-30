@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/client";
+
 import { useEffect, useState, type FormEvent } from "react";
 import type { Project } from "@/modules/shared";
 import { Button } from "@/components/ui/button";
@@ -147,6 +149,7 @@ function normalizeProjectFromRow(row: any, fallback?: Project): Project {
 }
 
 export default function ProjectsManager({ projects = [] }: { projects?: Project[] }) {
+  const { t } = useLocale();
   const [allProjects, setAllProjects] = useState<Project[]>(projects);
   const [githubTarget, setGithubTarget] = useState("");
   const [githubLoading, setGithubLoading] = useState(false);
@@ -455,7 +458,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
     <div className="max-w-5xl space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-serif">Projects</h1>
+          <h1 className="text-3xl font-serif">{t("projects.title")}</h1>
           <p className="text-muted-foreground mt-1">Showcase your best work.</p>
         </div>
         <Button data-testid="btn-add-project" onClick={openCreateDialog}>

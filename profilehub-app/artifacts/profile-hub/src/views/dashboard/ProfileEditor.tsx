@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/client";
+
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { usePathname, useRouter } from "next/navigation";
@@ -30,6 +32,7 @@ const profileSchema = z.object({
 });
 
 export default function ProfileEditor({ content }: { content: { profile: Profile, links: Link[], projects: Project[], services: Service[], media: GalleryItem[] } }) {
+  const { t } = useLocale();
   const profile = content.profile;
   const { toast } = useToast();
   const pathname = usePathname();
@@ -103,8 +106,8 @@ export default function ProfileEditor({ content }: { content: { profile: Profile
     <div className="flex gap-12 max-w-6xl">
       <div className="flex-1 space-y-8">
         <div>
-          <h1 className="text-3xl font-serif">Profile Information</h1>
-          <p className="text-muted-foreground">Update your public profile details.</p>
+          <h1 className="text-3xl font-serif">{t("profile.edit")}</h1>
+          <p className="text-muted-foreground">{t("profile.subtitle")}</p>
         </div>
 
         <Form {...form}>
