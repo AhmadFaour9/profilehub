@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
+import { AuthHashHandler } from "@/components/AuthHashHandler";
 import { LocaleProvider } from "@/lib/i18n/client";
 import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 
@@ -22,6 +23,7 @@ export function ClientProviders({
       <LocaleProvider initialLocale={locale}>
         <ThemeProvider>
           <TooltipProvider>
+            <AuthHashHandler />
             {children}
             <Toaster />
           </TooltipProvider>

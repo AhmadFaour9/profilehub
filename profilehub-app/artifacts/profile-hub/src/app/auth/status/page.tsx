@@ -3,6 +3,8 @@ import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { isSafeRedirectPath } from "@/modules/shared";
+import { getTranslations } from "@/lib/i18n/server";
+import type { MessageKey } from "@/lib/i18n";
 
 type StatusSearchParams = {
   status?: string;
@@ -10,86 +12,94 @@ type StatusSearchParams = {
   next?: string;
 };
 
-function statusCopy(status: string, type: string) {
+function statusCopy(status: string, type: string): {
+  tone: "success" | "error";
+  titleKey: MessageKey;
+  messageKey: MessageKey;
+  primaryKey: MessageKey;
+  primaryHref: string;
+  secondaryKey: MessageKey;
+  secondaryHref: string;
+} {
   if (status === "success" && type === "email_confirm") {
     return {
-      tone: "success" as const,
-      title: "Account confirmed successfully",
-      message: "Your email is verified. You can now continue setting up and managing your ProfileHub profile.",
-      primaryLabel: "Continue",
+      tone: "success",
+      titleKey: "authStatus.confirmTitle",
+      messageKey: "authStatus.confirmMessage",
+      primaryKey: "action.continue",
       primaryHref: "/dashboard",
-      secondaryLabel: "Go to login",
+      secondaryKey: "authStatus.goToLogin",
       secondaryHref: "/login",
     };
   }
 
   if (status === "success" && type === "password_recovery") {
     return {
-      tone: "success" as const,
-      title: "Password reset link verified",
-      message: "Your secure password reset link is valid. Continue to choose a new password.",
-      primaryLabel: "Set new password",
+      tone: "success",
+      titleKey: "authStatus.recoveryTitle",
+      messageKey: "authStatus.recoveryMessage",
+      primaryKey: "action.continue",
       primaryHref: "/auth/update-password",
-      secondaryLabel: "Go to login",
+      secondaryKey: "authStatus.goToLogin",
       secondaryHref: "/login",
     };
   }
 
   if (status === "success" && type === "password_updated") {
     return {
-      tone: "success" as const,
-      title: "Password updated successfully",
-      message: "Your ProfileHub password has been changed. Use the new password the next time you sign in.",
-      primaryLabel: "Go to dashboard",
-      primaryHref: "/dashboard",
-      secondaryLabel: "Go to login",
+      tone: "success",
+      titleKey: "authStatus.updatedTitle",
+      messageKey: "authStatus.updatedMessage",
+      primaryKey: "auth.login",
+      primaryHref: "/login",
+      secondaryKey: "authStatus.goToLogin",
       secondaryHref: "/login",
     };
   }
 
   if (status === "success" && type === "email_updated") {
     return {
-      tone: "success" as const,
-      title: "Email updated successfully",
-      message: "Your new email address has been confirmed and is now attached to your ProfileHub account.",
-      primaryLabel: "Go to settings",
+      tone: "success",
+      titleKey: "authStatus.emailUpdatedTitle",
+      messageKey: "authStatus.emailUpdatedMessage",
+      primaryKey: "action.continue",
       primaryHref: "/dashboard/settings",
-      secondaryLabel: "Go to dashboard",
-      secondaryHref: "/dashboard",
+      secondaryKey: "authStatus.goToLogin",
+      secondaryHref: "/login",
     };
   }
 
   if (type === "expired") {
     return {
-      tone: "error" as const,
-      title: "Invalid or expired link",
-      message: "This verification link is no longer valid. Request a new link and try again.",
-      primaryLabel: "Request password reset",
+      tone: "error",
+      titleKey: "authStatus.expiredTitle",
+      messageKey: "authStatus.expiredMessage",
+      primaryKey: "authStatus.requestReset",
       primaryHref: "/forgot-password",
-      secondaryLabel: "Go to login",
+      secondaryKey: "authStatus.goToLogin",
       secondaryHref: "/login",
     };
   }
 
   if (type === "oauth_failed") {
     return {
-      tone: "error" as const,
-      title: "Google sign-in failed",
-      message: "We could not complete Google sign-in. Try again, or use email and password if your account already exists.",
-      primaryLabel: "Try Google again",
-      primaryHref: "/auth/google",
-      secondaryLabel: "Go to login",
-      secondaryHref: "/login",
+      tone: "error",
+      titleKey: "authStatus.oauthFailedTitle",
+      messageKey: "authStatus.oauthFailedMessage",
+      primaryKey: "auth.login",
+      primaryHref: "/login",
+      secondaryKey: "authStatus.requestReset",
+      secondaryHref: "/forgot-password",
     };
   }
 
   return {
-    tone: "error" as const,
-    title: "Something went wrong",
-    message: "We could not complete this authentication step. Please try again or request a new link.",
-    primaryLabel: "Go to login",
+    tone: "error",
+    titleKey: "authStatus.unknownTitle",
+    messageKey: "authStatus.unknownMessage",
+    primaryKey: "authStatus.goToLogin",
     primaryHref: "/login",
-    secondaryLabel: "Request password reset",
+    secondaryKey: "authStatus.requestReset",
     secondaryHref: "/forgot-password",
   };
 }
@@ -103,6 +113,7 @@ export default async function AuthStatusPage({
   const status = params.status === "success" ? "success" : "error";
   const type = params.type || "unknown";
   const copy = statusCopy(status, type);
+  const { t } = await getTranslations();
   const primaryHref = isSafeRedirectPath(params.next) && copy.tone === "success" ? params.next! : copy.primaryHref;
   const Icon = copy.tone === "success" ? CheckCircle2 : AlertTriangle;
 
@@ -115,17 +126,17 @@ export default async function AuthStatusPage({
           </div>
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">ProfileHub</p>
-            <CardTitle className="mt-2 text-2xl font-serif">{copy.title}</CardTitle>
+            <CardTitle className="mt-2 text-2xl font-serif">{t(copy.titleKey)}</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="space-y-6 text-center">
-          <p className="text-sm leading-6 text-muted-foreground">{copy.message}</p>
+          <p className="text-sm leading-6 text-muted-foreground">{t(copy.messageKey)}</p>
           <div className="space-y-3">
             <Button className="w-full" asChild>
-              <Link href={primaryHref}>{copy.primaryLabel}</Link>
+              <Link href={primaryHref}>{t(copy.primaryKey)}</Link>
             </Button>
             <Button className="w-full" variant="outline" asChild>
-              <Link href={copy.secondaryHref}>{copy.secondaryLabel}</Link>
+              <Link href={copy.secondaryHref}>{t(copy.secondaryKey)}</Link>
             </Button>
           </div>
         </CardContent>

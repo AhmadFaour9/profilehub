@@ -4,12 +4,14 @@ import { LockKeyhole } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAuthenticatedUser } from "@/modules/auth";
+import { getTranslations } from "@/lib/i18n/server";
 import { UpdatePasswordForm } from "./UpdatePasswordForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function UpdatePasswordPage() {
   const { user } = await getAuthenticatedUser("generic");
+  const { t } = await getTranslations();
 
   if (!user) {
     redirect("/auth/status?status=error&type=expired");
@@ -24,16 +26,16 @@ export default async function UpdatePasswordPage() {
           </div>
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">ProfileHub</p>
-            <CardTitle className="mt-2 text-2xl font-serif">Create a new password</CardTitle>
+            <CardTitle className="mt-2 text-2xl font-serif">{t("authStatus.newPasswordTitle")}</CardTitle>
           </div>
           <p className="text-sm leading-6 text-muted-foreground">
-            Your password reset link was verified. Choose a new password to secure your account.
+            {t("authStatus.newPasswordMessage")}
           </p>
         </CardHeader>
         <CardContent className="space-y-6">
           <UpdatePasswordForm email={user.email} />
           <Button className="w-full" variant="outline" asChild>
-            <Link href="/login">Back to login</Link>
+            <Link href="/login">{t("authStatus.backToLogin")}</Link>
           </Button>
         </CardContent>
       </Card>
