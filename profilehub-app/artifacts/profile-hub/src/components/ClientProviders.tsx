@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthHashHandler } from "@/components/AuthHashHandler";
+import { GlobalLanguageToggle } from "@/components/LanguageToggle";
 import { LocaleProvider } from "@/lib/i18n/client";
 import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 
@@ -24,6 +25,7 @@ export function ClientProviders({
         <ThemeProvider>
           <TooltipProvider>
             <AuthHashHandler />
+            <GlobalLanguageToggle />
             {children}
             <Toaster />
           </TooltipProvider>
