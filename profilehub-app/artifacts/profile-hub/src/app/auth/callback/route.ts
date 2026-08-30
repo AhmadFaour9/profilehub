@@ -78,7 +78,16 @@ export async function GET(request: NextRequest) {
       );
 
   if (error) {
-    await log("warn", "auth", "Auth callback failed", { reason: error.message, type: callbackType });
+    // Record the origin too: a verifier "not found" almost always means the
+    // callback landed on a different host than the one that set the cookie.
+    await log("warn", "auth", "Auth callback failed", {
+      reason: error.message,
+      type: callbackType,
+      origin: request.nextUrl.origin,
+      forwardedHost: request.headers.get("x-forwarded-host") || request.headers.get("host"),
+      hadVerifierCookie: request.cookies.getAll().some((c) => c.name.includes("code-verifier")),
+      cookieNames: request.cookies.getAll().map((c) => c.name),
+    });
     return NextResponse.redirect(authStatusUrl(request, "error", "expired"));
   }
 
