@@ -114,10 +114,13 @@
   color: var(--fg);
 }
 
-.site-shell .wordmark svg {
-  width: 22px;
-  height: 22px;
+/* Sized by height: object-contain fits this mark by its taller axis, so an
+   equal-sided box renders it narrower than the number suggests. */
+.site-shell .wordmark img {
+  width: 26px;
+  height: 26px;
   flex: none;
+  object-fit: contain;
 }
 
 .site-shell .header-nav,
@@ -507,9 +510,10 @@
   color: #ffffff;
 }
 
-.site-shell .mini-brand svg {
-  width: 15px;
-  height: 15px;
+.site-shell .mini-brand img {
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
 }
 
 .site-shell .status {

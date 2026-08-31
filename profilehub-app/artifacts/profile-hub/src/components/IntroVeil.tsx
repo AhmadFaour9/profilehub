@@ -35,8 +35,9 @@ const HARD_CAP_MS = 3400;
 type Phase = "in" | "out" | "gone";
 
 /**
- * The loading intro: the ProfileHub mark assembles itself while the page
- * behind it finishes loading, then lifts away.
+ * The loading intro: the ProfileHub mark rises into focus, pulsing rings from
+ * its own connector node, while the page behind it finishes loading - then the
+ * whole thing lifts away.
  *
  * Shown once per session. An intro is a first impression, and a first
  * impression replayed on every navigation is just a delay.
@@ -110,10 +111,15 @@ export function IntroVeil({ label }: { label: string }) {
     >
       <div className="intro-stage">
         <span className="intro-mark" aria-hidden>
-          <i className="intro-tile tile-a" />
-          <i className="intro-tile tile-b" />
-          <i className="intro-tile tile-c" />
-          <i className="intro-tile tile-d" />
+          {/* Two rings leaving the mark, staggered - the connector node the
+              logo is built around, doing what it depicts. */}
+          <i className="intro-ring" />
+          <i className="intro-ring intro-ring-late" />
+
+          {/* Plain <img>: the mark has to be in the first paint, and the
+              optimizer would put a round trip in front of it. */}
+          <img src="/logo.png" alt="" className="intro-logo on-light" />
+          <img src="/logo-dark.png" alt="" className="intro-logo on-dark" />
         </span>
 
         <p className="intro-word" aria-hidden>

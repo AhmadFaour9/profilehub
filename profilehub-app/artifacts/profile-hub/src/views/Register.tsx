@@ -52,7 +52,7 @@ export default function Register() {
     <div className="min-h-screen flex flex-col items-center justify-center gap-7 p-4 pt-20 bg-muted/30">
       {/* Arriving here from the landing page should not feel like leaving the
           product. */}
-      <Link href="/" className="text-lg transition-opacity hover:opacity-75">
+      <Link href="/" className="text-xl transition-opacity hover:opacity-75">
         <Wordmark />
       </Link>
 

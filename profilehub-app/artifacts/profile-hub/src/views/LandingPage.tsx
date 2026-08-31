@@ -270,7 +270,7 @@ function ProfileCard({ t }: { t: Translate }) {
       <article className="profile-card">
         <div className="card-top">
           <span className="mini-brand">
-            <HubMark />
+            <HubMark surface="dark" />
             ProfileHub
           </span>
           <span className="status">
