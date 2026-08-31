@@ -7,6 +7,7 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from "next/link";
+import { Wordmark } from "@/components/HubMark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -48,7 +49,13 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 pt-20 bg-muted/30">
+    <div className="min-h-screen flex flex-col items-center justify-center gap-7 p-4 pt-20 bg-muted/30">
+      {/* Arriving here from the landing page should not feel like leaving the
+          product. */}
+      <Link href="/" className="text-lg transition-opacity hover:opacity-75">
+        <Wordmark />
+      </Link>
+
       <div className="w-full max-w-md bg-card p-8 rounded-2xl shadow-sm border">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-serif mb-2">{t("auth.registerTitle")}</h1>

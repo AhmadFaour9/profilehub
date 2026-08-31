@@ -4,10 +4,16 @@ import { ProfileTheme } from "@/modules/shared";
 import { Check } from "lucide-react";
 import { useLocale } from "@/lib/i18n/client";
 
+/*
+ * A published profile is the owner's page, so these stay a free choice - the
+ * product palette does not get imposed on it. Ocean leads because it is that
+ * palette: someone who never opens this picker should end up looking like the
+ * product rather than like whichever preset happened to be written first.
+ */
 const THEME_PRESETS = [
+  { id: "thm_3", primaryColor: "#2563EB", backgroundColor: "#F8FAFC", label: "Ocean" },
   { id: "thm_1", primaryColor: "#3A4F41", backgroundColor: "#FAF9F6", label: "Forest" },
   { id: "thm_2", primaryColor: "#171717", backgroundColor: "#FFFFFF", label: "Minimal" },
-  { id: "thm_3", primaryColor: "#2563EB", backgroundColor: "#F8FAFC", label: "Ocean" },
   { id: "thm_4", primaryColor: "#9D4EDD", backgroundColor: "#FDF4FF", label: "Plum" },
   { id: "thm_5", primaryColor: "#E11D48", backgroundColor: "#FEF2F2", label: "Rose" },
   { id: "thm_6", primaryColor: "#D97706", backgroundColor: "#FFFBEB", label: "Amber" },

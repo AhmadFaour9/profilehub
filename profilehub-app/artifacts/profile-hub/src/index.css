@@ -44,6 +44,10 @@
   --color-destructive-foreground: hsl(var(--destructive-foreground));
   --color-destructive-border: var(--destructive-border);
 
+  /* Brand marks, distinct from --accent, which shadcn uses for hover surfaces. */
+  --color-brand-accent: hsl(var(--brand-accent));
+  --color-brand-warm: hsl(var(--brand-warm));
+
   --color-sidebar: hsl(var(--sidebar));
   --color-sidebar-foreground: hsl(var(--sidebar-foreground));
   --color-sidebar-border: hsl(var(--sidebar-border));
@@ -61,100 +65,123 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/*
+ * One palette for the whole product.
+ *
+ * The landing page arrived from the design tool on a cool slate ground with a
+ * single blue action colour. Keeping that to the landing would have left the
+ * login, the dashboard, and every published profile on the old warm sage set -
+ * two products wearing different clothes. These are the same values the
+ * landing uses, expressed once here so every page follows them.
+ *
+ * Note --accent is shadcn's subtle hover surface, not the brand accent. The
+ * cyan the landing uses for eyebrows and section marks is --brand-accent.
+ */
 :root {
-  --background: 45 20% 97%; /* #FAF9F6 */
-  --foreground: 0 0% 10%;
-  
+  --background: 210 40% 98%; /* #F8FAFC */
+  --foreground: 222 47% 11%; /* #0F172A */
+
   --card: 0 0% 100%;
-  --card-foreground: 0 0% 10%;
-  --card-border: 45 10% 90%;
-  
+  --card-foreground: 222 47% 11%;
+  --card-border: 214 32% 91%;
+
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 10%;
-  --popover-border: 45 10% 90%;
-  
-  --primary: 140 15% 27%; /* #3A4F41 */
+  --popover-foreground: 222 47% 11%;
+  --popover-border: 214 32% 91%;
+
+  --primary: 221 83% 53%; /* #2563EB */
   --primary-foreground: 0 0% 100%;
-  
-  --secondary: 45 15% 92%;
-  --secondary-foreground: 140 15% 27%;
-  
-  --muted: 45 10% 90%;
-  --muted-foreground: 0 0% 45%;
-  
-  --accent: 45 15% 92%;
-  --accent-foreground: 140 15% 27%;
-  
-  --destructive: 0 84% 60%;
+
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
+
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 19% 35%; /* #475569 */
+
+  --accent: 210 40% 94%;
+  --accent-foreground: 222 47% 11%;
+
+  --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
-  
-  --border: 45 10% 90%;
-  --input: 45 10% 90%;
-  --ring: 140 15% 27%;
-  
-  --chart-1: 140 15% 27%;
-  --chart-2: 45 20% 50%;
-  --chart-3: 0 0% 30%;
-  --chart-4: 45 10% 70%;
-  --chart-5: 140 10% 50%;
-  
-  --sidebar: 45 20% 97%;
-  --sidebar-foreground: 0 0% 10%;
-  --sidebar-border: 45 10% 90%;
-  --sidebar-primary: 140 15% 27%;
+
+  --border: 214 32% 91%; /* #E2E8F0 */
+  --input: 214 32% 91%;
+  --ring: 221 83% 53%;
+
+  /* The landing's cyan and orange, for marks and highlights rather than
+     surfaces. Kept out of --accent so shadcn hover states stay neutral. */
+  --brand-accent: 192 91% 36%; /* #0891B2 */
+  --brand-warm: 25 95% 53%; /* #F97316 */
+
+  --chart-1: 221 83% 53%;
+  --chart-2: 192 91% 36%;
+  --chart-3: 262 83% 58%;
+  --chart-4: 25 95% 53%;
+  --chart-5: 215 19% 35%;
+
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 222 47% 11%;
+  --sidebar-border: 214 32% 91%;
+  --sidebar-primary: 221 83% 53%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 45 15% 92%;
-  --sidebar-accent-foreground: 140 15% 27%;
-  --sidebar-ring: 140 15% 27%;
+  --sidebar-accent: 210 40% 94%;
+  --sidebar-accent-foreground: 222 47% 11%;
+  --sidebar-ring: 221 83% 53%;
 
   --radius: 0.5rem;
 }
 
 .dark {
-  --background: 0 0% 10%;
-  --foreground: 45 20% 97%;
-  
-  --card: 0 0% 12%;
-  --card-foreground: 45 20% 97%;
-  --card-border: 0 0% 18%;
-  
-  --popover: 0 0% 12%;
-  --popover-foreground: 45 20% 97%;
-  --popover-border: 0 0% 18%;
-  
-  --primary: 45 20% 97%;
-  --primary-foreground: 140 15% 27%;
-  
-  --secondary: 0 0% 18%;
-  --secondary-foreground: 45 20% 97%;
-  
-  --muted: 0 0% 18%;
-  --muted-foreground: 0 0% 65%;
-  
-  --accent: 0 0% 18%;
-  --accent-foreground: 45 20% 97%;
-  
-  --destructive: 0 62% 30%;
-  --destructive-foreground: 45 20% 97%;
-  
-  --border: 0 0% 18%;
-  --input: 0 0% 18%;
-  --ring: 45 20% 97%;
-  
-  --chart-1: 45 20% 97%;
-  --chart-2: 140 15% 50%;
-  --chart-3: 0 0% 70%;
-  --chart-4: 45 10% 30%;
-  --chart-5: 140 10% 30%;
-  
-  --sidebar: 0 0% 10%;
-  --sidebar-foreground: 45 20% 97%;
-  --sidebar-border: 0 0% 18%;
-  --sidebar-primary: 45 20% 97%;
-  --sidebar-primary-foreground: 140 15% 27%;
-  --sidebar-accent: 0 0% 18%;
-  --sidebar-accent-foreground: 45 20% 97%;
-  --sidebar-ring: 45 20% 97%;
+  --background: 222 47% 11%; /* #0F172A */
+  --foreground: 210 40% 98%;
+
+  --card: 220 38% 15%; /* #172033 */
+  --card-foreground: 210 40% 98%;
+  --card-border: 215 25% 27%;
+
+  --popover: 220 38% 15%;
+  --popover-foreground: 210 40% 98%;
+  --popover-border: 215 25% 27%;
+
+  /* Blue stays the action colour on dark rather than inverting to white:
+     a page whose primary button changes identity with the theme reads as a
+     different product. */
+  --primary: 217 91% 60%; /* #3B82F6 */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 217 33% 17%;
+  --secondary-foreground: 210 40% 98%;
+
+  --muted: 217 33% 17%;
+  --muted-foreground: 213 27% 84%; /* #CBD5E1 */
+
+  --accent: 217 33% 21%;
+  --accent-foreground: 210 40% 98%;
+
+  --destructive: 0 63% 45%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 215 25% 27%;
+  --input: 215 25% 27%;
+  --ring: 217 91% 60%;
+
+  --brand-accent: 187 85% 53%; /* #22D3EE - lifted so it stays legible */
+  --brand-warm: 27 96% 61%;
+
+  --chart-1: 217 91% 60%;
+  --chart-2: 187 85% 53%;
+  --chart-3: 258 90% 66%;
+  --chart-4: 27 96% 61%;
+  --chart-5: 213 27% 84%;
+
+  --sidebar: 220 38% 15%;
+  --sidebar-foreground: 210 40% 98%;
+  --sidebar-border: 215 25% 27%;
+  --sidebar-primary: 217 91% 60%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 217 33% 21%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-ring: 217 91% 60%;
 }
 
 @layer base {

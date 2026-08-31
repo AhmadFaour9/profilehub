@@ -1,28 +1,32 @@
 /*
  * Landing page styling.
  *
- * Every rule is scoped under .site-shell. The rest of the application runs on
- * the warm Tailwind token set in index.css, and this page runs on its own cool
- * palette - scoping is what lets the two coexist instead of one overwriting
- * the other.
+ * Layout and typography only. The colours come from the product tokens in
+ * index.css - the palette this page arrived with is now the whole product's
+ * palette, so there is nothing here to keep separate.
  *
- * Colours are declared once here as local custom properties rather than as the
- * four stacked !important layers the design tool emitted.
+ * Rules stay scoped under .site-shell because the page's structure is its own
+ * (a full-bleed hero, orbits, an editorial grid), not because its colours are.
+ *
+ * The names below are local shorthands for those tokens, not a second palette.
+ * Dark mode needs no block here: the tokens already have one.
  */
-
 .site-shell {
-  --bg: #f8fafc;
-  --fg: #0f172a;
-  --surface: #ffffff;
-  --surface-border: #cbd5e1;
-  --line: #e2e8f0;
-  --track: #e2e8f0;
-  --dim: #475569;
-  --action: #2563eb;
-  --action-hover: #1d4ed8;
-  --action-fg: #ffffff;
-  --accent: #0891b2;
-  --warm: #f97316;
+  --bg: hsl(var(--background));
+  --fg: hsl(var(--foreground));
+  --surface: hsl(var(--card));
+  --line: hsl(var(--border));
+  --track: hsl(var(--muted));
+  --dim: hsl(var(--muted-foreground));
+  --action: hsl(var(--primary));
+  --action-fg: hsl(var(--primary-foreground));
+  --mark: hsl(var(--brand-accent));
+  --mark-warm: hsl(var(--brand-warm));
+
+  /* A field's edge has to be findable against the card behind it, so it runs
+     one step darker than a divider. */
+  --surface-border: hsl(var(--border) / 1);
+  --action-hover: hsl(var(--primary) / 0.88);
 
   position: relative;
   min-height: 100vh;
@@ -32,15 +36,8 @@
   font-family: var(--font-sans, "Outfit", sans-serif);
 }
 
-:root.dark .site-shell {
-  --bg: #0f172a;
-  --fg: #f8fafc;
-  --surface: #172033;
-  --surface-border: #334155;
-  --line: #334155;
-  --track: #1e293b;
-  --dim: #cbd5e1;
-  --accent: #22d3ee;
+:root:not(.dark) .site-shell {
+  --surface-border: #cbd5e1;
 }
 
 /* Faint blueprint grid behind the first screen, faded out before the fold. */
@@ -79,7 +76,7 @@
 .site-shell .ambient-two {
   width: 24rem;
   height: 24rem;
-  background: var(--accent);
+  background: var(--mark);
   inset-block-start: 32rem;
   inset-inline-start: -12rem;
 }
@@ -155,19 +152,10 @@
   color: var(--dim);
 }
 
-/* The shared switcher is built from the application token set, which is warm.
-   Repaint it for this page rather than fork the component. */
+/* The shared switcher already wears the product tokens; it only needs the tap
+   target this header's row height implies. */
 .site-shell [data-testid="language-toggle"] {
   min-height: 44px;
-  border-color: var(--surface-border);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--dim);
-}
-
-.site-shell [data-testid="language-toggle"]:hover {
-  background: var(--surface);
-  color: var(--action);
 }
 
 /* Buttons and links
@@ -294,11 +282,11 @@
   height: 7px;
   flex: none;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--mark);
 }
 
 .site-shell .eyebrow-dot.warm {
-  background: var(--warm);
+  background: var(--mark-warm);
 }
 
 /* Hero
@@ -388,7 +376,7 @@
 }
 
 .site-shell .claim-input.is-rejected {
-  border-color: var(--warm);
+  border-color: var(--mark-warm);
 }
 
 .site-shell .claim-state {
@@ -441,7 +429,7 @@
 .site-shell .orbit-b {
   width: 330px;
   height: 500px;
-  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  border-color: color-mix(in srgb, var(--mark) 30%, transparent);
   transform: rotate(40deg);
 }
 
@@ -859,7 +847,7 @@
 }
 
 .site-shell .score-item:last-child .progress-fill {
-  background: var(--accent);
+  background: var(--mark);
 }
 
 .site-shell .found-row {

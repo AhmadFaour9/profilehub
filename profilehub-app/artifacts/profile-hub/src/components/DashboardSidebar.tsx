@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useTranslation } from "@/hooks/use-translation";
 import { LayoutDashboard, User, Link as LinkIcon, Briefcase, Box, Image, Palette, BarChart, Settings, LogOut, FileText, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Wordmark } from "@/components/HubMark";
 
 type DashboardSidebarProps = {
   variant?: "desktop" | "mobile";
@@ -38,7 +39,7 @@ export function DashboardSidebar({ variant = "desktop", onNavigate }: DashboardS
       )}
     >
       <div className="p-6">
-        <h2 className="text-xl font-serif font-bold text-sidebar-foreground">ProfileHub</h2>
+        <Wordmark className="text-xl text-sidebar-foreground" />
       </div>
       <nav className="flex-1 px-4 space-y-1">
         {links.map((link) => {
