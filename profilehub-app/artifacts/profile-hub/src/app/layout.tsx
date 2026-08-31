@@ -2,11 +2,65 @@ import type { Metadata } from "next";
 import { ClientProviders } from "@/components/ClientProviders";
 import { getDirection } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { getAppUrl } from "@/lib/env";
 import "../index.css";
 
 export const metadata: Metadata = {
-  title: "ProfileHub",
-  description: "Create and publish a professional profile hub.",
+  metadataBase: new URL(getAppUrl()),
+  applicationName: "ProfileHub",
+  title: {
+    default: "ProfileHub | Professional Profile & Personal Brand Hub",
+    template: "%s | ProfileHub",
+  },
+  description:
+    "ProfileHub is a professional profile platform for founders, creators, and professionals to showcase work, services, projects, and contact details in one polished digital presence.",
+  keywords: [
+    "ProfileHub",
+    "professional profile",
+    "personal branding",
+    "creator portfolio",
+    "digital resume",
+    "portfolio website",
+    "business profile",
+    "professional website",
+  ],
+  authors: [{ name: "ProfileHub" }],
+  creator: "ProfileHub",
+  publisher: "ProfileHub",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "/",
+    siteName: "ProfileHub",
+    title: "ProfileHub | Professional Profile & Personal Brand Hub",
+    description:
+      "Showcase your work, services, links, and contact details through one elegant professional profile.",
+    images: [{ url: "/icon.png", width: 512, height: 512, alt: "ProfileHub logo" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@ProfileHub",
+    creator: "@ProfileHub",
+    title: "ProfileHub | Professional Profile & Personal Brand Hub",
+    description:
+      "Create a polished digital profile that turns attention into opportunities.",
+    images: ["/icon.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+  },
+};
+
+export const viewport = {
+  themeColor: "#0f172a",
+  colorScheme: "dark light",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
