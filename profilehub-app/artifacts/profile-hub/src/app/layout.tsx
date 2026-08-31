@@ -67,9 +67,21 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Resolved on the server so lang/dir are correct on first paint, with no
   // flash of the wrong direction before hydration.
   const locale = await getLocale();
+  const appUrl = getAppUrl();
 
   return (
-    <html lang={locale} dir={getDirection(locale)} suppressHydrationWarning>
+    <html
+      lang={locale}
+      dir={getDirection(locale)}
+      suppressHydrationWarning
+    >
+      <head>
+        {/* Preload critical resources for faster rendering */}
+        <link rel="preload" as="image" href="/icon.png" />
+        <link rel="dns-prefetch" href={appUrl} />
+        {/* Preconnect to Supabase for faster database queries */}
+        <link rel="preconnect" href="https://api.supabase.co" />
+      </head>
       <body>
         <ClientProviders locale={locale}>{children}</ClientProviders>
       </body>

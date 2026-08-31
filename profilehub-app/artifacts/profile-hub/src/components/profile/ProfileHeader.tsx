@@ -35,6 +35,8 @@ export function ProfileHeader({ profile, profileUrl }: { profile: Profile; profi
             className="w-full h-full object-cover"
             loading="eager"
             decoding="async"
+            fetchPriority="high"
+            sizes="100vw"
           />
         </div>
       ) : (

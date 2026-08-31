@@ -15,7 +15,7 @@ export function ServiceCard({ service, theme }: { service: Service; theme?: Prof
           {(service.imageUrl || service.icon) && (
             <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-muted grid place-items-center">
               {service.imageUrl ? (
-                <img src={service.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
+                <img src={service.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" fetchPriority="low" sizes="48px" />
               ) : (
                 <span className="text-xs font-medium text-muted-foreground uppercase">{service.icon}</span>
               )}

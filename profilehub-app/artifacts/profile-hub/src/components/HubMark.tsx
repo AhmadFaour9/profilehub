@@ -51,17 +51,34 @@ export function HubMark({
 }
 
 /**
- * Mark plus name, sized from the surrounding text. The auth pages and the
- * dashboard each had a different idea of what the brand looked like - or none
- * at all.
+ * Mark plus name. The auth pages and the dashboard each had a different idea
+ * of what the brand looked like - or none at all.
+ *
+ * Two lockups. In a row of chrome - a header, a sidebar - the name sits beside
+ * the mark and takes its size from the surrounding text. Where the brand is
+ * the only thing on the line, above a sign-in card, it stacks: the mark reads
+ * as a mark at that size instead of as an ornament in front of a word, and the
+ * name drops to a quiet caption. It is the same lockup the intro veil uses, so
+ * the page someone lands on after the intro repeats what they just watched.
  */
 export function Wordmark({
   className = "",
   surface = "auto",
+  stacked = false,
 }: {
   className?: string;
   surface?: Surface;
+  stacked?: boolean;
 }) {
+  if (stacked) {
+    return (
+      <span className={`inline-flex flex-col items-center gap-2 ${className}`}>
+        <HubMark className="h-11 w-11" surface={surface} />
+        <span className="text-[13px] font-medium tracking-[0.09em]">ProfileHub</span>
+      </span>
+    );
+  }
+
   return (
     <span className={`inline-flex items-center gap-2.5 font-medium tracking-tight ${className}`}>
       <HubMark className="h-[1.6em] w-[1.6em] shrink-0" surface={surface} />

@@ -64,9 +64,68 @@ const CAPABILITIES = [
 export default async function LandingPage() {
   const { t } = await getTranslations();
   const appHost = new URL(getAppUrl()).host;
+  const appUrl = getAppUrl();
+
+  const homeJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "ProfileHub",
+    url: appUrl,
+    logo: `${appUrl}/icon.png`,
+    description:
+      "ProfileHub helps professionals, founders, and creators build a polished digital profile with links, projects, services, and contact details in one place.",
+    sameAs: ["https://github.com/AhmadFaour9/profilehub"],
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "customer support",
+      email: "hello@profilehub.app",
+    },
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "ProfileHub",
+        item: appUrl,
+      },
+    ],
+  };
+
+  const softwareAppJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "ProfileHub",
+    description:
+      "Professional profile and personal brand hub for creators, founders, and professionals.",
+    url: appUrl,
+    applicationCategory: "Business Application",
+    operatingSystem: "Web",
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "USD",
+      price: "0",
+      description: "Free professional profile builder",
+    },
+  };
 
   return (
     <div className="site-shell">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd).replace(/</g, "\\u003c") }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd).replace(/</g, "\\u003c") }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppJsonLd).replace(/</g, "\\u003c") }}
+      />
       {/* Must run before the veil below paints, so a returning visitor never
           sees a frame of an intro they already watched. */}
       <script dangerouslySetInnerHTML={{ __html: INTRO_SKIP_SCRIPT }} />
