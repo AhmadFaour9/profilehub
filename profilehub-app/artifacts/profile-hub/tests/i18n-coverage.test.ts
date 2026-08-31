@@ -20,7 +20,11 @@ const posix = (file: string) => file.split("\\").join("/");
  */
 const ALLOWED = [
   "ProfileHub",
+  // The landing mock shows the real demo profile. Its name and headline are
+  // that person's own words and render in English on /ahmadfaour whatever the
+  // page language is, so the mock matches rather than inventing a translation.
   "Ahmad Faour",
+  "Senior AI Engineer",
   "English",
   "Google",
   "GitHub",
