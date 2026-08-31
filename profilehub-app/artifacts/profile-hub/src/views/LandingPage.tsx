@@ -6,7 +6,8 @@ import { INTRO_SKIP_SCRIPT, IntroVeil } from "@/components/IntroVeil";
 import { HubMark } from "@/components/HubMark";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { getAppUrl } from "@/lib/env";
-import { getTranslations } from "@/lib/i18n/server";
+import { getTranslations, getLocale } from "@/lib/i18n/server";
+import { generateLocalizedOrganizationSchema, generateLocalizedWebsiteSchema } from "@/lib/i18n/seo";
 import type { Translate } from "@/lib/i18n";
 
 import "./landing.css";
@@ -63,28 +64,18 @@ const CAPABILITIES = [
  */
 export default async function LandingPage() {
   const { t } = await getTranslations();
+  const locale = await getLocale();
   const appHost = new URL(getAppUrl()).host;
   const appUrl = getAppUrl();
 
-  const homeJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    name: "ProfileHub",
-    url: appUrl,
-    logo: `${appUrl}/icon.png`,
-    description:
-      "ProfileHub helps professionals, founders, and creators build a polished digital profile with links, projects, services, and contact details in one place.",
-    sameAs: ["https://github.com/AhmadFaour9/profilehub"],
-    contactPoint: {
-      "@type": "ContactPoint",
-      contactType: "customer support",
-      email: "hello@profilehub.app",
-    },
-  };
+  const homeJsonLd = generateLocalizedOrganizationSchema(locale, appUrl);
+
+  const websiteJsonLd = generateLocalizedWebsiteSchema(locale, appUrl);
 
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
+    "@language": locale,
     itemListElement: [
       {
         "@type": "ListItem",
@@ -98,9 +89,12 @@ export default async function LandingPage() {
   const softwareAppJsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
+    "@language": locale,
     name: "ProfileHub",
     description:
-      "Professional profile and personal brand hub for creators, founders, and professionals.",
+      locale === "ar"
+        ? "مركز العلامة التجارية الشخصية والملف التعريفي الاحترافي للمبدعين والمؤسسين والمحترفين."
+        : "Professional profile and personal brand hub for creators, founders, and professionals.",
     url: appUrl,
     applicationCategory: "Business Application",
     operatingSystem: "Web",
@@ -108,7 +102,8 @@ export default async function LandingPage() {
       "@type": "Offer",
       priceCurrency: "USD",
       price: "0",
-      description: "Free professional profile builder",
+      description:
+        locale === "ar" ? "منشئ ملف تعريفي احترافي مجاني" : "Free professional profile builder",
     },
   };
 
@@ -125,6 +120,10 @@ export default async function LandingPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppJsonLd).replace(/</g, "\\u003c") }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c") }}
       />
       {/* Must run before the veil below paints, so a returning visitor never
           sees a frame of an intro they already watched. */}

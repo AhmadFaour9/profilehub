@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { ClientProviders } from "@/components/ClientProviders";
-import { getDirection } from "@/lib/i18n";
+import { getDirection, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { getAppUrl } from "@/lib/env";
+import { generateHrefLangAlternates, localizedMetadata } from "@/lib/i18n/seo";
 import "../index.css";
 
 export const metadata: Metadata = {
@@ -29,6 +30,7 @@ export const metadata: Metadata = {
   publisher: "ProfileHub",
   alternates: {
     canonical: "/",
+    languages: generateHrefLangAlternates("/"),
   },
   openGraph: {
     type: "website",
