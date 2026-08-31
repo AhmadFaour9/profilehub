@@ -25,6 +25,21 @@ const SECTION_SCORES = [
   { key: "landing.scoreImpact", score: 71 },
 ] as const;
 
+/**
+ * Everything a published profile can carry. The point of the product is that
+ * these live in one place, so the page has to name them all - the three
+ * sections below only get to a few.
+ */
+const COMPONENTS = [
+  "landing.cLinks",
+  "landing.cProjects",
+  "landing.cServices",
+  "landing.cSkills",
+  "landing.cGallery",
+  "landing.cQr",
+  "landing.cAnalytics",
+] as const;
+
 const CAPABILITIES = [
   { number: "01", title: "landing.rowLinksTitle", body: "landing.rowLinksBody" },
   { number: "02", title: "landing.rowWorkTitle", body: "landing.rowWorkBody" },
@@ -113,10 +128,18 @@ export default async function LandingPage() {
           <ProfileCard t={t} />
         </section>
 
+        {/* The one-place claim, made checkable. Every component the profile
+            can hold, named - including the three the sections below never get
+            round to mentioning. */}
         <section className="signal-strip wrap">
-          <span>{t("landing.signalA")}</span>
+          <span className="signal-lead">{t("landing.componentsLead")}</span>
           <span className="signal-line" />
-          <span>{t("landing.signalB")}</span>
+
+          <ul className="component-list">
+            {COMPONENTS.map((component) => (
+              <li key={component}>{t(component)}</li>
+            ))}
+          </ul>
         </section>
 
         {/* ── CV reading: the differentiator, given the room ─────────────── */}

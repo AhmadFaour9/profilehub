@@ -610,9 +610,37 @@
   color: var(--dim);
 }
 
+.site-shell .signal-lead {
+  flex: none;
+  color: var(--fg);
+}
+
 .site-shell .signal-line {
   flex: 1;
   height: 1px;
+  background: var(--line);
+}
+
+.site-shell .component-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A hairline between names, not after the last one. */
+.site-shell .component-list li + li {
+  position: relative;
+}
+
+.site-shell .component-list li + li::before {
+  content: "";
+  position: absolute;
+  inset-block: 2px;
+  inset-inline-start: -8px;
+  width: 1px;
   background: var(--line);
 }
 
@@ -1135,9 +1163,19 @@
     width: 100%;
   }
 
-  .site-shell .signal-strip .signal-line,
-  .site-shell .signal-strip span:last-child {
+  /* The names wrap onto their own rows rather than fighting the lead for one
+     line; nothing here is decoration that can be dropped. */
+  .site-shell .signal-strip {
+    display: block;
+    padding-block-end: 44px;
+  }
+
+  .site-shell .signal-line {
     display: none;
+  }
+
+  .site-shell .component-list {
+    margin-block-start: 12px;
   }
 
   .site-shell .site-footer {
