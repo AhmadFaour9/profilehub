@@ -83,11 +83,10 @@ describe("advanced schema types", () => {
     expect(seoIndexContent).toContain("generateLocalBusinessSchema");
   });
 
-  it("SEO index exports multilingual SEO utilities", () => {
+  it("SEO index exports localized schema utilities", () => {
     const seoIndexPath = join(process.cwd(), "src/lib/seo/index.ts");
     const seoIndexContent = readFileSync(seoIndexPath, "utf-8");
 
-    expect(seoIndexContent).toContain("generateHrefLangAlternates");
     expect(seoIndexContent).toContain("generateLocalizedOrganizationSchema");
     expect(seoIndexContent).toContain("generateLocalizedWebsiteSchema");
   });
@@ -120,12 +119,12 @@ describe("advanced schema types", () => {
     expect(schemasContent).toContain("availability");
   });
 
-  it("Profile page includes hreflang alternates in metadata", () => {
+  it("Profile page uses a self-referencing canonical URL", () => {
     const profilePagePath = join(process.cwd(), "src/app/[username]/page.tsx");
     const profilePageContent = readFileSync(profilePagePath, "utf-8");
 
-    expect(profilePageContent).toContain("generateHrefLangAlternates");
-    expect(profilePageContent).toContain("languages:");
+    expect(profilePageContent).toContain("canonical: profileUrl");
+    expect(profilePageContent).not.toContain("generateHrefLangAlternates");
   });
 
   it("LocalBusiness schema supports address and ratings", () => {

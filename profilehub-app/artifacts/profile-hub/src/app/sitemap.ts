@@ -7,12 +7,9 @@ export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const appUrl = getAppUrl();
-  const now = new Date();
   const entries: MetadataRoute.Sitemap = [
     {
       url: appUrl,
-      lastModified: now,
-      changeFrequency: "weekly",
       priority: 1,
     },
   ];
@@ -22,11 +19,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("username,updated_at")
+    .select("username,updated_at,avatar_url,cover_url")
     .eq("is_published", true)
     .not("username", "is", null)
     .order("updated_at", { ascending: false })
-    .limit(5000);
+    // The sitemap protocol permits up to 50,000 URLs in one sitemap. If this
+    // marketplace exceeds that, split it with generateSitemaps instead of
+    // silently omitting profiles.
+    .limit(50_000);
 
   if (error) return entries;
 
@@ -34,9 +34,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...entries,
     ...(data || []).map((profile) => ({
       url: buildProfileUrl(appUrl, String(profile.username)),
-      lastModified: profile.updated_at ? new Date(profile.updated_at) : now,
+      lastModified: toValidDate(profile.updated_at),
       changeFrequency: "weekly" as const,
       priority: 0.8,
+      images: [profile.avatar_url, profile.cover_url].flatMap((value) => {
+        const url = toHttpUrl(value);
+        return url ? [url] : [];
+      }),
     })),
   ];
+}
+
+function toValidDate(value: string | null | undefined): Date | undefined {
+  if (!value) return undefined;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+function toHttpUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
 }

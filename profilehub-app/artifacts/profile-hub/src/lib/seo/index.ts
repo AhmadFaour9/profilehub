@@ -13,4 +13,5 @@ export {
   generateLocalBusinessSchema,
 } from "./advanced-schemas";
 
-export { generateHrefLangAlternates, generateLocalizedOrganizationSchema, generateLocalizedWebsiteSchema, localizedMetadata } from "@/lib/i18n/seo";
+export { generateLocalizedOrganizationSchema, generateLocalizedWebsiteSchema, localizedMetadata } from "@/lib/i18n/seo";
+export { isNonIndexablePath } from "./indexability";

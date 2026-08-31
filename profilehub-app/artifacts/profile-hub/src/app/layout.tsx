@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import { ClientProviders } from "@/components/ClientProviders";
-import { getDirection, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { getDirection } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
-import { getAppUrl } from "@/lib/env";
-import { generateHrefLangAlternates, localizedMetadata } from "@/lib/i18n/seo";
+import { getAppUrl, isIndexableDeployment } from "@/lib/env";
 import "../index.css";
 
+const appUrl = getAppUrl();
+const shouldIndex = isIndexableDeployment();
+
 export const metadata: Metadata = {
-  metadataBase: new URL(getAppUrl()),
+  metadataBase: new URL(appUrl),
   applicationName: "ProfileHub",
   title: {
     default: "ProfileHub | Professional Profile & Personal Brand Hub",
@@ -30,7 +32,6 @@ export const metadata: Metadata = {
   publisher: "ProfileHub",
   alternates: {
     canonical: "/",
-    languages: generateHrefLangAlternates("/"),
   },
   openGraph: {
     type: "website",
@@ -40,20 +41,32 @@ export const metadata: Metadata = {
     title: "ProfileHub | Professional Profile & Personal Brand Hub",
     description:
       "Showcase your work, services, links, and contact details through one elegant professional profile.",
-    images: [{ url: "/icon.png", width: 512, height: 512, alt: "ProfileHub logo" }],
+    images: [
+      {
+        url: "/opengraph.jpg",
+        width: 1280,
+        height: 720,
+        alt: "ProfileHub professional profile platform",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    site: "@ProfileHub",
-    creator: "@ProfileHub",
     title: "ProfileHub | Professional Profile & Personal Brand Hub",
     description:
       "Create a polished digital profile that turns attention into opportunities.",
-    images: ["/icon.png"],
+    images: ["/opengraph.jpg"],
   },
   robots: {
-    index: true,
-    follow: true,
+    index: shouldIndex,
+    follow: shouldIndex,
+    googleBot: {
+      index: shouldIndex,
+      follow: shouldIndex,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
   verification: {
     google: process.env.GOOGLE_SITE_VERIFICATION || undefined,

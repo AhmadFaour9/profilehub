@@ -1,6 +1,4 @@
-import { Metadata } from "next";
-import { LOCALES, type Locale } from "./config";
-import { getAppUrl } from "@/lib/env";
+import { type Locale } from "./config";
 
 /**
  * Multilingual metadata content for each supported locale
@@ -54,30 +52,6 @@ export const localizedMetadata: Record<
 };
 
 /**
- * Generate hreflang alternates for multilingual support
- * Used in metadata.alternates.languages
- */
-export function generateHrefLangAlternates(
-  path: string = "/"
-): Record<string, string> {
-  const appUrl = getAppUrl();
-  const alternates: Record<string, string> = {};
-
-  LOCALES.forEach((locale) => {
-    const url = new URL(path, appUrl);
-    // For simplicity, we use subdirectory approach (e.g., /en/, /ar/)
-    // In production, you might use subdomains (en.profilehub.app, ar.profilehub.app)
-    const localizedPath = locale === "en" ? path : `/${locale}${path === "/" ? "" : path}`;
-    alternates[locale] = new URL(localizedPath, appUrl).toString();
-  });
-
-  // Add x-default for unspecified language preference
-  alternates["x-default"] = new URL("/", appUrl).toString();
-
-  return alternates;
-}
-
-/**
  * Get metadata for a specific locale
  */
 export function getLocalizedMetadata(locale: Locale): (typeof localizedMetadata)[Locale] {
@@ -102,24 +76,18 @@ export function generateLocalizedOrganizationSchema(
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": `${appUrl}/#organization`,
     "@language": locale,
     name: "ProfileHub",
     url: appUrl,
     logo: `${appUrl}/icon.png`,
     description: metadata.description,
     sameAs: ["https://github.com/AhmadFaour9/profilehub"],
-    contactPoint: {
-      "@type": "ContactPoint",
-      contactType: "customer support",
-      email: "hello@profilehub.app",
-    },
-    inLanguage: locale === "ar" ? "ar-AE" : "en-US",
+    inLanguage: locale,
   };
 }
 
-/**
- * Generate localized WebSite schema with search
- */
+/** Generate localized WebSite schema for the public landing page. */
 export function generateLocalizedWebsiteSchema(
   locale: Locale,
   appUrl: string
@@ -128,19 +96,13 @@ export function generateLocalizedWebsiteSchema(
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": `${appUrl}/#website`,
     "@language": locale,
     name: "ProfileHub",
     url: appUrl,
     description: metadata.description,
-    inLanguage: locale === "ar" ? "ar-AE" : "en-US",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: `${appUrl}/search?q={search_term_string}`,
-      },
-      "query-input": "required name=search_term_string",
-    },
+    inLanguage: locale,
+    publisher: { "@id": `${appUrl}/#organization` },
   };
 }
 

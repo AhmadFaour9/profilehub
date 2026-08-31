@@ -1,7 +1,11 @@
 import type { Link, Profile, PublicProfile, Service } from "@/modules/shared";
 
+const PROFILE_TITLE_MAX_LENGTH = 55;
+const PROFILE_DESCRIPTION_MAX_LENGTH = 155;
+
 export function getProfileSeoTitle(profile: Profile): string {
-  return profile.seoTitle || `${profile.displayName}${profile.title ? ` - ${profile.title}` : ""} | ProfileHub`;
+  const title = profile.seoTitle || `${profile.displayName}${profile.title ? ` - ${profile.title}` : ""}`;
+  return truncateForMetadata(title, PROFILE_TITLE_MAX_LENGTH);
 }
 
 export function getProfileSeoDescription(profile: Profile): string {
@@ -9,7 +13,7 @@ export function getProfileSeoDescription(profile: Profile): string {
     ? `Explore ${profile.displayName}'s profile, projects, services, and smart links.`
     : `Explore ${profile.displayName}'s public ProfileHub profile.`;
 
-  return (profile.seoDescription || profile.bio || fallback).slice(0, 160);
+  return truncateForMetadata(profile.seoDescription || profile.bio || fallback, PROFILE_DESCRIPTION_MAX_LENGTH);
 }
 
 export function getProfileOgImageUrl(profileUrl: string): string {
@@ -46,10 +50,13 @@ export function getPrimaryProfileCta(profile: PublicProfile): Link | { title: st
 }
 
 export function buildProfileJsonLd(profile: PublicProfile, profileUrl: string) {
-  const sameAs = [
+  const sameAs = uniqueHttpUrls([
     profile.website,
     ...(profile.socialLinks || []).filter((link) => link.isActive !== false).map((link) => link.url),
-  ].filter(Boolean);
+  ]);
+
+  const personId = `${profileUrl}#person`;
+  const profilePageId = `${profileUrl}#profilepage`;
 
   const projects = profile.projects
     .filter((project) => project.isActive !== false)
@@ -62,7 +69,7 @@ export function buildProfileJsonLd(profile: PublicProfile, profileUrl: string) {
       keywords: project.tags?.length ? project.tags.join(", ") : undefined,
     }));
 
-  const services = profile.services
+  const offers = profile.services
     .filter((service) => service.isActive)
     .map((service) => ({
       "@type": "Offer",
@@ -72,29 +79,73 @@ export function buildProfileJsonLd(profile: PublicProfile, profileUrl: string) {
       url: service.ctaUrl || profileUrl,
     }));
 
+  const skills = profile.skills
+    .filter((skill) => skill.isActive)
+    .map((skill) => skill.name)
+    .filter(Boolean);
+
+  const description = profile.bio || getProfileSeoDescription(profile);
+
   return stripUndefined({
     "@context": "https://schema.org",
-    "@type": "Person",
-    name: profile.displayName,
-    alternateName: profile.username ? `@${profile.username}` : undefined,
-    jobTitle: profile.title || profile.profession || undefined,
-    description: profile.bio || undefined,
-    image: profile.avatarUrl || undefined,
-    url: profileUrl,
-    address: profile.location
-      ? {
-          "@type": "PostalAddress",
-          addressLocality: profile.location,
-        }
-      : undefined,
-    sameAs: sameAs.length ? sameAs : undefined,
-    mainEntityOfPage: {
-      "@type": "ProfilePage",
-      "@id": profileUrl,
-    },
-    hasPart: projects.length ? projects : undefined,
-    makesOffer: services.length ? services : undefined,
+    "@graph": [
+      {
+        "@type": "ProfilePage",
+        "@id": profilePageId,
+        url: profileUrl,
+        name: getProfileSeoTitle(profile),
+        description,
+        dateModified: profile.updatedAt || undefined,
+        mainEntity: { "@id": personId },
+        hasPart: projects.length ? projects : undefined,
+      },
+      {
+        "@type": "Person",
+        "@id": personId,
+        name: profile.displayName,
+        alternateName: profile.username ? `@${profile.username}` : undefined,
+        jobTitle: profile.title || profile.profession || undefined,
+        description,
+        image: toHttpUrl(profile.avatarUrl),
+        url: profileUrl,
+        address: profile.location
+          ? {
+              "@type": "PostalAddress",
+              addressLocality: profile.location,
+            }
+          : undefined,
+        sameAs: sameAs.length ? sameAs : undefined,
+        knowsAbout: skills.length ? skills : undefined,
+        makesOffer: offers.length ? offers : undefined,
+        mainEntityOfPage: { "@id": profilePageId },
+      },
+    ],
   });
+}
+
+function truncateForMetadata(value: string, maxLength: number): string {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (normalized.length <= maxLength) return normalized;
+
+  const truncated = normalized.slice(0, maxLength - 1);
+  const lastWord = truncated.lastIndexOf(" ");
+  const readable = lastWord >= Math.floor(maxLength * 0.6) ? truncated.slice(0, lastWord) : truncated;
+  return `${readable.trimEnd()}…`;
+}
+
+function toHttpUrl(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function uniqueHttpUrls(values: Array<string | null | undefined>): string[] {
+  return Array.from(new Set(values.map(toHttpUrl).filter((value): value is string => Boolean(value))));
 }
 
 function stripUndefined<T>(value: T): T {

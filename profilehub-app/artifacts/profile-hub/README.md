@@ -621,16 +621,6 @@ Check:
 
 The current API routes always return JSON. If this reappears, verify the deployed commit is current and the request is not hitting a Vercel/auth redirect HTML response.
 
-### Build warning about middleware
-
-Next.js currently warns:
-
-```text
-The "middleware" file convention is deprecated. Please use "proxy" instead.
-```
-
-This is a known framework migration item, not a current runtime blocker.
-
 ## Useful Commands
 
 From `artifacts/profile-hub`:
@@ -672,7 +662,6 @@ npx vercel logs https://profilehub-two.vercel.app --limit 50 --expand
 - Public profile caching revalidates every 300 seconds; dashboard mutations call revalidation, but manual external DB changes may not appear immediately.
 - GitHub import image extraction is best-effort; README images and social preview fallbacks are used where possible.
 - The root workspace has a Windows-incompatible preinstall path; use the documented Corepack commands.
-- Next.js warns that `middleware` should migrate to `proxy`.
 - Production email templates must be pasted into the Supabase Dashboard manually; committed template files do not automatically update hosted Supabase.
 
 ## Future Roadmap
@@ -681,8 +670,6 @@ npx vercel logs https://profilehub-two.vercel.app --limit 50 --expand
 - Add richer analytics views for Smart Links and profile visitors.
 - Add drag-and-drop ordering for Smart Links, Projects, Services, and Gallery.
 - Add better media upload and cropping flows for project/service images.
-- Add stronger public SEO metadata and Open Graph previews per profile.
 - Add team/workspace support if needed.
 - Add AI-assisted onboarding and profile quality scoring.
 - Add automated Playwright end-to-end tests for auth, dashboard CRUD, and public profile.
-- Migrate deprecated middleware convention to Next.js proxy.

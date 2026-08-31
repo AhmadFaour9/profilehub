@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { getPublicProfileCached } from "@/lib/profile-data";
+import { getAppUrl } from "@/lib/env";
 
 export const runtime = "nodejs";
 export const alt = "ProfileHub profile preview";
@@ -20,6 +21,7 @@ export default async function OpenGraphImage({
   const title = profile?.title || profile?.profession || "Professional profile";
   const bio = profile?.bio || "Smart links, projects, services, and portfolio in one public profile.";
   const initial = displayName.trim().charAt(0).toUpperCase() || "P";
+  const profileHost = new URL(getAppUrl()).host;
 
   return new ImageResponse(
     (
@@ -82,7 +84,7 @@ export default async function OpenGraphImage({
         </div>
 
         <div style={{ display: "flex", justifyContent: "space-between", color: "#94a3b8", fontSize: 25 }}>
-          <span>{profile?.username ? `profilehub-two.vercel.app/${profile.username}` : "profilehub-two.vercel.app"}</span>
+          <span>{profile?.username ? `${profileHost}/${profile.username}` : profileHost}</span>
           <span>Smart links · Projects · Services</span>
         </div>
       </div>

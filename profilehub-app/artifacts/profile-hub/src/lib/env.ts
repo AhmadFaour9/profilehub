@@ -1,11 +1,33 @@
 import { PRODUCTION_APP_URL, normalizeBaseUrl } from "@/lib/profile-url";
 
+function isLocalUrl(value: string): boolean {
+  try {
+    const hostname = new URL(value).hostname;
+    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Preview deployments must never compete with the canonical production site in
+ * search. Vercel provides this value at build and request time.
+ */
+export function isIndexableDeployment(): boolean {
+  const vercelEnvironment = process.env.VERCEL_ENV;
+  return !vercelEnvironment || vercelEnvironment === "production";
+}
+
 export function getAppUrl(): string {
   const configuredUrl = normalizeBaseUrl(process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL);
-  if (configuredUrl) return configuredUrl;
+  // A local value in .env.local is useful for development, but it must never
+  // leak into production canonicals, Open Graph URLs, or the sitemap.
+  if (configuredUrl && (process.env.NODE_ENV !== "production" || !isLocalUrl(configuredUrl))) {
+    return configuredUrl;
+  }
 
-  if (process.env.NODE_ENV === "production") return PRODUCTION_APP_URL;
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  if (process.env.NODE_ENV === "production") return PRODUCTION_APP_URL;
 
   return "http://localhost:24359";
 }

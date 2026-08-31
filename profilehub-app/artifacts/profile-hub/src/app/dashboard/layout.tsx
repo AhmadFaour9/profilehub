@@ -3,7 +3,7 @@ import { isSupabaseConfigured } from "@/lib/env";
 import { getDashboardProfile } from "@/lib/profile-data";
 import { debugLog, startServerTimer } from "@/lib/perf";
 import { headers } from "next/headers";
-import { PATHNAME_HEADER } from "@/middleware";
+import { PATHNAME_HEADER } from "@/proxy";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";

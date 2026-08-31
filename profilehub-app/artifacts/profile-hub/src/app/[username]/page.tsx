@@ -4,7 +4,6 @@ import { getPublicProfileCached } from "@/lib/profile-data";
 import { getCanonicalProfileUrl } from "@/lib/request-url";
 import { getAppUrl } from "@/lib/env";
 import { getProfileOgImageUrl, getProfileSeoDescription, getProfileSeoTitle } from "@/lib/profile-seo";
-import { generateHrefLangAlternates } from "@/lib/seo";
 
 /**
  * No route-level time cache.
@@ -30,7 +29,7 @@ export async function generateMetadata({
 
   if (!profile) {
     return {
-      title: "Profile not found | ProfileHub",
+      title: "Profile not found",
       robots: { index: false, follow: false },
     };
   }
@@ -46,7 +45,6 @@ export async function generateMetadata({
     description,
     alternates: {
       canonical: profileUrl,
-      languages: generateHrefLangAlternates(`/${profile.username}`),
     },
     openGraph: {
       type: "profile",

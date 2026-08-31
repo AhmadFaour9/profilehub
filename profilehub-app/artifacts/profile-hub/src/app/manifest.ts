@@ -1,7 +1,5 @@
 import type { MetadataRoute } from "next";
 
-import { getAppUrl } from "@/lib/env";
-
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "ProfileHub",

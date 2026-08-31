@@ -3,21 +3,14 @@ import { readFileSync } from "fs";
 import { join } from "path";
 
 describe("multilingual SEO", () => {
-  it("includes hreflang alternates in layout metadata", () => {
+  it("does not advertise locale URLs that the router does not serve", () => {
     const layoutPath = join(process.cwd(), "src/app/layout.tsx");
     const layoutContent = readFileSync(layoutPath, "utf-8");
+    const profilePagePath = join(process.cwd(), "src/app/[username]/page.tsx");
+    const profilePageContent = readFileSync(profilePagePath, "utf-8");
 
-    expect(layoutContent).toContain("generateHrefLangAlternates");
-    expect(layoutContent).toContain("alternates:");
-    expect(layoutContent).toContain("languages:");
-  });
-
-  it("imports localized metadata utility", () => {
-    const layoutPath = join(process.cwd(), "src/app/layout.tsx");
-    const layoutContent = readFileSync(layoutPath, "utf-8");
-
-    expect(layoutContent).toContain("@/lib/i18n/seo");
-    expect(layoutContent).toContain("generateHrefLangAlternates");
+    expect(layoutContent).not.toContain("generateHrefLangAlternates");
+    expect(profilePageContent).not.toContain("generateHrefLangAlternates");
   });
 
   it("provides localized metadata for English and Arabic", () => {
@@ -41,17 +34,16 @@ describe("multilingual SEO", () => {
     expect(seoContent).toContain("generateLocalizedOrganizationSchema");
     expect(seoContent).toContain("@language");
     expect(seoContent).toContain("inLanguage");
-    expect(seoContent).toContain("ar-AE");
-    expect(seoContent).toContain("en-US");
+    expect(seoContent).toContain("inLanguage: locale");
   });
 
-  it("generates localized WebSite schema with search capability", () => {
+  it("generates a truthful WebSite schema without an unimplemented search action", () => {
     const seoPath = join(process.cwd(), "src/lib/i18n/seo.ts");
     const seoContent = readFileSync(seoPath, "utf-8");
 
     expect(seoContent).toContain("generateLocalizedWebsiteSchema");
-    expect(seoContent).toContain("SearchAction");
-    expect(seoContent).toContain("EntryPoint");
+    expect(seoContent).toContain('"@type": "WebSite"');
+    expect(seoContent).not.toContain("SearchAction");
   });
 
   it("LandingPage uses localized schema generation", () => {
@@ -74,20 +66,4 @@ describe("multilingual SEO", () => {
     expect(landingContent).toContain("professional profile");
   });
 
-  it("hreflang generation includes x-default fallback", () => {
-    const seoPath = join(process.cwd(), "src/lib/i18n/seo.ts");
-    const seoContent = readFileSync(seoPath, "utf-8");
-
-    expect(seoContent).toContain("x-default");
-    expect(seoContent).toContain("alternates");
-  });
-
-  it("supports subdirectory localization pattern", () => {
-    const seoPath = join(process.cwd(), "src/lib/i18n/seo.ts");
-    const seoContent = readFileSync(seoPath, "utf-8");
-
-    expect(seoContent).toContain("localizedPath");
-    expect(seoContent).toContain('locale === "en"');
-    expect(seoContent).toContain("locale");
-  });
 });
