@@ -80,6 +80,8 @@ export function GlobalLanguageToggle() {
   // control there would appear to be part of the visitor's profile.
   if (pathname?.startsWith("/dashboard")) return null;
   if (pathname?.startsWith("/account/preview")) return null;
+  // The landing page has one in its header; a floating copy would overlap it.
+  if (pathname === "/") return null;
 
   return <LanguageToggle variant="floating" />;
 }

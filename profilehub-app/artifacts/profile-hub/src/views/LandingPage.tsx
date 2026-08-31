@@ -37,17 +37,21 @@ export default async function LandingPage() {
     <div className="min-h-screen bg-background text-foreground">
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur">
-        <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3 md:px-8">
-          <Link href="/" className="font-serif text-xl font-bold">
+        <nav className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-5 py-3 md:px-8">
+          <Link href="/" className="font-serif text-lg font-bold sm:text-xl">
             ProfileHub
           </Link>
 
-          <div className="flex items-center gap-1">
+          <div className="flex min-w-0 items-center gap-1">
             <LanguageToggle />
-            <Button variant="ghost" size="sm" asChild>
+
+            {/* Below sm the row has space for one action; the primary one wins,
+                and Log in stays reachable from the closing section. */}
+            <Button variant="ghost" size="sm" className="hidden sm:inline-flex" asChild>
               <Link href="/login">{t("auth.login")}</Link>
             </Button>
-            <Button size="sm" asChild>
+
+            <Button size="sm" className="whitespace-nowrap" asChild>
               <Link href="/register">{t("landing.createProfile")}</Link>
             </Button>
           </div>

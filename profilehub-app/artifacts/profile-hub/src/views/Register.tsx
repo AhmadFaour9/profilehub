@@ -48,7 +48,7 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-muted/30">
+    <div className="min-h-screen flex items-center justify-center p-4 pt-20 bg-muted/30">
       <div className="w-full max-w-md bg-card p-8 rounded-2xl shadow-sm border">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-serif mb-2">{t("auth.registerTitle")}</h1>
