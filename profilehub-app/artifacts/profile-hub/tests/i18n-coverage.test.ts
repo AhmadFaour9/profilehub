@@ -24,6 +24,10 @@ const ALLOWED = [
   // that person's own words and render in English on /ahmadfaour whatever the
   // page language is, so the mock matches rather than inventing a translation.
   "Ahmad Faour",
+  // The card sets the surname on its own line in the serif face, so the name
+  // has to be two text nodes rather than one.
+  "Ahmad",
+  "Faour",
   "Senior AI Engineer",
   "English",
   "Google",

@@ -1,0 +1,1179 @@
+/*
+ * Landing page styling.
+ *
+ * Every rule is scoped under .site-shell. The rest of the application runs on
+ * the warm Tailwind token set in index.css, and this page runs on its own cool
+ * palette - scoping is what lets the two coexist instead of one overwriting
+ * the other.
+ *
+ * Colours are declared once here as local custom properties rather than as the
+ * four stacked !important layers the design tool emitted.
+ */
+
+.site-shell {
+  --bg: #f8fafc;
+  --fg: #0f172a;
+  --surface: #ffffff;
+  --surface-border: #cbd5e1;
+  --line: #e2e8f0;
+  --track: #e2e8f0;
+  --dim: #475569;
+  --action: #2563eb;
+  --action-hover: #1d4ed8;
+  --action-fg: #ffffff;
+  --accent: #0891b2;
+  --warm: #f97316;
+
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans, "Outfit", sans-serif);
+}
+
+:root.dark .site-shell {
+  --bg: #0f172a;
+  --fg: #f8fafc;
+  --surface: #172033;
+  --surface-border: #334155;
+  --line: #334155;
+  --track: #1e293b;
+  --dim: #cbd5e1;
+  --accent: #22d3ee;
+}
+
+/* Faint blueprint grid behind the first screen, faded out before the fold. */
+.site-shell::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 90px;
+  inset-inline: 0;
+  height: 620px;
+  pointer-events: none;
+  opacity: 0.65;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--fg) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--fg) 5%, transparent) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: linear-gradient(to bottom, #000, transparent 85%);
+}
+
+.site-shell .ambient {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.14;
+  animation: ph-drift 15s ease-in-out infinite alternate;
+}
+
+.site-shell .ambient-one {
+  width: 35rem;
+  height: 35rem;
+  background: var(--action);
+  inset-block-start: 2rem;
+  inset-inline-end: -10rem;
+}
+
+.site-shell .ambient-two {
+  width: 24rem;
+  height: 24rem;
+  background: var(--accent);
+  inset-block-start: 32rem;
+  inset-inline-start: -12rem;
+}
+
+.site-shell .wrap {
+  position: relative;
+  max-width: 1180px;
+  margin-inline: auto;
+}
+
+/* Header
+   ------------------------------------------------------------------------ */
+
+/* Wrapping rather than overflowing matters here: .site-shell clips overflow,
+   so anything that does not fit would be cut off instead of scrollable. */
+.site-shell .site-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  min-height: 90px;
+  padding-block: 12px;
+  padding-inline: 26px;
+  border-block-end: 1px solid var(--line);
+}
+
+.site-shell .wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  color: var(--fg);
+}
+
+.site-shell .wordmark svg {
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
+
+.site-shell .header-nav,
+.site-shell .header-actions,
+.site-shell .footer-links {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.site-shell .header-nav {
+  font-size: 13px;
+  color: var(--dim);
+}
+
+.site-shell .header-actions {
+  gap: 12px;
+  font-size: 13px;
+}
+
+.site-shell .header-nav a:hover,
+.site-shell .footer-links a:hover,
+.site-shell .login:hover {
+  color: var(--action);
+}
+
+.site-shell .login {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 4px;
+  color: var(--dim);
+}
+
+/* The shared switcher is built from the application token set, which is warm.
+   Repaint it for this page rather than fork the component. */
+.site-shell [data-testid="language-toggle"] {
+  min-height: 44px;
+  border-color: var(--surface-border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--dim);
+}
+
+.site-shell [data-testid="language-toggle"]:hover {
+  background: var(--surface);
+  color: var(--action);
+}
+
+/* Buttons and links
+   ------------------------------------------------------------------------ */
+
+.site-shell .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 52px;
+  padding-inline: 21px;
+  border: 1px solid var(--action);
+  border-radius: 8px;
+  background: var(--action);
+  color: var(--action-fg);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px #0f172a14;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease;
+}
+
+.site-shell .button:hover {
+  background: var(--action-hover);
+  border-color: var(--action-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px #2563eb3d;
+}
+
+.site-shell .button:disabled {
+  opacity: 0.45;
+  transform: none;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.site-shell .button-small {
+  min-height: 44px;
+  gap: 10px;
+  padding-inline: 16px;
+}
+
+.site-shell .profile-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding-block-end: 7px;
+  border-block-end: 1px solid var(--surface-border);
+  font-size: 13px;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.site-shell .profile-link:hover {
+  color: var(--action);
+  border-color: var(--action);
+}
+
+.site-shell .link-arrow {
+  color: var(--action);
+}
+
+.site-shell .link-note {
+  color: var(--dim);
+}
+
+/* The corner glyph points away from the reader; in Arabic that is the other
+   corner. */
+[dir="rtl"] .site-shell .arrow {
+  display: inline-block;
+  transform: scaleX(-1);
+}
+
+/* Type
+   ------------------------------------------------------------------------ */
+
+.site-shell h1,
+.site-shell h2 {
+  margin: 0;
+  font-weight: 400;
+  letter-spacing: -0.05em;
+  line-height: 0.94;
+}
+
+.site-shell h1 {
+  margin-block-end: 30px;
+  font-size: clamp(46px, 7.2vw, 104px);
+}
+
+.site-shell h1 em,
+.site-shell h2 em {
+  font-family: var(--font-serif, "Instrument Serif", Georgia, serif);
+  font-style: italic;
+  color: var(--action);
+}
+
+/* Instrument Serif carries no Arabic, so the emphasis line would fall back to
+   a default face slanted by the browser. Arabic does not use italics; the
+   colour alone carries the emphasis. */
+[dir="rtl"] .site-shell h1 em,
+[dir="rtl"] .site-shell h2 em {
+  font-family: inherit;
+  font-style: normal;
+}
+
+.site-shell .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 24px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.site-shell .eyebrow-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.site-shell .eyebrow-dot.warm {
+  background: var(--warm);
+}
+
+/* Hero
+   ------------------------------------------------------------------------ */
+
+.site-shell .hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 42px;
+  padding-block: 76px 94px;
+  padding-inline: 26px;
+}
+
+/*
+ * A grid item will not shrink below its min-content width by default, so on a
+ * narrow phone the track grows past the column and .site-shell clips whatever
+ * hangs off the end. min-width:0 lets the track take the width it actually has
+ * and the text wrap into it.
+ */
+.site-shell .hero > *,
+.site-shell .intelligence > *,
+.site-shell .capabilities > * {
+  min-width: 0;
+}
+
+.site-shell .hero-copy {
+  animation: ph-rise 0.9s ease both;
+}
+
+.site-shell .hero-lede {
+  max-width: 430px;
+  margin: 0 0 30px;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--dim);
+}
+
+.site-shell .hero-copy .profile-link {
+  margin-block-start: 28px;
+}
+
+/* Claim field
+   ------------------------------------------------------------------------ */
+
+.site-shell .claim-form {
+  display: flex;
+  gap: 10px;
+  max-width: 520px;
+}
+
+.site-shell .claim-input {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  min-height: 52px;
+  padding-inline: 16px;
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--dim);
+  font-size: 13px;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.site-shell .claim-input input {
+  flex: 1;
+  min-width: 50px;
+  border: 0;
+  outline: 0;
+  background: none;
+  color: var(--fg);
+  font-size: 15px;
+}
+
+.site-shell .claim-input:focus-within {
+  border-color: var(--action);
+  box-shadow: 0 0 0 3px #2563eb33;
+}
+
+.site-shell .claim-input.is-available {
+  border-color: #16a34a;
+}
+
+.site-shell .claim-input.is-rejected {
+  border-color: var(--warm);
+}
+
+.site-shell .claim-state {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  flex: none;
+  color: var(--dim);
+}
+
+.site-shell .claim-message {
+  margin: 10px 0 0;
+  min-height: 17px;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.site-shell .claim-message.is-good {
+  color: #15803d;
+}
+
+.site-shell .claim-message.is-bad {
+  color: #c2410c;
+}
+
+/* Hero visual
+   ------------------------------------------------------------------------ */
+
+.site-shell .hero-visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 480px;
+  animation: ph-rise 1s 0.15s ease both;
+}
+
+.site-shell .orbit {
+  position: absolute;
+  border: 1px solid color-mix(in srgb, var(--action) 28%, transparent);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.site-shell .orbit-a {
+  width: 500px;
+  height: 200px;
+  transform: rotate(-25deg);
+}
+
+.site-shell .orbit-b {
+  width: 330px;
+  height: 500px;
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  transform: rotate(40deg);
+}
+
+.site-shell .float-label {
+  position: absolute;
+  z-index: 3;
+  padding: 11px 13px;
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--action);
+  font-size: 12px;
+  box-shadow: 0 10px 25px #0f172a1f;
+  animation: ph-label 6s ease-in-out infinite;
+}
+
+.site-shell .float-label span {
+  display: block;
+  margin-block-start: 3px;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.site-shell .label-top {
+  inset-block-start: 46px;
+  inset-inline-start: 0;
+}
+
+.site-shell .label-bottom {
+  inset-block-end: 42px;
+  inset-inline-end: 0;
+  animation-delay: 1.4s;
+}
+
+/* The card keeps one fixed dark treatment in both themes: it is the product,
+   not chrome, and it should look the same to everyone. */
+.site-shell .profile-card {
+  position: relative;
+  z-index: 2;
+  width: min(390px, 86vw);
+  padding: 25px;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  background: #0f172a;
+  color: #f8fafc;
+  box-shadow: 0 20px 45px #0f172a2e;
+  transform: rotate(2deg);
+  animation: ph-float 7s ease-in-out infinite;
+}
+
+/* On a dark page the card and the background are the same family, so it needs
+   a lighter surface and a stronger edge to still read as a separate object. */
+:root.dark .site-shell .profile-card {
+  border-color: #3b4d68;
+  background: #16223a;
+  box-shadow: 0 24px 60px #00000066;
+}
+
+.site-shell .card-top,
+.site-shell .card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10px;
+  color: #cbd5e1;
+}
+
+.site-shell .mini-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #ffffff;
+}
+
+.site-shell .mini-brand svg {
+  width: 15px;
+  height: 15px;
+}
+
+.site-shell .status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.site-shell .status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 3px #22c55e29;
+}
+
+.site-shell .avatar {
+  display: grid;
+  place-items: center;
+  width: 78px;
+  height: 78px;
+  margin-block: 62px 24px;
+  border: 1px solid #22d3ee;
+  border-radius: 50%;
+  background: #1e293b;
+  color: #67e8f9;
+  font-size: 25px;
+}
+
+.site-shell .card-kicker {
+  margin: 0 0 14px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #67e8f9;
+}
+
+.site-shell .profile-card h2 {
+  margin: 0 0 22px;
+  font-size: clamp(42px, 12vw, 58px);
+  line-height: 0.86;
+  color: #f8fafc;
+}
+
+.site-shell .profile-card h2 span {
+  font-family: var(--font-serif, "Instrument Serif", Georgia, serif);
+  font-style: italic;
+  color: #60a5fa;
+}
+
+.site-shell .card-bio {
+  max-width: 240px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #cbd5e1;
+}
+
+.site-shell .card-rule {
+  height: 1px;
+  margin-block: 30px 15px;
+  background: #334155;
+}
+
+.site-shell .circle-arrow {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--action);
+  color: #ffffff;
+}
+
+/* Signal strip
+   ------------------------------------------------------------------------ */
+
+.site-shell .signal-strip {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 26px 56px;
+  font-size: 9px;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.site-shell .signal-line {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* Sections
+   ------------------------------------------------------------------------ */
+
+.site-shell .intelligence,
+.site-shell .capabilities {
+  display: grid;
+  gap: 72px;
+  padding-block: 110px;
+  padding-inline: 26px;
+  border-block-start: 1px solid var(--line);
+}
+
+.site-shell .intelligence {
+  grid-template-columns: 0.85fr 1.15fr;
+}
+
+.site-shell .capabilities {
+  grid-template-columns: 0.8fr 1.2fr;
+}
+
+.site-shell .section-intro h2,
+.site-shell .cap-heading h2,
+.site-shell .closing h2 {
+  margin-block-end: 26px;
+  font-size: clamp(38px, 5.4vw, 76px);
+}
+
+.site-shell .section-intro > p:not(.eyebrow),
+.site-shell .cap-heading > p:not(.eyebrow) {
+  max-width: 360px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--dim);
+}
+
+/* Matched at the same weight as the paragraph rule above, which would
+   otherwise flatten this to body copy. */
+.site-shell .section-intro > p.section-index {
+  margin-block-start: 72px;
+  font-size: 13px;
+  color: var(--action);
+}
+
+.site-shell .section-index span {
+  color: var(--dim);
+}
+
+/* CV interface
+   ------------------------------------------------------------------------ */
+
+.site-shell .cv-interface {
+  padding: 27px;
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 12px 30px #0f172a12;
+}
+
+.site-shell .cv-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-block-end: 22px;
+  border-block-end: 1px solid var(--line);
+}
+
+.site-shell .cv-file {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.site-shell .cv-file svg {
+  flex: none;
+  color: var(--action);
+}
+
+.site-shell .cv-file strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.site-shell .cv-file small {
+  display: block;
+  margin-block-start: 5px;
+  font-size: 10px;
+  color: var(--dim);
+}
+
+.site-shell .scan-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  font-size: 10px;
+  color: var(--action);
+}
+
+.site-shell .scan-state i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--action);
+  box-shadow: 0 0 0 3px #2563eb29;
+}
+
+.site-shell .score-row {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  padding-block: 30px;
+}
+
+.site-shell .score-ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 126px;
+  height: 126px;
+  border-radius: 50%;
+  background: conic-gradient(var(--action) 0 80%, var(--track) 80%);
+}
+
+.site-shell .score-ring::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.site-shell .score-ring > div {
+  position: relative;
+  text-align: center;
+}
+
+.site-shell .score-ring strong {
+  display: block;
+  font-size: 34px;
+  font-weight: 400;
+}
+
+.site-shell .score-ring span {
+  font-size: 9px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.site-shell .overline {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--action);
+}
+
+.site-shell .score-copy h3 {
+  margin: 9px 0;
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.site-shell .score-copy p {
+  margin: 0;
+  font-size: 11px;
+  color: var(--dim);
+}
+
+.site-shell .score-list {
+  margin: 0;
+  padding-block-start: 19px;
+  border-block-start: 1px solid var(--line);
+  list-style: none;
+}
+
+.site-shell .score-item {
+  margin-block-end: 14px;
+}
+
+.site-shell .score-item > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-block-end: 7px;
+  font-size: 11px;
+}
+
+.site-shell .score-item b {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.site-shell .progress-track {
+  display: block;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--track);
+}
+
+.site-shell .progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--action);
+  animation: ph-load 1.4s ease both;
+}
+
+.site-shell .score-item:last-child .progress-fill {
+  background: var(--accent);
+}
+
+.site-shell .found-row {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding-block-start: 18px;
+  border-block-start: 1px solid var(--line);
+  font-size: 10px;
+  color: var(--dim);
+}
+
+.site-shell .found-row b {
+  margin-inline-end: 4px;
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--fg);
+}
+
+.site-shell .found-row .strong {
+  color: var(--action);
+}
+
+.site-shell .spark {
+  margin-inline-start: auto;
+  color: var(--action);
+}
+
+/* Capabilities
+   ------------------------------------------------------------------------ */
+
+.site-shell .cap-list {
+  margin: 0;
+  padding: 0;
+  border-block-start: 1px solid var(--line);
+  list-style: none;
+}
+
+.site-shell .cap-item {
+  display: grid;
+  grid-template-columns: 70px 1fr 35px;
+  gap: 16px;
+  align-items: start;
+  padding-block: 26px;
+  border-block-end: 1px solid var(--line);
+}
+
+.site-shell .cap-number {
+  font-family: var(--font-serif, "Instrument Serif", Georgia, serif);
+  font-size: 35px;
+  line-height: 1;
+  color: var(--action);
+}
+
+.site-shell .cap-item h3 {
+  margin: 2px 0 8px;
+  font-size: 21px;
+  font-weight: 400;
+}
+
+.site-shell .cap-item p {
+  max-width: 380px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--dim);
+}
+
+.site-shell .cap-arrow {
+  justify-self: end;
+  color: var(--dim);
+  transition: color 0.2s ease;
+}
+
+.site-shell .cap-item:hover .cap-arrow {
+  color: var(--action);
+}
+
+/* Closing and footer
+   ------------------------------------------------------------------------ */
+
+.site-shell .closing {
+  padding-block: 130px;
+  padding-inline: 26px;
+  border-block-start: 1px solid var(--line);
+  text-align: center;
+}
+
+.site-shell .closing .eyebrow {
+  justify-content: center;
+}
+
+.site-shell .closing > p:not(.eyebrow) {
+  margin: 0;
+  font-size: 15px;
+  color: var(--dim);
+}
+
+.site-shell .closing-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-block-start: 34px;
+}
+
+.site-shell .site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 20px;
+  padding: 28px 26px 38px;
+  border-block-start: 1px solid var(--line);
+  font-size: 11px;
+  color: var(--dim);
+}
+
+.site-shell .site-footer p {
+  margin: 0;
+}
+
+.site-shell .footer-links {
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+/* Motion
+   ------------------------------------------------------------------------ */
+
+@keyframes ph-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ph-float {
+  0%,
+  100% {
+    transform: rotate(2deg) translateY(0);
+  }
+  50% {
+    transform: rotate(0deg) translateY(-12px);
+  }
+}
+
+@keyframes ph-label {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes ph-drift {
+  to {
+    transform: translate(35px, 25px) scale(1.1);
+  }
+}
+
+@keyframes ph-load {
+  from {
+    width: 0;
+  }
+}
+
+/* Responsive
+   ------------------------------------------------------------------------ */
+
+@media (max-width: 900px) {
+  .site-shell .header-nav {
+    display: none;
+  }
+
+  .site-shell .site-header {
+    padding-inline: 18px;
+  }
+
+  .site-shell .hero,
+  .site-shell .intelligence,
+  .site-shell .capabilities {
+    grid-template-columns: 1fr;
+    gap: 56px;
+  }
+
+  .site-shell .hero {
+    padding-block: 60px 72px;
+  }
+
+  .site-shell .intelligence,
+  .site-shell .capabilities {
+    padding-block: 84px;
+  }
+
+  .site-shell .section-index {
+    margin-block-start: 36px;
+  }
+}
+
+/* Below this the card fills most of the row, and the orbits and floating
+   labels start sitting on top of it - which is exactly the overlap they are
+   meant to frame, not cause. */
+@media (max-width: 760px) {
+  .site-shell .orbit,
+  .site-shell .float-label {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .site-shell .login {
+    display: none;
+  }
+
+  .site-shell .hero,
+  .site-shell .intelligence,
+  .site-shell .capabilities,
+  .site-shell .closing,
+  .site-shell .signal-strip,
+  .site-shell .site-footer {
+    padding-inline: 18px;
+  }
+
+  .site-shell .claim-form {
+    display: block;
+  }
+
+  .site-shell .claim-form .button {
+    width: 100%;
+    margin-block-start: 10px;
+  }
+
+  .site-shell .hero-visual {
+    min-height: 430px;
+  }
+
+  .site-shell .profile-card {
+    transform: none;
+    animation: none;
+  }
+
+  .site-shell .avatar {
+    margin-block: 46px 20px;
+  }
+
+  .site-shell .cv-interface {
+    padding: 19px;
+  }
+
+  .site-shell .score-row {
+    gap: 16px;
+  }
+
+  .site-shell .score-ring {
+    width: 100px;
+    height: 100px;
+  }
+
+  .site-shell .score-ring strong {
+    font-size: 28px;
+  }
+
+  .site-shell .score-copy h3 {
+    font-size: 18px;
+  }
+
+  .site-shell .found-row {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .site-shell .cap-item {
+    grid-template-columns: 44px 1fr;
+  }
+
+  .site-shell .cap-arrow {
+    display: none;
+  }
+
+  .site-shell .cap-number {
+    font-size: 28px;
+  }
+
+  .site-shell .closing {
+    padding-block: 90px;
+  }
+
+  .site-shell .closing-actions {
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .site-shell .closing-actions .button {
+    width: 100%;
+  }
+
+  .site-shell .signal-strip .signal-line,
+  .site-shell .signal-strip span:last-child {
+    display: none;
+  }
+
+  .site-shell .site-footer {
+    display: block;
+  }
+
+  .site-shell .site-footer p {
+    margin-block: 14px;
+  }
+}
+
+/* The narrowest phones: the header still has to hold a wordmark, a language
+   switcher, and the primary action on one row. */
+@media (max-width: 420px) {
+  .site-shell .site-header,
+  .site-shell .header-actions {
+    gap: 8px;
+  }
+
+  .site-shell .wordmark {
+    font-size: 16px;
+  }
+
+  .site-shell .button-small {
+    gap: 8px;
+    padding-inline: 12px;
+    font-size: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-shell *,
+  .site-shell *::before,
+  .site-shell *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

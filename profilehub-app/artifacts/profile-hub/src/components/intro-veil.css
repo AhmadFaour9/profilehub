@@ -1,0 +1,312 @@
+/*
+ * Intro veil.
+ *
+ * Shown on the first visit of a session while the landing page finishes
+ * loading. Everything here is plain CSS driven by two classes, so the whole
+ * animation runs from the server-rendered markup - it plays before React has
+ * hydrated, which is exactly the window it exists to cover.
+ */
+
+.intro-veil {
+  --intro-bg: #f8fafc;
+  --intro-ink: #0f172a;
+  --intro-dim: #64748b;
+  --intro-rail: #e2e8f0;
+  --intro-accent: #2563eb;
+
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  background: var(--intro-bg);
+  transition:
+    opacity 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+    visibility 0.6s;
+
+  /* Failsafe: if JavaScript never runs, the veil still gets out of the way. */
+  animation: intro-failsafe 0.5s 3.8s forwards;
+}
+
+/*
+ * The theme class is only applied after hydration, and the veil is painted
+ * before that - so it reads the system preference directly. The class rule
+ * follows it for the case where someone has explicitly chosen dark against a
+ * light system setting.
+ */
+@media (prefers-color-scheme: dark) {
+  .intro-veil {
+    --intro-bg: #0f172a;
+    --intro-ink: #f8fafc;
+    --intro-dim: #94a3b8;
+    --intro-rail: #1e293b;
+    --intro-accent: #60a5fa;
+  }
+}
+
+:root.dark .intro-veil {
+  --intro-bg: #0f172a;
+  --intro-ink: #f8fafc;
+  --intro-dim: #94a3b8;
+  --intro-rail: #1e293b;
+  --intro-accent: #60a5fa;
+}
+
+/* Same grid texture the landing page carries, so the reveal is a continuation
+   rather than a cut to a different surface. */
+.intro-veil::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--intro-ink) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--intro-ink) 5%, transparent) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(circle at 50% 50%, #000, transparent 68%);
+}
+
+/* A slow bloom behind the mark; the only thing moving before the tiles land. */
+.intro-veil::after {
+  content: "";
+  position: absolute;
+  width: 30rem;
+  height: 30rem;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, color-mix(in srgb, var(--intro-accent) 18%, transparent), transparent 65%);
+  filter: blur(60px);
+  animation: intro-bloom 3.4s ease-in-out infinite alternate;
+}
+
+.intro-stage {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 26px;
+  transition:
+    opacity 0.5s ease,
+    transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+    filter 0.6s ease;
+}
+
+/* ── The mark: four tiles that fly in and lock together ─────────────────── */
+
+.intro-mark {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  direction: ltr; /* A logo is not mirrored in Arabic. */
+  animation: intro-breathe 3s 1.1s ease-in-out infinite;
+}
+
+.intro-tile {
+  position: absolute;
+  display: block;
+  opacity: 0;
+  animation: intro-assemble 0.62s cubic-bezier(0.22, 1.4, 0.36, 1) forwards;
+}
+
+/* Geometry mirrors public/logo.svg at 4x, including the two square inner
+   corners that make the four tiles read as one mark instead of four dots. */
+.intro-tile.tile-a {
+  inset: 8px auto auto 8px;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px 11px 0 11px;
+  background: #2e9eff;
+  --from-x: -30px;
+  --from-y: -30px;
+  animation-delay: 0s;
+}
+
+.intro-tile.tile-b {
+  inset: 8px 8px auto auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #0c79d8;
+  --from-x: 30px;
+  --from-y: -30px;
+  animation-delay: 0.09s;
+}
+
+.intro-tile.tile-c {
+  inset: auto auto 8px 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #0c79d8;
+  --from-x: -30px;
+  --from-y: 30px;
+  animation-delay: 0.18s;
+}
+
+.intro-tile.tile-d {
+  inset: auto 8px 8px auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 0 11px 11px 11px;
+  background: #68c4ff;
+  --from-x: 30px;
+  --from-y: 30px;
+  animation-delay: 0.27s;
+}
+
+/* ── Wordmark and progress rail ─────────────────────────────────────────── */
+
+.intro-word {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--intro-ink);
+  letter-spacing: 0.34em;
+  text-indent: 0.34em; /* Keeps the tracking from pushing the word off-centre. */
+  opacity: 0;
+  animation: intro-word-in 0.7s 0.52s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.intro-rail {
+  display: block;
+  width: 132px;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--intro-rail);
+}
+
+.intro-rail i {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--intro-accent);
+  /* Eases towards - never reaching - the end, then the exit closes the gap.
+     A bar that sits at 100% while the page is still working is a lie. */
+  animation: intro-rail-fill 2.6s 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: width 0.22s ease-out;
+}
+
+/* ── Exit ───────────────────────────────────────────────────────────────── */
+
+.intro-veil.is-out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.intro-veil.is-out .intro-stage {
+  opacity: 0;
+  transform: translateY(-12px) scale(1.06);
+  filter: blur(4px);
+}
+
+.intro-veil.is-out .intro-rail i {
+  width: 100% !important;
+  animation: none;
+}
+
+/* Already seen this session: never paint it at all. Set pre-paint by the
+   inline script on the landing page, so there is no flash of the intro for
+   someone coming back from /login. */
+:root[data-intro="seen"] .intro-veil {
+  display: none;
+}
+
+@keyframes intro-assemble {
+  from {
+    opacity: 0;
+    transform: translate(var(--from-x), var(--from-y)) scale(0.35) rotate(-12deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes intro-word-in {
+  from {
+    opacity: 0;
+    letter-spacing: 0.34em;
+    text-indent: 0.34em;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    letter-spacing: 0.09em;
+    text-indent: 0.09em;
+    transform: none;
+  }
+}
+
+@keyframes intro-rail-fill {
+  from {
+    width: 0;
+  }
+  to {
+    width: 88%;
+  }
+}
+
+@keyframes intro-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.035);
+  }
+}
+
+@keyframes intro-bloom {
+  from {
+    opacity: 0.35;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes intro-failsafe {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+/*
+ * Reduced motion: the veil still does its job - it covers the loading page -
+ * but nothing flies, breathes, or pulses. The tiles are simply there.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .intro-veil::after,
+  .intro-mark {
+    animation: none;
+  }
+
+  .intro-tile {
+    opacity: 1;
+    animation: none;
+    transform: none;
+  }
+
+  .intro-word {
+    opacity: 1;
+    letter-spacing: 0.09em;
+    text-indent: 0.09em;
+    animation: none;
+  }
+
+  .intro-rail i {
+    width: 88%;
+    animation: none;
+  }
+
+  .intro-veil.is-out .intro-stage {
+    transform: none;
+    filter: none;
+  }
+}

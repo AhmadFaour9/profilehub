@@ -10,5 +10,8 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    // Only this project's suite. front-end/ holds a design handoff that ships
+    // its own node --test files, which Vitest cannot run and should not try.
+    include: ["tests/**/*.test.ts"],
   },
 });
