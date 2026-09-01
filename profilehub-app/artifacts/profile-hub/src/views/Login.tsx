@@ -40,8 +40,8 @@ export default function Login({ nextPath = "/dashboard" }: { nextPath?: string }
     <div className="min-h-screen flex flex-col items-center justify-center gap-7 p-4 pt-20 bg-muted/30">
       {/* Arriving here from the landing page should not feel like leaving the
           product. */}
-      <Link href="/" className="text-xl transition-opacity hover:opacity-75">
-        <Wordmark />
+      <Link href="/" className="transition-opacity hover:opacity-75">
+        <Wordmark stacked />
       </Link>
 
       <div className="w-full max-w-md bg-card p-8 rounded-2xl shadow-sm border">
