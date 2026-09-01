@@ -7,59 +7,28 @@ import { SiBehance, SiTiktok, SiWhatsapp, SiX, SiInstagram, SiDribbble, SiGithub
 import { Linkedin, Facebook, Link2 } from "lucide-react";
 import { getCategoryTone, getSkillIcon } from "@/lib/skill-icons";
 import { ProfileAppearanceControls } from "@/components/LanguageToggle";
+import type { Translate } from "@/lib/i18n";
 
-const ORBIT_POSITIONS = [
-  "-top-2 left-1/2 -translate-x-1/2",
-  "right-0 top-1/4 translate-x-1/3",
-  "bottom-0 right-1/4 translate-y-1/3",
-  "bottom-1/4 left-0 -translate-x-1/3",
-] as const;
+const PROFILE_SKILL_LIMIT = 3;
 
-function featuredSkills(skills: Skill[]): Skill[] {
+function highlightedSkills(skills: Skill[]): Skill[] {
   const seenCategories = new Set<string>();
-  const featured: Skill[] = [];
+  const highlighted: Skill[] = [];
 
   for (const skill of skills) {
     if (skill.isActive === false || seenCategories.has(skill.category)) continue;
-    featured.push(skill);
+    highlighted.push(skill);
     seenCategories.add(skill.category);
-    if (featured.length === ORBIT_POSITIONS.length) break;
+    if (highlighted.length === PROFILE_SKILL_LIMIT) break;
   }
 
-  return featured;
+  return highlighted;
 }
 
-function ProfileSkillOrbit({ profile, skills }: { profile: Profile; skills: Skill[] }) {
-  const orbitSkills = featuredSkills(skills);
-
+function ProfileAvatar({ profile }: { profile: Profile }) {
   return (
-    <div
-      className="profile-skill-orbit relative h-32 w-32 md:h-40 md:w-40"
-      data-testid="profile-skill-orbit"
-    >
-      {orbitSkills.length > 0 && (
-        <>
-          <span className="profile-skill-orbit__halo" aria-hidden />
-          <span className="profile-skill-orbit__ring" aria-hidden />
-          {orbitSkills.map((skill, index) => {
-            const Icon = getSkillIcon(skill.name);
-            const tone = getCategoryTone(skill.category);
-
-            return (
-              <span
-                key={skill.id}
-                className={`profile-skill-orbit__satellite ${ORBIT_POSITIONS[index]}`}
-                style={{ "--skill-delay": `${index * -0.7}s` } as CSSProperties}
-                aria-hidden
-              >
-                {Icon ? <Icon className={`h-3.5 w-3.5 ${tone}`} /> : <SparkleMark className={`h-3.5 w-3.5 ${tone}`} />}
-              </span>
-            );
-          })}
-        </>
-      )}
-
-      <Avatar className="profile-skill-orbit__avatar h-32 w-32 border-4 border-background bg-background shadow-lg md:h-40 md:w-40">
+    <div className="profile-avatar-frame h-32 w-32 md:h-40 md:w-40" data-testid="profile-avatar-frame">
+      <Avatar className="relative z-10 h-32 w-32 border-4 border-background bg-background shadow-xl md:h-40 md:w-40">
         <AvatarImage src={profile.avatarUrl || ""} alt={profile.displayName} />
         <AvatarFallback className="text-4xl">{profile.displayName.charAt(0)}</AvatarFallback>
       </Avatar>
@@ -67,11 +36,33 @@ function ProfileSkillOrbit({ profile, skills }: { profile: Profile; skills: Skil
   );
 }
 
-function SparkleMark({ className }: { className?: string }) {
-  return <span className={`block rounded-full bg-current ${className || ""}`} />;
+function ProfileSkillRibbon({ skills, t }: { skills: Skill[]; t: Translate }) {
+  const highlighted = highlightedSkills(skills);
+  if (!highlighted.length) return null;
+
+  return (
+    <ul className="profile-skill-ribbon" aria-label={t("public.skills")} data-testid="profile-skill-ribbon">
+      {highlighted.map((skill, index) => {
+        const Icon = getSkillIcon(skill.name);
+        const tone = getCategoryTone(skill.category);
+
+        return (
+          <li
+            key={skill.id}
+            className="profile-skill-ribbon__item"
+            style={{ "--skill-index": index } as CSSProperties}
+            title={skill.category}
+          >
+            {Icon ? <Icon className={`h-3.5 w-3.5 shrink-0 ${tone}`} aria-hidden /> : null}
+            <span className="truncate">{skill.name}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
 }
 
-export function ProfileHeader({ profile, profileUrl, skills = [] }: { profile: Profile; profileUrl?: string; skills?: Skill[] }) {
+export function ProfileHeader({ profile, profileUrl, skills = [], t }: { profile: Profile; profileUrl?: string; skills?: Skill[]; t: Translate }) {
   const activeSocialLinks = (profile.socialLinks || []).filter((social) => social.isActive !== false && social.url);
   const websiteHost = getSafeHostname(profile.website);
   const getSocialIcon = (platform: string) => {
@@ -112,7 +103,7 @@ export function ProfileHeader({ profile, profileUrl, skills = [] }: { profile: P
       
       <div className="px-4 pb-4 max-w-2xl mx-auto">
         <div className="flex justify-between items-end -mt-16 md:-mt-20 mb-4 relative z-10">
-          <ProfileSkillOrbit profile={profile} skills={skills} />
+          <ProfileAvatar profile={profile} />
           
           <div className="pb-2">
             <QRButton username={profile.username} url={profileUrl} />
@@ -125,6 +116,7 @@ export function ProfileHeader({ profile, profileUrl, skills = [] }: { profile: P
             {profile.profession && (
               <p className="text-lg text-muted-foreground mt-1">{profile.profession}</p>
             )}
+            <ProfileSkillRibbon skills={skills} t={t} />
           </div>
           
           {profile.bio && (

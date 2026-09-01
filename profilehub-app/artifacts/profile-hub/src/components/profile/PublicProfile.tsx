@@ -93,7 +93,7 @@ export async function PublicProfile({
       />
       <PageViewBeacon profileId={profile.id} />
       <div className="max-w-2xl mx-auto">
-        <ProfileHeader profile={shownProfile} profileUrl={profileUrl} skills={visibleSkills} />
+        <ProfileHeader profile={shownProfile} profileUrl={profileUrl} skills={visibleSkills} t={t} />
         
         <div className="px-4 mt-8 space-y-12">
           {primaryCta && <PrimaryCta cta={primaryCta} t={t} />}

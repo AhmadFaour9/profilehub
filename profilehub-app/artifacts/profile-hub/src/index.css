@@ -193,9 +193,10 @@
   }
 }
 
-/* Public profile: skill icons become a quiet halo around the real profile
-   photo. This is intentionally CSS-only so it does not delay the public page
-   or hide profile data from search engines. */
+/* Public-profile identity motion is intentionally finite and narrative: the
+   portrait settles in first, then up to three real skills arrive as a compact
+   signature. It gives the visitor context without turning the avatar into a
+   constantly moving decoration. */
 @layer components {
   .public-profile--custom-background {
     background-color: var(--profile-background, hsl(var(--background)));
@@ -209,77 +210,96 @@
     );
   }
 
-  .profile-skill-orbit__halo {
-    position: absolute;
-    z-index: -2;
-    inset: -0.6rem;
+  .profile-avatar-frame {
+    position: relative;
+    isolation: isolate;
     border-radius: 9999px;
-    background: conic-gradient(
-      from 120deg,
-      hsl(var(--primary) / 0.28),
-      hsl(var(--brand-accent) / 0.18),
-      hsl(var(--brand-warm) / 0.2),
-      hsl(var(--primary) / 0.28)
-    );
-    filter: blur(12px);
   }
 
-  .profile-skill-orbit__ring {
+  .profile-avatar-frame::before {
     position: absolute;
     z-index: -1;
-    inset: -0.25rem;
-    border: 1px solid hsl(var(--primary) / 0.28);
-    border-radius: 9999px;
-    border-inline-start-color: hsl(var(--brand-accent) / 0.7);
-    border-block-end-color: hsl(var(--brand-warm) / 0.55);
+    inset: -0.32rem;
+    content: "";
+    border-radius: inherit;
+    background: linear-gradient(135deg, hsl(var(--brand-accent) / 0.7), hsl(var(--primary) / 0.35), hsl(var(--brand-warm) / 0.45));
+    box-shadow: 0 12px 28px hsl(var(--primary) / 0.2);
   }
 
-  .profile-skill-orbit__avatar {
-    position: relative;
-    z-index: 1;
-  }
-
-  .profile-skill-orbit__satellite {
+  .profile-avatar-frame::after {
     position: absolute;
-    z-index: 2;
-    display: grid;
-    height: 1.75rem;
-    width: 1.75rem;
-    place-items: center;
+    inset: 0.22rem;
+    z-index: 20;
+    content: "";
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(112deg, transparent 38%, hsl(0 0% 100% / 0.52) 48%, transparent 58%);
+    opacity: 0;
+  }
+
+  .profile-skill-ribbon {
+    display: flex;
+    max-width: 100%;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 0.85rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .profile-skill-ribbon__item {
+    display: inline-flex;
+    min-width: 0;
+    max-width: 100%;
+    align-items: center;
+    gap: 0.4rem;
     border: 1px solid hsl(var(--border));
     border-radius: 9999px;
-    background: hsl(var(--background) / 0.96);
-    box-shadow: 0 5px 14px hsl(222 47% 11% / 0.12);
-    backdrop-filter: blur(6px);
+    background: hsl(var(--background) / 0.72);
+    padding: 0.38rem 0.68rem;
+    color: hsl(var(--foreground));
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    box-shadow: 0 4px 14px hsl(222 47% 11% / 0.07);
+    backdrop-filter: blur(8px);
+    transition: transform 180ms ease-out, border-color 180ms ease-out, background-color 180ms ease-out, box-shadow 180ms ease-out;
+  }
+
+  .profile-skill-ribbon__item:hover {
+    transform: translateY(-2px);
+    border-color: hsl(var(--primary) / 0.55);
+    background: hsl(var(--card));
+    box-shadow: 0 8px 18px hsl(var(--primary) / 0.14);
   }
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .profile-skill-orbit__halo {
-    animation: profile-skill-halo 5s ease-in-out infinite;
+  .profile-avatar-frame {
+    animation: profile-avatar-enter 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
-  .profile-skill-orbit__ring {
-    animation: profile-skill-ring 18s linear infinite;
+  .profile-avatar-frame::after {
+    animation: profile-avatar-sheen 900ms 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
-  .profile-skill-orbit__satellite > svg,
-  .profile-skill-orbit__satellite > span {
-    animation: profile-skill-float 4.5s ease-in-out infinite;
-    animation-delay: var(--skill-delay, 0s);
+  .profile-skill-ribbon__item {
+    animation: profile-skill-reveal 420ms calc(180ms + (var(--skill-index) * 90ms)) cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 }
 
-@keyframes profile-skill-halo {
-  0%, 100% { opacity: 0.5; transform: scale(0.98); }
-  50% { opacity: 0.9; transform: scale(1.05); }
+@keyframes profile-avatar-enter {
+  from { opacity: 0; transform: translateY(14px) scale(0.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-@keyframes profile-skill-ring {
-  to { transform: rotate(360deg); }
+@keyframes profile-avatar-sheen {
+  from { opacity: 0; transform: translateX(-115%); }
+  35% { opacity: 0.82; }
+  to { opacity: 0; transform: translateX(115%); }
 }
 
-@keyframes profile-skill-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+@keyframes profile-skill-reveal {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: translateY(0); }
 }
