@@ -197,6 +197,18 @@
    photo. This is intentionally CSS-only so it does not delay the public page
    or hide profile data from search engines. */
 @layer components {
+  .public-profile--custom-background {
+    background-color: var(--profile-background, hsl(var(--background)));
+  }
+
+  .dark .public-profile--custom-background {
+    background-color: hsl(var(--background));
+    background-image: linear-gradient(
+      hsl(var(--background) / 0.92),
+      hsl(var(--background) / 0.92)
+    );
+  }
+
   .profile-skill-orbit__halo {
     position: absolute;
     z-index: -2;

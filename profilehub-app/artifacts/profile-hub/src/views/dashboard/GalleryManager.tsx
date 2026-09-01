@@ -49,16 +49,16 @@ export default function GalleryManager({ gallery = [] }: { gallery?: GalleryItem
     try {
       const result = await uploadGalleryImage(formData);
       if (!result.ok) {
-        throw new Error(result.message || "Could not upload image.");
+        throw new Error(t("gallery.uploadFailedMessage"));
       }
 
       const nextItem = normalizeGalleryItem(result.data);
       setItems((current) => [...current, nextItem]);
-      toast({ title: "Image uploaded", description: "The image has been added to your gallery." });
-    } catch (error: any) {
+      toast({ title: t("gallery.uploaded"), description: t("gallery.uploadedMessage") });
+    } catch {
       toast({
-        title: "Upload failed",
-        description: error?.message || "Could not upload image.",
+        title: t("gallery.uploadFailed"),
+        description: t("gallery.uploadFailedMessage"),
         variant: "destructive",
       });
     } finally {
@@ -73,16 +73,16 @@ export default function GalleryManager({ gallery = [] }: { gallery?: GalleryItem
     try {
       const result = await deleteGalleryItem(deleteTarget.id);
       if (!result.ok) {
-        throw new Error(result.message || "Could not delete image.");
+        throw new Error(t("gallery.deleteFailedMessage"));
       }
 
       setItems((current) => current.filter((item) => item.id !== deleteTarget.id));
       setDeleteTarget(null);
-      toast({ title: "Image deleted", description: "The image has been removed from your gallery." });
-    } catch (error: any) {
+      toast({ title: t("gallery.deleted"), description: t("gallery.deletedMessage") });
+    } catch {
       toast({
-        title: "Delete failed",
-        description: error?.message || "Could not delete image.",
+        title: t("gallery.deleteFailed"),
+        description: t("gallery.deleteFailedMessage"),
         variant: "destructive",
       });
     } finally {
@@ -100,7 +100,7 @@ export default function GalleryManager({ gallery = [] }: { gallery?: GalleryItem
         </div>
         <Button data-testid="btn-add-image" onClick={openFilePicker} disabled={uploading}>
           {uploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-          {uploading ? "Uploading..." : "Upload Image"}
+          {uploading ? t("gallery.uploading") : t("gallery.uploadImage")}
         </Button>
       </div>
 
@@ -112,7 +112,7 @@ export default function GalleryManager({ gallery = [] }: { gallery?: GalleryItem
           action={
             <Button onClick={openFilePicker} disabled={uploading}>
               {uploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-              {uploading ? "Uploading..." : "Upload Image"}
+              {uploading ? t("gallery.uploading") : t("gallery.uploadImage")}
             </Button>
           }
         />
@@ -155,7 +155,7 @@ export default function GalleryManager({ gallery = [] }: { gallery?: GalleryItem
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete
+              {t("action.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

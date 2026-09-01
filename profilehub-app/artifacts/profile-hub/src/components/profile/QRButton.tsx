@@ -58,7 +58,7 @@ export function QRButton({ username, url }: { username: string; url?: string }) 
       .catch(() => {
         if (!cancelled) {
           setQrDataUrl("");
-          setQrError("Could not generate QR code.");
+          setQrError(t("qr.generateFailed"));
         }
       })
       .finally(() => {
@@ -68,7 +68,7 @@ export function QRButton({ username, url }: { username: string; url?: string }) 
     return () => {
       cancelled = true;
     };
-  }, [safeUsername, shareUrl]);
+  }, [safeUsername, shareUrl, t]);
 
   const handleDownload = () => {
     if (!qrDataUrl || !safeUsername) return;
@@ -100,7 +100,7 @@ export function QRButton({ username, url }: { username: string; url?: string }) 
             ) : qrError ? (
               <p className="px-4 text-center text-sm text-destructive">{qrError}</p>
             ) : qrDataUrl ? (
-              <img src={qrDataUrl} alt={`QR code for ${shareUrl}`} className="h-48 w-48" />
+              <img src={qrDataUrl} alt={t("qr.codeFor", { url: shareUrl })} className="h-48 w-48" />
             ) : (
               <QrCode className="h-24 w-24 text-black" />
             )}

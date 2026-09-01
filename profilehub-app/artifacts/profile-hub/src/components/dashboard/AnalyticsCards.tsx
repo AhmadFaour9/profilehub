@@ -31,7 +31,7 @@ export function AnalyticsCards({ data }: { data: AnalyticsOverview }) {
       trendUp: true,
     },
     {
-      title: "Conversion Rate",
+      title: t("analytics.conversionRate"),
       value: `${data.conversionRate ?? data.growthRate}%`,
       icon: TrendingUp,
       trend: "+2.1%",
@@ -55,7 +55,7 @@ export function AnalyticsCards({ data }: { data: AnalyticsOverview }) {
               <span className={metric.trendUp ? "text-green-500" : "text-red-500"}>
                 {metric.trend}
               </span>{" "}
-              from last month
+              {t("analytics.fromLastMonth")}
             </p>
           </CardContent>
         </Card>

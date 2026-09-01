@@ -1,8 +1,9 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Globe } from "lucide-react";
+import { Globe, Moon, Sun } from "lucide-react";
 
+import { useTheme } from "@/components/ThemeProvider";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,21 +17,22 @@ import { LOCALES, LOCALE_LABELS } from "@/lib/i18n";
 /**
  * Language switcher for pages outside the dashboard.
  *
- * `variant="floating"` pins it to the top corner of a page that has no chrome
- * of its own, which is every public and auth page. It sits on the side the
- * current direction calls "start", so it never covers content.
+ * `variant="floating"` is reserved for simple authentication pages. Published
+ * profiles place the compact control in their own header instead, so it never
+ * looks like a permanently hovered button over the visitor's content.
  */
 export function LanguageToggle({
   variant = "inline",
   className = "",
 }: {
-  variant?: "inline" | "floating";
+  variant?: "inline" | "floating" | "compact";
   className?: string;
 }) {
   const { locale, setLocale, t } = useLocale();
 
   const positioning =
     variant === "floating" ? "fixed top-4 end-4 z-50" : "";
+  const isCompact = variant === "compact";
 
   return (
     <div className={`${positioning} ${className}`.trim()}>
@@ -39,12 +41,19 @@ export function LanguageToggle({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2 bg-background/80 backdrop-blur border"
+            className={isCompact
+              ? "h-8 w-8 rounded-full p-0 text-foreground hover:bg-accent"
+              : "gap-2 border bg-background/80 backdrop-blur"}
             aria-label={t("nav.language")}
+            title={isCompact ? t("nav.language") : undefined}
             data-testid="language-toggle"
           >
             <Globe className="h-4 w-4" aria-hidden />
-            <span className="text-xs font-medium">{LOCALE_LABELS[locale]}</span>
+            {isCompact ? (
+              <span className="sr-only">{t("nav.language")}</span>
+            ) : (
+              <span className="text-xs font-medium">{LOCALE_LABELS[locale]}</span>
+            )}
           </Button>
         </DropdownMenuTrigger>
 
@@ -65,23 +74,49 @@ export function LanguageToggle({
   );
 }
 
+export function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const { t } = useLocale();
+  const isDark = resolvedTheme === "dark";
+  const nextLabel = isDark ? t("nav.switchToLight") : t("nav.switchToDark");
+
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8 rounded-full text-foreground hover:bg-accent"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      aria-label={nextLabel}
+      title={nextLabel}
+      data-testid="profile-theme-toggle"
+    >
+      {isDark ? <Sun className="h-4 w-4" aria-hidden /> : <Moon className="h-4 w-4" aria-hidden />}
+    </Button>
+  );
+}
+
+export function ProfileAppearanceControls() {
+  return (
+    <div
+      className="absolute top-4 end-4 z-20 flex items-center gap-1 rounded-full border border-border/80 bg-background/85 p-1 shadow-lg backdrop-blur-md"
+      data-testid="profile-appearance-controls"
+    >
+      <LanguageToggle variant="compact" />
+      <ThemeToggle />
+    </div>
+  );
+}
+
 /**
- * Mounts the floating switcher on every page that has no chrome of its own.
- *
- * The dashboard already carries one in its top bar, so it is skipped there to
- * avoid two controls on screen. Doing this in one place means a page added
- * later gets the switcher without anyone remembering to wire it up.
+ * Auth screens have no navigation of their own, so they retain a small floating
+ * language selector. Public profiles carry theirs in ProfileHeader.
  */
 export function GlobalLanguageToggle() {
   const pathname = usePathname();
+  const authRoutes = ["/login", "/register", "/forgot-password", "/auth/update-password", "/auth/status"];
 
-  // The dashboard carries its own switcher in the top bar, and /account/preview
-  // is the public page rendered inside the dashboard's phone frame - a floating
-  // control there would appear to be part of the visitor's profile.
-  if (pathname?.startsWith("/dashboard")) return null;
-  if (pathname?.startsWith("/account/preview")) return null;
-  // The landing page has one in its header; a floating copy would overlap it.
-  if (pathname === "/") return null;
-
-  return <LanguageToggle variant="floating" />;
+  return pathname && authRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`))
+    ? <LanguageToggle variant="floating" />
+    : null;
 }

@@ -56,6 +56,7 @@ export function Topbar({ profile, onMenuClick }: { profile?: Profile; onMenuClic
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" data-testid="language-toggle">
               <Globe className="h-4 w-4" />
+              <span className="sr-only">{t("nav.language")}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -68,6 +69,7 @@ export function Topbar({ profile, onMenuClick }: { profile?: Profile; onMenuClic
           variant="ghost" 
           size="icon" 
           onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+          aria-label={t("nav.toggleTheme")}
           data-testid="theme-toggle"
         >
           <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />

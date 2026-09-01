@@ -13,6 +13,7 @@ import { buildProfileJsonLd, getPrimaryProfileCta } from "@/lib/profile-seo";
 import { getTranslations } from "@/lib/i18n/server";
 import { parseSectionVisibility } from "@/lib/profile-visibility";
 import type { Translate } from "@/lib/i18n";
+import type { CSSProperties } from "react";
 
 export async function PublicProfile({
   username,
@@ -44,6 +45,9 @@ export async function PublicProfile({
   };
 
   const hasBg = Boolean(profile.theme?.backgroundColor);
+  const profileSurfaceStyle = hasBg
+    ? ({ "--profile-background": profile.theme?.backgroundColor } as CSSProperties)
+    : undefined;
   const visibleLinks = (visibility.smartLinks ? profile.links : [])
     .filter((link) => link.isActive)
     .sort((a, b) => {
@@ -80,8 +84,8 @@ export async function PublicProfile({
 
   return (
     <div
-      className={`min-h-screen pb-20 ${hasBg ? '' : 'bg-background text-foreground'}`}
-      style={hasBg ? { backgroundColor: profile.theme?.backgroundColor } : undefined}
+      className={`public-profile min-h-screen pb-20 text-foreground ${hasBg ? "public-profile--custom-background" : "bg-background"}`}
+      style={profileSurfaceStyle}
     >
       <script
         type="application/ld+json"
@@ -134,7 +138,7 @@ export async function PublicProfile({
               <h2 className="text-2xl font-serif">{t("public.services")}</h2>
               <div className="grid gap-4">
                 {visibleServices.map((service) => (
-                  <ServiceCard key={service.id} service={service} theme={profile.theme} />
+                  <ServiceCard key={service.id} service={service} theme={profile.theme} t={t} />
                 ))}
               </div>
             </section>

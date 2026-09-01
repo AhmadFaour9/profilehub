@@ -31,7 +31,9 @@ export default function Login({ nextPath = "/dashboard" }: { nextPath?: string }
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setMessage(null);
     const result = await loginWithPassword({ ...values, next: nextPath });
-    if (!result.ok) setMessage(result.message || "Could not log in.");
+    if (!result.ok) {
+      setMessage(result.message === "Invalid email or password." ? t("auth.invalidCredentials") : t("auth.loginFailed"));
+    }
   }
 
   return (

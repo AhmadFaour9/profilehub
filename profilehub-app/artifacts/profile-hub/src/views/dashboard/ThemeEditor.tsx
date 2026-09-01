@@ -29,12 +29,12 @@ export default function ThemeEditor({ content }: { content: { profile: Profile, 
       });
 
       if (result.ok) {
-        toast({ title: "Theme saved", description: "Your profile appearance has been updated." });
+        toast({ title: t("theme.saved"), description: t("theme.subtitle") });
       } else {
-        toast({ title: "Error", description: result.message || "Failed to save theme.", variant: "destructive" });
+        toast({ title: t("status.error"), description: result.message || t("theme.saveFailed"), variant: "destructive" });
       }
     } catch {
-      toast({ title: "Error", description: "Failed to save theme.", variant: "destructive" });
+      toast({ title: t("status.error"), description: t("theme.saveFailed"), variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -52,7 +52,7 @@ export default function ThemeEditor({ content }: { content: { profile: Profile, 
 
         <div className="pt-6 border-t">
           <Button onClick={handleSave} disabled={saving} data-testid="btn-save-theme">
-            {saving ? "Saving..." : "Save Appearance"}
+            {saving ? t("action.saving") : t("theme.save")}
           </Button>
         </div>
       </div>

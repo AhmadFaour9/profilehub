@@ -24,6 +24,7 @@ const formSchema = z.object({
 export default function Register() {
   const { t } = useLocale();
   const [message, setMessage] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { username: "", email: "", password: "" },
@@ -31,20 +32,21 @@ export default function Register() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setMessage(null);
+    setIsSuccess(false);
     const result = await registerWithPassword(values);
     if (!result.ok) {
       const code = result.message;
-      let uiMessage = "An unexpected error occurred.";
+      let uiMessage = t("auth.unexpectedError");
       if (code === "public_supabase_missing" || code === "service_role_missing" || code === "service_role_invalid") {
-        uiMessage = "System configuration error. Please try again later.";
-      } else if (code === "username_taken") uiMessage = "This username is already taken. Please choose another.";
-      else if (code === "auth_signup_failed") uiMessage = "Could not create your account. Please try again.";
-      else if (code === "profile_insert_failed") uiMessage = "Could not initialize your profile. Please contact support.";
-      else if (code === "schema_mismatch") uiMessage = "Database setup is incomplete. Please contact support.";
-      else uiMessage = code || "An unexpected error occurred.";
+        uiMessage = t("auth.configurationError");
+      } else if (code === "username_taken") uiMessage = t("auth.usernameTaken");
+      else if (code === "auth_signup_failed") uiMessage = t("auth.accountCreateFailed");
+      else if (code === "profile_insert_failed") uiMessage = t("auth.profileCreateFailed");
+      else if (code === "schema_mismatch") uiMessage = t("auth.databaseSetupIncomplete");
       setMessage(uiMessage);
     } else {
-      setMessage(result.message === "register_success" ? "Check your email to confirm your account." : result.message || "Account created.");
+      setIsSuccess(true);
+      setMessage(result.message === "register_success" ? t("auth.checkEmailToConfirm") : t("auth.accountCreated"));
     }
   }
 
@@ -118,7 +120,7 @@ export default function Register() {
                 </FormItem>
               )}
             />
-            {message && <p className={message.includes("Check") || message.includes("created") ? "text-sm text-primary" : "text-sm text-destructive"}>{message}</p>}
+            {message && <p className={isSuccess ? "text-sm text-primary" : "text-sm text-destructive"}>{message}</p>}
             <Button type="submit" className="w-full mt-6" data-testid="btn-submit-register">{t("auth.register")}</Button>
           </form>
         </Form>

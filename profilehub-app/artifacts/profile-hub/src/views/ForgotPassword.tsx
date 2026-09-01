@@ -31,7 +31,7 @@ export default function ForgotPassword() {
     setMessage(null);
     const result = await sendPasswordReset(values.email);
     if (result.ok) setIsSubmitted(true);
-    else setMessage(result.message || "Could not send reset email.");
+    else setMessage(t("auth.resetEmailFailed"));
   }
 
   return (

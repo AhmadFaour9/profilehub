@@ -46,7 +46,7 @@ export default function Overview({
             {(topLinks.length > 0 ? topLinks : []).map((link) => (
               <div className="flex min-w-0 items-center justify-between gap-3" key={link.linkId}>
                 <span className="min-w-0 flex-1 truncate text-sm font-medium" title={link.title}>{link.title}</span>
-                <span className="shrink-0 text-sm text-muted-foreground">{link.clicks.toLocaleString()} clicks</span>
+                <span className="shrink-0 text-sm text-muted-foreground">{t("dashboard.clicks", { count: link.clicks.toLocaleString() })}</span>
               </div>
             ))}
             {topLinks.length === 0 && (

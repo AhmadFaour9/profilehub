@@ -8,6 +8,17 @@ import "../index.css";
 
 const appUrl = getAppUrl();
 const shouldIndex = isIndexableDeployment();
+// Applies the visitor's saved preference (or operating-system preference) before
+// React hydrates, preventing a bright flash when a dark-mode visitor opens a page.
+const themeBootstrapScript = `(() => {
+  try {
+    const stored = localStorage.getItem("profilehub-theme");
+    const theme = stored === "light" || stored === "dark" || stored === "system" ? stored : "system";
+    const isDark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.classList.toggle("dark", isDark);
+    document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+  } catch {}
+})();`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
@@ -75,7 +86,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: "#0f172a",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+  ],
   colorScheme: "dark light",
 };
 
@@ -92,6 +106,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       suppressHydrationWarning
     >
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
         {/* Preload critical resources for faster rendering */}
         <link rel="preload" as="image" href="/icon.png" />
         <link rel="dns-prefetch" href={appUrl} />

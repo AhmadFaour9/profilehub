@@ -1,8 +1,9 @@
 import { Service, ProfileTheme } from "@/modules/shared";
 import { Button } from "@/components/ui/button";
 import { Box } from "lucide-react";
+import type { Translate } from "@/lib/i18n";
 
-export function ServiceCard({ service, theme }: { service: Service; theme?: ProfileTheme }) {
+export function ServiceCard({ service, theme, t }: { service: Service; theme?: ProfileTheme; t: Translate }) {
   const isRounded = theme?.buttonStyle === "rounded";
   const isPill = theme?.buttonStyle === "pill";
   const radiusClass = isPill ? "rounded-3xl" : isRounded ? "rounded-xl" : "rounded-none";
@@ -52,7 +53,7 @@ export function ServiceCard({ service, theme }: { service: Service; theme?: Prof
           className={`w-full @md:w-auto mt-2 ${isPill ? 'rounded-full' : isRounded ? 'rounded-md' : 'rounded-none'}`}
         >
           <a href={service.ctaUrl} target="_blank" rel="noopener noreferrer">
-            {service.ctaLabel || "Inquire"}
+            {service.ctaLabel || t("public.inquire")}
           </a>
         </Button>
       )}

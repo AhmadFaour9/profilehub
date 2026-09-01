@@ -54,7 +54,7 @@ function emptyForm(sortOrder: number): ServiceFormState {
     description: "",
     price: "",
     duration: "",
-    ctaLabel: "Inquire",
+    ctaLabel: "",
     ctaUrl: "",
     icon: "",
     imageUrl: "",
@@ -150,7 +150,7 @@ export default function ServicesManager({ services = [] }: { services?: Service[
     try {
       const result = editingService ? await updateService(editingService.id, payload) : await createService(payload);
       if (!result.ok) {
-        throw new Error(result.message || "Could not save service.");
+        throw new Error(t("services.saveFailedMessage"));
       }
 
       const saved = normalizeService(result.data, editingService || undefined);
@@ -161,13 +161,13 @@ export default function ServicesManager({ services = [] }: { services?: Service[
       setEditingService(null);
       router.refresh();
       toast({
-        title: editingService ? "Service updated" : "Service created",
-        description: "Your services section has been saved.",
+        title: editingService ? t("services.updated") : t("services.created"),
+        description: t("services.savedMessage"),
       });
-    } catch (error: any) {
+    } catch {
       toast({
-        title: "Save failed",
-        description: error?.message || "Could not save service.",
+        title: t("services.saveFailed"),
+        description: t("services.saveFailedMessage"),
         variant: "destructive",
       });
     } finally {
@@ -179,8 +179,8 @@ export default function ServicesManager({ services = [] }: { services?: Service[
     const result = await updateService(service.id, patch);
     if (!result.ok) {
       toast({
-        title: "Update failed",
-        description: result.message || "Could not update service.",
+        title: t("services.updateFailed"),
+        description: t("services.updateFailedMessage"),
         variant: "destructive",
       });
       return false;
@@ -208,8 +208,8 @@ export default function ServicesManager({ services = [] }: { services?: Service[
 
     if (!first.ok || !second.ok) {
       toast({
-        title: "Reorder failed",
-        description: first.message || second.message || "Could not reorder services.",
+        title: t("services.reorderFailed"),
+        description: t("services.reorderFailedMessage"),
         variant: "destructive",
       });
       return;
@@ -234,17 +234,17 @@ export default function ServicesManager({ services = [] }: { services?: Service[
     try {
       const result = await deleteService(deleteTarget.id);
       if (!result.ok) {
-        throw new Error(result.message || "Could not delete service.");
+        throw new Error(t("services.deleteFailedMessage"));
       }
 
       setAllServices((current) => current.filter((service) => service.id !== deleteTarget.id));
       setDeleteTarget(null);
       router.refresh();
-      toast({ title: "Service deleted", description: "The service has been removed from your profile." });
-    } catch (error: any) {
+      toast({ title: t("services.deleted"), description: t("services.deletedMessage") });
+    } catch {
       toast({
-        title: "Delete failed",
-        description: error?.message || "Could not delete service.",
+        title: t("services.deleteFailed"),
+        description: t("services.deleteFailedMessage"),
         variant: "destructive",
       });
     } finally {
@@ -277,7 +277,7 @@ export default function ServicesManager({ services = [] }: { services?: Service[
         <div className="grid gap-6">
           {allServices.map((service, index) => (
             <div key={service.id} className="relative group" data-testid={`service-row-${service.id}`}>
-              <ServiceCard service={service} theme={{ id: "default", buttonStyle: "rounded" }} />
+              <ServiceCard service={service} theme={{ id: "default", buttonStyle: "rounded" }} t={t} />
               <div className="absolute top-4 right-4 z-10 flex flex-wrap gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button type="button" size="icon" variant="secondary" className="h-8 w-8" onClick={() => moveService(service, -1)} disabled={index === 0} title={t("form.moveUp")}>
                   <ArrowUp className="h-4 w-4" />
@@ -306,7 +306,7 @@ export default function ServicesManager({ services = [] }: { services?: Service[
       }}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingService ? "Edit Service" : "Add Service"}</DialogTitle>
+            <DialogTitle>{editingService ? t("services.edit") : t("services.addService")}</DialogTitle>
           </DialogHeader>
           <form onSubmit={saveService} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
@@ -352,7 +352,7 @@ export default function ServicesManager({ services = [] }: { services?: Service[
                   id="service-duration"
                   value={form.duration}
                   onChange={(event) => updateForm("duration", event.target.value)}
-                  placeholder="30 min, 2 weeks, ongoing"
+                  placeholder={t("services.durationPlaceholder")}
                   maxLength={80}
                 />
               </div>
@@ -374,7 +374,7 @@ export default function ServicesManager({ services = [] }: { services?: Service[
                 id="service-cta-url"
                 value={form.ctaUrl}
                 onChange={(event) => updateForm("ctaUrl", event.target.value)}
-                placeholder="https://cal.com/... or mailto:name@example.com"
+                placeholder={t("services.ctaUrlPlaceholder")}
               />
             </div>
 
@@ -385,7 +385,7 @@ export default function ServicesManager({ services = [] }: { services?: Service[
                   id="service-icon"
                   value={form.icon}
                   onChange={(event) => updateForm("icon", event.target.value)}
-                  placeholder="consult, code, design"
+                  placeholder={t("services.iconPlaceholder")}
                   maxLength={40}
                 />
               </div>
@@ -421,7 +421,7 @@ export default function ServicesManager({ services = [] }: { services?: Service[
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>{t("action.cancel")}</Button>
               <Button type="submit" disabled={saving}>
                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {editingService ? "Save Service" : "Create Service"}
+                {editingService ? t("services.save") : t("services.create")}
               </Button>
             </DialogFooter>
           </form>
@@ -433,7 +433,7 @@ export default function ServicesManager({ services = [] }: { services?: Service[
           <AlertDialogHeader>
             <AlertDialogTitle>{t("services.deleteConfirm")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes {deleteTarget?.title ? `"${deleteTarget.title}"` : "this service"} from your profile.
+              {t("services.deleteBody", { name: deleteTarget?.title ? `“${deleteTarget.title}”` : t("services.title") })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -447,7 +447,7 @@ export default function ServicesManager({ services = [] }: { services?: Service[
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete
+              {t("action.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

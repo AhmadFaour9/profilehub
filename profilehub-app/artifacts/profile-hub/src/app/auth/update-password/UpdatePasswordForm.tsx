@@ -28,16 +28,16 @@ export function UpdatePasswordForm({ email }: { email?: string | null }) {
     setMessage("");
 
     if (password !== confirmPassword) {
-      const nextMessage = "Passwords must match.";
+      const nextMessage = t("auth.passwordsDoNotMatch");
       setMessage(nextMessage);
-      toast({ title: "Password update failed", description: nextMessage, variant: "destructive" });
+      toast({ title: t("auth.passwordUpdateFailed"), description: nextMessage, variant: "destructive" });
       return;
     }
 
     if (!passwordMeetsMinimum(password)) {
       const nextMessage = t("auth.passwordHint");
       setMessage(nextMessage);
-      toast({ title: "Password update failed", description: nextMessage, variant: "destructive" });
+      toast({ title: t("auth.passwordUpdateFailed"), description: nextMessage, variant: "destructive" });
       return;
     }
 
@@ -46,15 +46,25 @@ export function UpdatePasswordForm({ email }: { email?: string | null }) {
     setSaving(false);
 
     if (!result.ok) {
-      const nextMessage = result.message || "Could not update password.";
+      const nextMessage = result.code === "not_logged_in"
+        ? t("auth.passwordResetExpired")
+        : result.code === "same_password"
+          ? t("auth.chooseDifferentPassword")
+          : result.code === "rate_limited"
+            ? t("auth.tooManyAttempts")
+            : result.code === "password_mismatch"
+              ? t("auth.passwordsDoNotMatch")
+              : result.code === "weak_password"
+                ? t("auth.passwordHint")
+                : t("auth.passwordUpdateFailedMessage");
       setMessage(nextMessage);
-      toast({ title: "Password update failed", description: nextMessage, variant: "destructive" });
+      toast({ title: t("auth.passwordUpdateFailed"), description: nextMessage, variant: "destructive" });
       return;
     }
 
     setPassword("");
     setConfirmPassword("");
-    toast({ title: "Password updated", description: result.message || "Password updated successfully." });
+    toast({ title: t("auth.passwordUpdated"), description: result.message || t("authStatus.updatedMessage") });
     router.push("/auth/status?status=success&type=password_updated");
   }
 
@@ -91,7 +101,7 @@ export function UpdatePasswordForm({ email }: { email?: string | null }) {
       </div>
       {message && <p className="text-sm text-destructive">{message}</p>}
       <Button type="submit" className="w-full" disabled={saving || !password || !confirmPassword}>
-        {saving ? "Updating..." : "Update password"}
+        {saving ? t("action.saving") : t("auth.updatePassword")}
       </Button>
     </form>
   );

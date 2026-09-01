@@ -6,6 +6,7 @@ import { QRButton } from "./QRButton";
 import { SiBehance, SiTiktok, SiWhatsapp, SiX, SiInstagram, SiDribbble, SiGithub, SiYoutube } from "react-icons/si";
 import { Linkedin, Facebook, Link2 } from "lucide-react";
 import { getCategoryTone, getSkillIcon } from "@/lib/skill-icons";
+import { ProfileAppearanceControls } from "@/components/LanguageToggle";
 
 const ORBIT_POSITIONS = [
   "-top-2 left-1/2 -translate-x-1/2",
@@ -92,6 +93,7 @@ export function ProfileHeader({ profile, profileUrl, skills = [] }: { profile: P
 
   return (
     <div className="relative">
+      <ProfileAppearanceControls />
       {profile.coverUrl ? (
         <div className="h-48 md:h-64 w-full relative">
           <img 
