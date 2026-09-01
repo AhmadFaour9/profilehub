@@ -1,5 +1,6 @@
 import { Link, ProfileTheme } from "@/modules/shared";
 import { ExternalLink, Link2 } from "lucide-react";
+import type { CSSProperties } from "react";
 
 export function SmartLinkCard({ link, theme }: { link: Link; theme?: ProfileTheme }) {
   const isRounded = theme?.buttonStyle === "rounded";
@@ -13,8 +14,8 @@ export function SmartLinkCard({ link, theme }: { link: Link; theme?: ProfileThem
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={`@container group flex items-center p-4 bg-card hover:bg-accent border border-card-border transition-all ${radiusClass} hover-elevate`}
-      style={theme?.primaryColor ? { '--hover-bg': theme.primaryColor } as any : {}}
+      className={`profile-link-card @container group flex items-center p-4 bg-card border border-card-border ${radiusClass}`}
+      style={theme?.primaryColor ? ({ "--profile-link-glow": theme.primaryColor } as CSSProperties) : undefined}
       data-testid={`link-${link.id}`}
     >
       <div className="w-12 h-12 shrink-0 rounded-md overflow-hidden bg-muted mr-4 grid place-items-center text-muted-foreground">

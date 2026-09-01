@@ -193,10 +193,9 @@
   }
 }
 
-/* Public-profile identity motion is intentionally finite and narrative: the
-   portrait settles in first, then up to three real skills arrive as a compact
-   signature. It gives the visitor context without turning the avatar into a
-   constantly moving decoration. */
+/* Public profile: a focused, editorial identity surface. The ambient canvas is
+   intentionally confined to the cover, while the links receive tactile, finite
+   hover feedback instead of constant visual noise. */
 @layer components {
   .public-profile--custom-background {
     background-color: var(--profile-background, hsl(var(--background)));
@@ -214,6 +213,128 @@
     position: relative;
     isolation: isolate;
     border-radius: 9999px;
+  }
+
+  .profile-cover-stage {
+    position: relative;
+    width: 100%;
+    isolation: isolate;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 18% 18%, hsl(var(--brand-accent) / 0.38), transparent 34%),
+      radial-gradient(circle at 78% 8%, hsl(var(--primary) / 0.46), transparent 38%),
+      linear-gradient(125deg, hsl(222 47% 16%), hsl(217 72% 32%));
+  }
+
+  .profile-cover-stage__media,
+  .profile-cover-stage__scrim,
+  .profile-cover-stage__glow,
+  .profile-particles,
+  .profile-particles > div,
+  .profile-particles canvas {
+    position: absolute !important;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .profile-cover-stage__media {
+    z-index: -2;
+    object-fit: cover;
+  }
+
+  .profile-cover-stage__scrim {
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(120deg, hsl(222 47% 11% / 0.46), transparent 52%, hsl(217 91% 60% / 0.18));
+  }
+
+  .profile-cover-stage__glow {
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0.7;
+    background: radial-gradient(circle at 72% 12%, hsl(0 0% 100% / 0.18), transparent 24%);
+    mix-blend-mode: soft-light;
+  }
+
+  .profile-particles {
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .profile-link-card {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    box-shadow: 0 1px 2px hsl(222 47% 11% / 0.04);
+    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), border-color 220ms ease, box-shadow 220ms ease, background-color 220ms ease;
+  }
+
+  .profile-link-card::before {
+    position: absolute;
+    z-index: 0;
+    top: -50%;
+    bottom: -50%;
+    left: -42%;
+    width: 28%;
+    content: "";
+    opacity: 0;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--profile-link-glow, hsl(var(--brand-accent))) 28%, transparent), transparent);
+    transform: skewX(-18deg) translateX(-260%);
+    transition: transform 500ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease;
+  }
+
+  .profile-link-card > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .profile-link-card:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--profile-link-glow, hsl(var(--primary))) 45%, hsl(var(--border)));
+    background-color: color-mix(in srgb, var(--profile-link-glow, hsl(var(--card))) 6%, hsl(var(--card)));
+    box-shadow: 0 14px 28px hsl(222 47% 11% / 0.12);
+  }
+
+  .profile-link-card:hover::before {
+    opacity: 1;
+    transform: skewX(-18deg) translateX(640%);
+  }
+
+  .profile-link-card:focus-visible,
+  .profile-primary-cta__button:focus-visible {
+    outline: 3px solid hsl(var(--ring) / 0.52);
+    outline-offset: 3px;
+  }
+
+  .profile-primary-cta {
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 12px 28px hsl(222 47% 11% / 0.07);
+  }
+
+  .profile-primary-cta::after {
+    position: absolute;
+    top: -4rem;
+    right: -3rem;
+    width: 10rem;
+    height: 10rem;
+    content: "";
+    pointer-events: none;
+    border-radius: 9999px;
+    background: radial-gradient(circle, hsl(var(--brand-accent) / 0.16), transparent 68%);
+  }
+
+  .profile-primary-cta__button {
+    position: relative;
+    z-index: 1;
+    transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms ease, filter 180ms ease;
+  }
+
+  .profile-primary-cta__button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px hsl(var(--primary) / 0.28);
+    filter: saturate(1.08);
   }
 
   .profile-avatar-frame::before {
@@ -285,6 +406,20 @@
 
   .profile-skill-ribbon__item {
     animation: profile-skill-reveal 420ms calc(180ms + (var(--skill-index) * 90ms)) cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-link-card,
+  .profile-primary-cta__button,
+  .profile-skill-ribbon__item {
+    transition: none;
+  }
+
+  .profile-link-card:hover,
+  .profile-primary-cta__button:hover,
+  .profile-skill-ribbon__item:hover {
+    transform: none;
   }
 }
 

@@ -172,7 +172,7 @@ function ctaHref(cta: { id?: string; url: string }) {
 
 function PrimaryCta({ cta, t }: { cta: { id?: string; title: string; url: string; description?: string | null }; t: Translate }) {
   return (
-    <section className="rounded-2xl border bg-card p-5 shadow-sm">
+    <section className="profile-primary-cta rounded-2xl border bg-card p-5 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">{t("public.startHere")}</p>
       <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
@@ -183,7 +183,7 @@ function PrimaryCta({ cta, t }: { cta: { id?: string; title: string; url: string
           href={ctaHref(cta)}
           target={cta.url.startsWith("mailto:") ? undefined : "_blank"}
           rel="noopener noreferrer"
-          className="inline-flex shrink-0 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+          className="profile-primary-cta__button inline-flex shrink-0 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
         >
           {t("action.continue")}
         </a>

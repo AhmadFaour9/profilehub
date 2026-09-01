@@ -8,6 +8,7 @@ import { Linkedin, Facebook, Link2 } from "lucide-react";
 import { getCategoryTone, getSkillIcon } from "@/lib/skill-icons";
 import { ProfileAppearanceControls } from "@/components/LanguageToggle";
 import type { Translate } from "@/lib/i18n";
+import { ProfileParticles } from "./ProfileParticles";
 
 const PROFILE_SKILL_LIMIT = 3;
 
@@ -85,21 +86,22 @@ export function ProfileHeader({ profile, profileUrl, skills = [], t }: { profile
   return (
     <div className="relative">
       <ProfileAppearanceControls />
-      {profile.coverUrl ? (
-        <div className="h-48 md:h-64 w-full relative">
-          <img 
-            src={profile.coverUrl} 
+      <div className={`profile-cover-stage ${profile.coverUrl ? "h-48 md:h-64" : "h-36 md:h-48"}`}>
+        {profile.coverUrl ? (
+          <img
+            src={profile.coverUrl}
             alt={`${profile.displayName} cover`}
-            className="w-full h-full object-cover"
+            className="profile-cover-stage__media"
             loading="eager"
             decoding="async"
             fetchPriority="high"
             sizes="100vw"
           />
-        </div>
-      ) : (
-        <div className="h-32 bg-muted w-full" />
-      )}
+        ) : null}
+        <div className="profile-cover-stage__scrim" aria-hidden="true" />
+        <ProfileParticles />
+        <div className="profile-cover-stage__glow" aria-hidden="true" />
+      </div>
       
       <div className="px-4 pb-4 max-w-2xl mx-auto">
         <div className="flex justify-between items-end -mt-16 md:-mt-20 mb-4 relative z-10">

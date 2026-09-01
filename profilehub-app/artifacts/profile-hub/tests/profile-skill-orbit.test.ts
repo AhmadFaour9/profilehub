@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 const header = readFileSync("src/components/profile/ProfileHeader.tsx", "utf8");
 const profile = readFileSync("src/components/profile/PublicProfile.tsx", "utf8");
 const styles = readFileSync("src/index.css", "utf8");
+const particles = readFileSync("src/components/profile/ProfileParticles.tsx", "utf8");
 
 describe("profile identity motion", () => {
   it("uses the profile avatar with a concise ribbon of real skills", () => {
@@ -20,7 +21,17 @@ describe("profile identity motion", () => {
 
   it("respects operating-system reduced-motion preferences", () => {
     expect(styles).toContain("@media (prefers-reduced-motion: no-preference)");
+    expect(styles).toContain("@media (prefers-reduced-motion: reduce)");
     expect(styles).toContain("profile-skill-reveal");
     expect(styles).not.toContain("profile-skill-orbit");
+  });
+
+  it("keeps particles decorative, lightweight, and motion-aware", () => {
+    expect(header).toContain("<ProfileParticles />");
+    expect(particles).toContain('"use client"');
+    expect(particles).toContain("pauseOnOutsideViewport: true");
+    expect(particles).toContain("fpsLimit: 48");
+    expect(particles).toContain("prefers-reduced-motion: no-preference");
+    expect(particles).toContain('aria-hidden="true"');
   });
 });
