@@ -107,7 +107,7 @@ export function ResumeDropZone({
       onDrop={handleDrop}
       data-testid="resume-dropzone"
       data-dragging={dragging ? "true" : "false"}
-      className={`relative rounded-lg border border-dashed transition-colors ${
+      className={`relative min-w-0 rounded-lg border border-dashed transition-colors ${
         dragging ? "border-primary bg-primary/10" : "border-muted-foreground/30 hover:bg-accent/40"
       } ${disabled ? "pointer-events-none opacity-60" : ""}`}
     >
@@ -115,7 +115,7 @@ export function ResumeDropZone({
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={disabled}
-        className={`flex w-full flex-col items-center justify-center gap-2 text-center ${
+        className={`flex min-w-0 w-full flex-col items-center justify-center gap-2 text-center ${
           compact ? "px-4 py-6" : "px-6 py-12"
         }`}
       >
@@ -128,7 +128,7 @@ export function ResumeDropZone({
           />
         )}
 
-        <span className="text-sm font-medium">
+        <span className="max-w-full break-words text-sm font-medium [overflow-wrap:anywhere]">
           {dragging ? t("resume.dropHere") : file ? file.name : t("resume.dropOrBrowse")}
         </span>
 

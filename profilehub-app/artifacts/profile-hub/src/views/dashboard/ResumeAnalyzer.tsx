@@ -172,14 +172,14 @@ export default function ResumeAnalyzer({ profile }: { profile: Profile }) {
   };
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="min-w-0 max-w-4xl space-y-8">
       <header className="space-y-1">
         <h1 className="text-3xl font-serif">{t("resume.title")}</h1>
         <p className="text-muted-foreground">{t("resume.subtitle")}</p>
       </header>
 
       {/* ── Input ─────────────────────────────────────────────────────────── */}
-      <section className="rounded-xl border bg-card p-6">
+      <section className="min-w-0 rounded-xl border bg-card p-6">
         <Tabs defaultValue="upload">
           <TabsList>
             <TabsTrigger value="upload">{t("resume.uploadTab")}</TabsTrigger>
@@ -212,20 +212,20 @@ export default function ResumeAnalyzer({ profile }: { profile: Profile }) {
           </TabsContent>
         </Tabs>
 
-        <div className="mt-4 flex items-center gap-3">
+        <div className="mt-4 flex flex-wrap items-center gap-3">
           <Button onClick={handleAnalyze} disabled={loading} data-testid="btn-analyze-resume">
             <Sparkles className="mr-2 h-4 w-4" aria-hidden />
             {loading ? t("resume.analyzing") : analysis ? t("resume.reanalyze") : t("resume.analyze")}
           </Button>
 
           {meta?.fallback && (
-            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="flex min-w-0 items-center gap-1.5 break-words text-xs text-muted-foreground [overflow-wrap:anywhere]">
               <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
               {t("resume.usingFallback")}
             </span>
           )}
           {meta && !meta.fallback && meta.model && (
-            <span className="text-xs text-muted-foreground">
+            <span className="min-w-0 break-words text-xs text-muted-foreground [overflow-wrap:anywhere]">
               {t("resume.usingModel")} {meta.model}
             </span>
           )}
@@ -235,7 +235,7 @@ export default function ResumeAnalyzer({ profile }: { profile: Profile }) {
       {analysis && (
         <>
           {/* ── Scores ────────────────────────────────────────────────────── */}
-          <section className="rounded-xl border bg-card p-6 space-y-6">
+          <section className="min-w-0 space-y-6 rounded-xl border bg-card p-6">
             <div className="flex flex-wrap items-end gap-8">
               <div>
                 <p className="text-sm text-muted-foreground">{t("resume.overallScore")}</p>
@@ -264,9 +264,9 @@ export default function ResumeAnalyzer({ profile }: { profile: Profile }) {
 
                   return (
                     <div key={section.key} className="space-y-1">
-                      <div className="flex items-baseline justify-between gap-4 text-sm">
-                        <span className="font-medium capitalize">{label}</span>
-                        <span className="tabular-nums text-muted-foreground">{section.score}</span>
+                      <div className="flex min-w-0 items-baseline justify-between gap-4 text-sm">
+                        <span className="min-w-0 flex-1 break-words font-medium capitalize [overflow-wrap:anywhere]">{label}</span>
+                        <span className="shrink-0 tabular-nums text-muted-foreground">{section.score}</span>
                       </div>
                       <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                         <div
@@ -275,7 +275,7 @@ export default function ResumeAnalyzer({ profile }: { profile: Profile }) {
                         />
                       </div>
                       {section.comment && (
-                        <p className="text-xs text-muted-foreground">{section.comment}</p>
+                        <p className="break-words text-xs text-muted-foreground [overflow-wrap:anywhere]">{section.comment}</p>
                       )}
                     </div>
                   );
@@ -285,35 +285,35 @@ export default function ResumeAnalyzer({ profile }: { profile: Profile }) {
           </section>
 
           {/* ── Extracted fields ──────────────────────────────────────────── */}
-          <section className="rounded-xl border bg-card p-6 space-y-5">
+          <section className="min-w-0 space-y-5 rounded-xl border bg-card p-6">
             <div className="space-y-1">
               <h2 className="text-xl font-semibold">{t("resume.extractedFields")}</h2>
               <p className="text-sm text-muted-foreground">{t("resume.extractedHint")}</p>
             </div>
 
-            <dl className="divide-y">
+            <dl className="min-w-0 divide-y">
               {RESUME_FIELDS.map((key) => {
                 const value = analysis.fields[key as ResumeFieldKey];
                 const empty = isFieldEmpty(value);
 
                 return (
-                  <div key={key} className="grid gap-1 py-3 sm:grid-cols-3 sm:gap-4">
-                    <dt className="text-sm font-medium text-muted-foreground">
+                  <div key={key} className="grid min-w-0 gap-1 py-3 sm:grid-cols-3 sm:gap-4">
+                    <dt className="min-w-0 break-words text-sm font-medium text-muted-foreground [overflow-wrap:anywhere]">
                       {t(RESUME_FIELD_LABEL_KEYS[key])}
                     </dt>
-                    <dd className="sm:col-span-2 text-sm">
+                    <dd className="min-w-0 text-sm sm:col-span-2">
                       {empty ? (
                         <span className="text-muted-foreground italic">{t("resume.notFound")}</span>
                       ) : Array.isArray(value) ? (
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex min-w-0 flex-wrap gap-1.5">
                           {value.map((item, index) => (
-                            <Badge key={`${key}-${index}`} variant="secondary" className="font-normal">
+                            <Badge key={`${key}-${index}`} variant="secondary" className="max-w-full whitespace-normal break-words font-normal [overflow-wrap:anywhere]">
                               {item}
                             </Badge>
                           ))}
                         </div>
                       ) : (
-                        <span className="whitespace-pre-wrap break-words">{value}</span>
+                        <span className="block min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{value}</span>
                       )}
                     </dd>
                   </div>
@@ -324,7 +324,7 @@ export default function ResumeAnalyzer({ profile }: { profile: Profile }) {
 
           {/* ── Apply to profile ──────────────────────────────────────────── */}
           {plans.length > 0 && (
-            <section className="rounded-xl border bg-card p-6 space-y-5">
+            <section className="min-w-0 space-y-5 rounded-xl border bg-card p-6">
               <div className="space-y-1">
                 <h2 className="text-xl font-semibold">{t("resume.applyToProfile")}</h2>
                 <p className="text-sm text-muted-foreground">
@@ -342,11 +342,11 @@ export default function ResumeAnalyzer({ profile }: { profile: Profile }) {
                   return (
                     <div
                       key={plan.key}
-                      className="rounded-lg border p-4 space-y-3"
+                      className="min-w-0 space-y-3 rounded-lg border p-4"
                       data-testid={`resume-plan-${plan.key}`}
                     >
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-medium">
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <span className="min-w-0 break-words text-sm font-medium [overflow-wrap:anywhere]">
                           {t(RESUME_FIELD_LABEL_KEYS[plan.key])}
                         </span>
                         {applied ? (
@@ -362,20 +362,20 @@ export default function ResumeAnalyzer({ profile }: { profile: Profile }) {
                       </div>
 
                       {!plan.isEmpty && (
-                        <div className="rounded-md bg-muted/50 p-3 text-sm">
+                        <div className="min-w-0 rounded-md bg-muted/50 p-3 text-sm">
                           <p className="text-xs font-medium text-muted-foreground">
                             {t("resume.currentValue")}
                           </p>
-                          <p className="mt-1 whitespace-pre-wrap break-words">{plan.current}</p>
+                          <p className="mt-1 min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{plan.current}</p>
                         </div>
                       )}
 
-                      <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-sm">
-                        <p className="whitespace-pre-wrap break-words">{plan.suggested}</p>
+                      <div className="min-w-0 rounded-md border border-primary/30 bg-primary/5 p-3 text-sm">
+                        <p className="min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{plan.suggested}</p>
                       </div>
 
                       {!applied && (
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           <Button
                             size="sm"
                             variant={checked ? "default" : "outline"}
@@ -410,7 +410,7 @@ export default function ResumeAnalyzer({ profile }: { profile: Profile }) {
 
           {/* ── Advice ────────────────────────────────────────────────────── */}
           {analysis.advice.length > 0 && (
-            <section className="rounded-xl border bg-card p-6 space-y-4">
+            <section className="min-w-0 space-y-4 rounded-xl border bg-card p-6">
               <div className="space-y-1">
                 <h2 className="text-xl font-semibold">{t("resume.advice")}</h2>
                 <p className="text-sm text-muted-foreground">{t("resume.adviceHint")}</p>
@@ -418,9 +418,9 @@ export default function ResumeAnalyzer({ profile }: { profile: Profile }) {
 
               <ol className="space-y-3">
                 {analysis.advice.map((item, index) => (
-                  <li key={index} className="rounded-lg border p-4 space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium">{item.title}</span>
+                  <li key={index} className="min-w-0 space-y-1 rounded-lg border p-4">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <span className="min-w-0 break-words font-medium [overflow-wrap:anywhere]">{item.title}</span>
                       <Badge
                         variant={item.impact === "high" ? "default" : "secondary"}
                         className="font-normal"
@@ -429,7 +429,7 @@ export default function ResumeAnalyzer({ profile }: { profile: Profile }) {
                       </Badge>
                     </div>
                     {item.detail && (
-                      <p className="text-sm text-muted-foreground">{item.detail}</p>
+                      <p className="break-words text-sm text-muted-foreground [overflow-wrap:anywhere]">{item.detail}</p>
                     )}
                   </li>
                 ))}

@@ -25,28 +25,28 @@ export default function Overview({
   const firstName = profile ? (profile.displayName || profile.username).split(" ")[0] : "there";
 
   return (
-    <div className="space-y-8 max-w-5xl">
+    <div className="min-w-0 max-w-5xl space-y-8">
       <div>
-        <h1 className="text-3xl font-serif text-foreground">{t("dashboard.greeting")}, {firstName}</h1>
+        <h1 className="break-words text-3xl font-serif text-foreground [overflow-wrap:anywhere]">{t("dashboard.greeting")}, {firstName}</h1>
         <p className="text-muted-foreground mt-1">{t("dashboard.todaySubtitle")}</p>
       </div>
 
       {analytics && <AnalyticsCards data={analytics} />}
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <div className="p-6 border rounded-xl bg-card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-medium flex items-center gap-2">
-              <LinkIcon className="w-5 h-5 text-primary" />{t("dashboard.linksPerformance")}</h2>
+      <div className="grid min-w-0 gap-6 md:grid-cols-2">
+        <div className="min-w-0 rounded-xl border bg-card p-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="flex min-w-0 items-center gap-2 break-words text-lg font-medium [overflow-wrap:anywhere]">
+              <LinkIcon className="h-5 w-5 shrink-0 text-primary" />{t("dashboard.linksPerformance")}</h2>
             <Button variant="ghost" size="sm" asChild>
               <Link href="/dashboard/analytics">{t("dashboard.viewAll")}<ArrowRight className="w-4 h-4 ml-1" /></Link>
             </Button>
           </div>
           <div className="space-y-4">
             {(topLinks.length > 0 ? topLinks : []).map((link) => (
-              <div className="flex items-center justify-between" key={link.linkId}>
-                <span className="text-sm font-medium truncate">{link.title}</span>
-                <span className="text-sm text-muted-foreground">{link.clicks.toLocaleString()} clicks</span>
+              <div className="flex min-w-0 items-center justify-between gap-3" key={link.linkId}>
+                <span className="min-w-0 flex-1 truncate text-sm font-medium" title={link.title}>{link.title}</span>
+                <span className="shrink-0 text-sm text-muted-foreground">{link.clicks.toLocaleString()} clicks</span>
               </div>
             ))}
             {topLinks.length === 0 && (
@@ -55,10 +55,10 @@ export default function Overview({
           </div>
         </div>
 
-        <div className="p-6 border rounded-xl bg-card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-medium flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-primary" />{t("projects.title")}</h2>
+        <div className="min-w-0 rounded-xl border bg-card p-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="flex min-w-0 items-center gap-2 break-words text-lg font-medium [overflow-wrap:anywhere]">
+              <Briefcase className="h-5 w-5 shrink-0 text-primary" />{t("projects.title")}</h2>
             <Button variant="ghost" size="sm" asChild>
               <Link href="/dashboard/projects">{t("dashboard.manage")}<ArrowRight className="w-4 h-4 ml-1" /></Link>
             </Button>
@@ -66,8 +66,8 @@ export default function Overview({
           {projects.length > 0 ? (
             <div className="space-y-3">
               {projects.slice(0, 3).map((project) => (
-                <div key={project.id} className="rounded-lg border p-3">
-                  <p className="text-sm font-medium truncate">{project.title}</p>
+                <div key={project.id} className="min-w-0 rounded-lg border p-3">
+                  <p className="block min-w-0 truncate text-sm font-medium" title={project.title}>{project.title}</p>
                   {project.description ? (
                     <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{project.description}</p>
                   ) : null}

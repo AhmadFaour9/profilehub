@@ -43,4 +43,8 @@ describe("resume drop zone", () => {
   it("ignores drops while an analysis is running", () => {
     expect(source).toMatch(/if \(disabled\) return;/);
   });
+
+  it("wraps an unbroken filename inside the drop zone", () => {
+    expect(source).toContain("max-w-full break-words text-sm font-medium [overflow-wrap:anywhere]");
+  });
 });
