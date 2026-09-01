@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { ClientProviders } from "@/components/ClientProviders";
 import { getDirection } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
@@ -99,6 +100,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <ClientProviders locale={locale}>{children}</ClientProviders>
+        <Analytics />
       </body>
     </html>
   );
