@@ -5,12 +5,13 @@ import type { Project, Skill } from "@/modules/shared";
 import type { Translate } from "@/lib/i18n";
 
 /**
- * Skills grouped by category, each group collapsed until the reader opens it.
+ * Skills grouped into visible category cards, which can still be collapsed by
+ * the reader when a profile has a very broad stack.
  *
- * A full stack listed flat is a wall of chips that pushes the rest of the
- * profile below the fold. Collapsed categories keep the shape of someone's
- * expertise readable at a glance - the group names and their sizes - and let a
- * reader open only the area they care about.
+ * The category cards keep a broad stack readable at a glance, while the chip
+ * groups make the actual tools immediately scannable for recruiters and
+ * clients. Native details/summary keeps each card keyboard accessible without
+ * requiring client-side state.
  *
  * Built on <details>/<summary> rather than component state: it needs no
  * JavaScript, keeps the section a Server Component, is keyboard accessible and
@@ -86,23 +87,24 @@ export function SkillsSection({
     <section className="space-y-4" data-testid="public-skills">
       <h2 className="text-2xl font-serif">{t("public.skills")}</h2>
 
-      <div className="space-y-2">
+      <div className="grid gap-3 sm:grid-cols-2">
         {groups.map((group) => {
           const tone = getCategoryTone(group.category);
 
           return (
             <details
               key={group.category}
-              className="group rounded-xl border bg-card transition-colors"
+              open
+              className="group min-w-0 overflow-hidden rounded-2xl border bg-card shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md motion-reduce:transform-none"
               data-testid={`skill-group-${group.category}`}
             >
               <summary
-                className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 hover:bg-accent/40 [&::-webkit-details-marker]:hidden"
+                className="flex cursor-pointer list-none items-center justify-between gap-3 bg-gradient-to-br from-primary/[0.07] via-transparent to-transparent px-4 py-3.5 hover:bg-accent/40 [&::-webkit-details-marker]:hidden"
                 aria-label={`${group.category} (${group.items.length})`}
               >
                 <span className="flex min-w-0 items-center gap-2.5">
                   <Sparkles className={`h-4 w-4 shrink-0 ${tone}`} aria-hidden />
-                  <span className="truncate text-sm font-medium">{group.category}</span>
+                  <span className="min-w-0 break-words text-sm font-semibold [overflow-wrap:anywhere]">{group.category}</span>
                   <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
                     {group.items.length}
                   </span>
@@ -114,7 +116,7 @@ export function SkillsSection({
                 />
               </summary>
 
-              <ul className="flex flex-wrap gap-2 border-t px-4 py-3">
+              <ul className="flex flex-wrap gap-2 border-t px-4 py-3.5">
                 {group.items.map((skill) => {
                   const Icon = getSkillIcon(skill.name);
                   const project = findProject(skill.name, skillLinks);
@@ -150,13 +152,13 @@ export function SkillsSection({
                         <a
                           href={`#project-${project.id}`}
                           title={`${skill.name} - ${project.title}`}
-                          className="inline-flex items-center gap-2 rounded-lg border border-primary/25 bg-background px-3 py-1.5 text-sm transition-colors hover:border-primary/60 hover:bg-accent"
+                          className="inline-flex max-w-full items-center gap-2 rounded-lg border border-primary/25 bg-background px-3 py-1.5 text-sm transition duration-200 hover:border-primary/60 hover:bg-accent hover:shadow-sm motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none"
                           data-testid={`skill-link-${skill.id}`}
                         >
                           {inner}
                         </a>
                       ) : (
-                        <span className="inline-flex items-center gap-2 rounded-lg border bg-background px-3 py-1.5 text-sm">
+                        <span className="inline-flex max-w-full items-center gap-2 rounded-lg border bg-background px-3 py-1.5 text-sm">
                           {inner}
                         </span>
                       )}

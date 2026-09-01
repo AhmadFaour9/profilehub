@@ -192,3 +192,82 @@
     @apply font-sans antialiased bg-background text-foreground transition-colors duration-300;
   }
 }
+
+/* Public profile: skill icons become a quiet halo around the real profile
+   photo. This is intentionally CSS-only so it does not delay the public page
+   or hide profile data from search engines. */
+@layer components {
+  .profile-skill-orbit__halo {
+    position: absolute;
+    z-index: -2;
+    inset: -0.6rem;
+    border-radius: 9999px;
+    background: conic-gradient(
+      from 120deg,
+      hsl(var(--primary) / 0.28),
+      hsl(var(--brand-accent) / 0.18),
+      hsl(var(--brand-warm) / 0.2),
+      hsl(var(--primary) / 0.28)
+    );
+    filter: blur(12px);
+  }
+
+  .profile-skill-orbit__ring {
+    position: absolute;
+    z-index: -1;
+    inset: -0.25rem;
+    border: 1px solid hsl(var(--primary) / 0.28);
+    border-radius: 9999px;
+    border-inline-start-color: hsl(var(--brand-accent) / 0.7);
+    border-block-end-color: hsl(var(--brand-warm) / 0.55);
+  }
+
+  .profile-skill-orbit__avatar {
+    position: relative;
+    z-index: 1;
+  }
+
+  .profile-skill-orbit__satellite {
+    position: absolute;
+    z-index: 2;
+    display: grid;
+    height: 1.75rem;
+    width: 1.75rem;
+    place-items: center;
+    border: 1px solid hsl(var(--border));
+    border-radius: 9999px;
+    background: hsl(var(--background) / 0.96);
+    box-shadow: 0 5px 14px hsl(222 47% 11% / 0.12);
+    backdrop-filter: blur(6px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .profile-skill-orbit__halo {
+    animation: profile-skill-halo 5s ease-in-out infinite;
+  }
+
+  .profile-skill-orbit__ring {
+    animation: profile-skill-ring 18s linear infinite;
+  }
+
+  .profile-skill-orbit__satellite > svg,
+  .profile-skill-orbit__satellite > span {
+    animation: profile-skill-float 4.5s ease-in-out infinite;
+    animation-delay: var(--skill-delay, 0s);
+  }
+}
+
+@keyframes profile-skill-halo {
+  0%, 100% { opacity: 0.5; transform: scale(0.98); }
+  50% { opacity: 0.9; transform: scale(1.05); }
+}
+
+@keyframes profile-skill-ring {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes profile-skill-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}

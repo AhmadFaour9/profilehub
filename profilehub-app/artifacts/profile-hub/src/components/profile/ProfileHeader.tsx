@@ -1,11 +1,76 @@
-import { Profile } from "@/modules/shared";
+import type { CSSProperties } from "react";
+import type { Profile, Skill } from "@/modules/shared";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Mail, MapPin, Globe } from "lucide-react";
 import { QRButton } from "./QRButton";
 import { SiBehance, SiTiktok, SiWhatsapp, SiX, SiInstagram, SiDribbble, SiGithub, SiYoutube } from "react-icons/si";
 import { Linkedin, Facebook, Link2 } from "lucide-react";
+import { getCategoryTone, getSkillIcon } from "@/lib/skill-icons";
 
-export function ProfileHeader({ profile, profileUrl }: { profile: Profile; profileUrl?: string }) {
+const ORBIT_POSITIONS = [
+  "-top-2 left-1/2 -translate-x-1/2",
+  "right-0 top-1/4 translate-x-1/3",
+  "bottom-0 right-1/4 translate-y-1/3",
+  "bottom-1/4 left-0 -translate-x-1/3",
+] as const;
+
+function featuredSkills(skills: Skill[]): Skill[] {
+  const seenCategories = new Set<string>();
+  const featured: Skill[] = [];
+
+  for (const skill of skills) {
+    if (skill.isActive === false || seenCategories.has(skill.category)) continue;
+    featured.push(skill);
+    seenCategories.add(skill.category);
+    if (featured.length === ORBIT_POSITIONS.length) break;
+  }
+
+  return featured;
+}
+
+function ProfileSkillOrbit({ profile, skills }: { profile: Profile; skills: Skill[] }) {
+  const orbitSkills = featuredSkills(skills);
+
+  return (
+    <div
+      className="profile-skill-orbit relative h-32 w-32 md:h-40 md:w-40"
+      data-testid="profile-skill-orbit"
+    >
+      {orbitSkills.length > 0 && (
+        <>
+          <span className="profile-skill-orbit__halo" aria-hidden />
+          <span className="profile-skill-orbit__ring" aria-hidden />
+          {orbitSkills.map((skill, index) => {
+            const Icon = getSkillIcon(skill.name);
+            const tone = getCategoryTone(skill.category);
+
+            return (
+              <span
+                key={skill.id}
+                className={`profile-skill-orbit__satellite ${ORBIT_POSITIONS[index]}`}
+                style={{ "--skill-delay": `${index * -0.7}s` } as CSSProperties}
+                aria-hidden
+              >
+                {Icon ? <Icon className={`h-3.5 w-3.5 ${tone}`} /> : <SparkleMark className={`h-3.5 w-3.5 ${tone}`} />}
+              </span>
+            );
+          })}
+        </>
+      )}
+
+      <Avatar className="profile-skill-orbit__avatar h-32 w-32 border-4 border-background bg-background shadow-lg md:h-40 md:w-40">
+        <AvatarImage src={profile.avatarUrl || ""} alt={profile.displayName} />
+        <AvatarFallback className="text-4xl">{profile.displayName.charAt(0)}</AvatarFallback>
+      </Avatar>
+    </div>
+  );
+}
+
+function SparkleMark({ className }: { className?: string }) {
+  return <span className={`block rounded-full bg-current ${className || ""}`} />;
+}
+
+export function ProfileHeader({ profile, profileUrl, skills = [] }: { profile: Profile; profileUrl?: string; skills?: Skill[] }) {
   const activeSocialLinks = (profile.socialLinks || []).filter((social) => social.isActive !== false && social.url);
   const websiteHost = getSafeHostname(profile.website);
   const getSocialIcon = (platform: string) => {
@@ -45,10 +110,7 @@ export function ProfileHeader({ profile, profileUrl }: { profile: Profile; profi
       
       <div className="px-4 pb-4 max-w-2xl mx-auto">
         <div className="flex justify-between items-end -mt-16 md:-mt-20 mb-4 relative z-10">
-          <Avatar className="h-32 w-32 md:h-40 md:w-40 border-4 border-background shadow-sm bg-background">
-            <AvatarImage src={profile.avatarUrl || ""} alt={profile.displayName} />
-            <AvatarFallback className="text-4xl">{profile.displayName.charAt(0)}</AvatarFallback>
-          </Avatar>
+          <ProfileSkillOrbit profile={profile} skills={skills} />
           
           <div className="pb-2">
             <QRButton username={profile.username} url={profileUrl} />

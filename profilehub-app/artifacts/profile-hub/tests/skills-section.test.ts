@@ -11,9 +11,8 @@ describe("skills section", () => {
     expect(section).toContain("<summary");
   });
 
-  it("leaves every group collapsed by default", () => {
-    // An `open` attribute on the element, not the `group-open:` class.
-    expect(section).not.toMatch(/<details[^>]*\sopen[\s>]/);
+  it("shows category contents by default while keeping them collapsible", () => {
+    expect(section).toMatch(/<details[\s\S]*?\sopen[\s>]/);
   });
 
   it("hides the native marker so the chevron is the only affordance", () => {
@@ -25,6 +24,11 @@ describe("skills section", () => {
   it("shows how many skills a collapsed group holds", () => {
     expect(section).toContain("{group.items.length}");
   });
+
+  it("lays categories out as distinct responsive cards", () => {
+    expect(section).toContain("grid gap-3 sm:grid-cols-2");
+    expect(section).toContain("rounded-2xl");
+  });
 });
 
 describe("skill to project links", () => {
@@ -35,7 +39,7 @@ describe("skill to project links", () => {
   it("renders a plain chip when no project claims the skill", () => {
     // A link that goes nowhere promises evidence that is not there.
     expect(section).toMatch(/project \? \(/);
-    expect(section).toContain("<span className=\"inline-flex items-center gap-2 rounded-lg border bg-background");
+    expect(section).toContain("<span className=\"inline-flex max-w-full items-center gap-2 rounded-lg border bg-background");
   });
 
   it("matches a skill against a differently written tag", () => {
