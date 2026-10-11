@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { PublicProfile as PublicProfileData } from "@/modules/shared";
 import { ProfileHeader } from "./ProfileHeader";
 import { SmartLinkCard } from "./SmartLinkCard";
-import { ProjectCard } from "./ProjectCard";
+import { ProjectShowcase } from "./ProjectShowcase";
 import { ServiceCard } from "./ServiceCard";
 import { GalleryGrid } from "./GalleryGrid";
 import { SkillsSection } from "./SkillsSection";
@@ -125,11 +125,7 @@ export async function PublicProfile({
           {visibleProjects.length > 0 && (
             <section className="space-y-4">
               <h2 className="text-2xl font-serif">{t("public.projects")}</h2>
-              <div className="grid gap-6">
-                {visibleProjects.map((project) => (
-                  <ProjectCard key={project.id} project={project} theme={profile.theme} />
-                ))}
-              </div>
+              <ProjectShowcase projects={visibleProjects} theme={profile.theme} t={t} />
             </section>
           )}
 

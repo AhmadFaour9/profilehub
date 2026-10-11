@@ -12,6 +12,10 @@ const mapProject = (row: any): Project => ({
   repoUrl: row.repo_url,
   url: row.project_url || row.repo_url,
   tags: row.tags || [],
+  category: row.category ?? null,
+  status: row.status ?? null,
+  features: row.features || [],
+  metrics: row.metrics || [],
   position: row.position,
   order: row.position,
   isFeatured: row.is_featured,
@@ -48,6 +52,10 @@ export class SupabaseProjectRepository implements IProjectRepository {
         project_url: data.projectUrl,
         repo_url: data.repoUrl,
         tags: data.tags,
+        category: data.category || null,
+        status: data.status || null,
+        features: data.features,
+        metrics: data.metrics,
         position: data.position,
         is_featured: data.isFeatured ?? false,
         is_active: data.isActive ?? true,
@@ -67,6 +75,10 @@ export class SupabaseProjectRepository implements IProjectRepository {
     if (data.projectUrl !== undefined) payload.project_url = data.projectUrl;
     if (data.repoUrl !== undefined) payload.repo_url = data.repoUrl;
     if (data.tags !== undefined) payload.tags = data.tags;
+    if (data.category !== undefined) payload.category = data.category || null;
+    if (data.status !== undefined) payload.status = data.status || null;
+    if (data.features !== undefined) payload.features = data.features;
+    if (data.metrics !== undefined) payload.metrics = data.metrics;
     if (data.position !== undefined) payload.position = data.position;
     if (data.isFeatured !== undefined) payload.is_featured = data.isFeatured;
     if (data.isActive !== undefined) payload.is_active = data.isActive;

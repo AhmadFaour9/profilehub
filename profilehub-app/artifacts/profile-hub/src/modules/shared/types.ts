@@ -76,6 +76,10 @@ export type Project = {
   repoUrl?: string | null;
   url?: string | null;
   tags: string[];
+  category?: string | null;
+  status?: string | null;
+  features?: string[];
+  metrics?: string[];
   position?: number;
   order?: number;
   isFeatured: boolean;

@@ -7,6 +7,7 @@ import type { Project } from "@/modules/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +41,12 @@ type ProjectFormState = {
   repoUrl: string;
   imageUrl: string;
   tags: string;
+  category: string;
+  status: string;
+  features: string;
+  metrics: string;
+  isFeatured: boolean;
+  isActive: boolean;
 };
 
 type DescriptionVariantKey = "improved" | "shorter" | "marketing" | "technical";
@@ -68,6 +75,12 @@ const EMPTY_PROJECT_FORM: ProjectFormState = {
   repoUrl: "",
   imageUrl: "",
   tags: "",
+  category: "",
+  status: "",
+  features: "",
+  metrics: "",
+  isFeatured: false,
+  isActive: true,
 };
 
 function safeTextError(text: string): string {
@@ -117,6 +130,12 @@ function formFromProject(project: Project): ProjectFormState {
     repoUrl: project.repoUrl || "",
     imageUrl: project.imageUrl || "",
     tags: (project.tags || []).join(", "),
+    category: project.category || "",
+    status: project.status || "",
+    features: (project.features || []).join("\n"),
+    metrics: (project.metrics || []).join("\n"),
+    isFeatured: project.isFeatured ?? false,
+    isActive: project.isActive ?? true,
   };
 }
 
@@ -126,6 +145,15 @@ function normalizeTags(value: string): string[] {
     .map((tag) => tag.trim())
     .filter(Boolean)
     .slice(0, 12);
+}
+
+/** Features and results are entered one per line. */
+function normalizeLines(value: string, max: number): string[] {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, max);
 }
 
 function normalizeProjectFromRow(row: any, fallback?: Project): Project {
@@ -139,6 +167,10 @@ function normalizeProjectFromRow(row: any, fallback?: Project): Project {
     repoUrl: row.repoUrl ?? row.repo_url ?? fallback?.repoUrl ?? "",
     url: row.url ?? row.projectUrl ?? row.project_url ?? row.repoUrl ?? row.repo_url ?? fallback?.url ?? "",
     tags: row.tags || fallback?.tags || [],
+    category: row.category ?? fallback?.category ?? null,
+    status: row.status ?? fallback?.status ?? null,
+    features: row.features || fallback?.features || [],
+    metrics: row.metrics || fallback?.metrics || [],
     position: row.position ?? fallback?.position,
     order: row.order ?? row.position ?? fallback?.order,
     isFeatured: row.isFeatured ?? row.is_featured ?? fallback?.isFeatured ?? false,
@@ -146,6 +178,76 @@ function normalizeProjectFromRow(row: any, fallback?: Project): Project {
     createdAt: row.createdAt || row.created_at || fallback?.createdAt || new Date().toISOString(),
     updatedAt: row.updatedAt || row.updated_at || fallback?.updatedAt,
   };
+}
+
+/**
+ * Category, status, features, results, and the two visibility switches.
+ * Shared by the create and edit dialogs so the two cannot drift apart.
+ */
+function CatalogFields({
+  form,
+  onChange,
+}: {
+  form: ProjectFormState;
+  onChange: (patch: Partial<ProjectFormState>) => void;
+}) {
+  const { t } = useLocale();
+
+  return (
+    <>
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="space-y-2 text-sm font-medium">
+          <span>{t("form.category")}</span>
+          <Input
+            value={form.category}
+            onChange={(event) => onChange({ category: event.target.value })}
+            placeholder={t("projects.categoryPlaceholder")}
+            maxLength={60}
+          />
+        </label>
+        <label className="space-y-2 text-sm font-medium">
+          <span>{t("form.status")}</span>
+          <Input
+            value={form.status}
+            onChange={(event) => onChange({ status: event.target.value })}
+            placeholder={t("projects.statusPlaceholder")}
+            maxLength={60}
+          />
+        </label>
+      </div>
+
+      <label className="space-y-2 text-sm font-medium block">
+        <span>{t("public.keyFeatures")}</span>
+        <Textarea
+          value={form.features}
+          onChange={(event) => onChange({ features: event.target.value })}
+          placeholder={t("projects.featuresHint")}
+          rows={4}
+        />
+      </label>
+
+      <label className="space-y-2 text-sm font-medium block">
+        <span>{t("projects.metrics")}</span>
+        <Textarea
+          value={form.metrics}
+          onChange={(event) => onChange({ metrics: event.target.value })}
+          placeholder={t("projects.metricsHint")}
+          rows={2}
+        />
+      </label>
+
+      <div className="flex flex-wrap gap-x-6 gap-y-3">
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <Switch checked={form.isFeatured} onCheckedChange={(checked) => onChange({ isFeatured: checked })} />
+          <span>{t("projects.featured")}</span>
+        </label>
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <Switch checked={form.isActive} onCheckedChange={(checked) => onChange({ isActive: checked })} />
+          <span>{t("form.activeOnProfile")}</span>
+        </label>
+      </div>
+    </>
+  );
 }
 
 export default function ProjectsManager({ projects = [] }: { projects?: Project[] }) {
@@ -370,8 +472,12 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
         repoUrl: editForm.repoUrl,
         imageUrl: editForm.imageUrl,
         tags: normalizeTags(editForm.tags),
-        isFeatured: editingProject.isFeatured ?? false,
-        isActive: editingProject.isActive ?? true,
+        category: editForm.category,
+        status: editForm.status,
+        features: normalizeLines(editForm.features, 24),
+        metrics: normalizeLines(editForm.metrics, 8),
+        isFeatured: editForm.isFeatured,
+        isActive: editForm.isActive,
       });
 
       if (!result.ok) {
@@ -405,9 +511,13 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
         repoUrl: createForm.repoUrl,
         imageUrl: createForm.imageUrl,
         tags: normalizeTags(createForm.tags),
+        category: createForm.category,
+        status: createForm.status,
+        features: normalizeLines(createForm.features, 24),
+        metrics: normalizeLines(createForm.metrics, 8),
         position: allProjects.length,
-        isFeatured: false,
-        isActive: true,
+        isFeatured: createForm.isFeatured,
+        isActive: createForm.isActive,
       });
 
       if (!result.ok) {
@@ -572,6 +682,16 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
           {allProjects.map((project) => (
             <div key={project.id} className="relative group">
               <ProjectCard project={project} theme={{ id: "default", buttonStyle: "rounded" }} />
+              {(project.isFeatured || project.isActive === false) && (
+                <div className="pointer-events-none absolute start-6 top-6 z-10 flex gap-2 text-xs font-medium">
+                  {project.isFeatured && (
+                    <span className="rounded-full border border-primary/30 bg-background px-2.5 py-1 text-primary">{t("public.featured")}</span>
+                  )}
+                  {project.isActive === false && (
+                    <span className="rounded-full border bg-background px-2.5 py-1 text-muted-foreground">{t("projects.hidden")}</span>
+                  )}
+                </div>
+              )}
               <div className="absolute top-4 right-4 z-10 flex flex-wrap justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button
                   type="button"
@@ -596,7 +716,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
       )}
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{t("projects.addProject")}</DialogTitle>
           </DialogHeader>
@@ -659,6 +779,8 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
               />
             </label>
 
+            <CatalogFields form={createForm} onChange={(patch) => setCreateForm((prev) => ({ ...prev, ...patch }))} />
+
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setCreateOpen(false)} disabled={createSaving}>{t("action.cancel")}</Button>
               <Button type="submit" disabled={createSaving}>
@@ -671,7 +793,7 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
       </Dialog>
 
       <Dialog open={Boolean(editingProject)} onOpenChange={(open) => !open && setEditingProject(null)}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{t("projects.editProject")}</DialogTitle>
           </DialogHeader>
@@ -749,6 +871,8 @@ export default function ProjectsManager({ projects = [] }: { projects?: Project[
                 placeholder="https://..."
               />
             </label>
+
+            <CatalogFields form={editForm} onChange={(patch) => setEditForm((prev) => ({ ...prev, ...patch }))} />
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setEditingProject(null)} disabled={editSaving}>{t("action.cancel")}</Button>
